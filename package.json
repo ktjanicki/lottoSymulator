@@ -1,0 +1,11 @@
+{
+  "name": "lottoSymulator",
+  "version": "1.0.0",
+  "description": "Random game symulator",
+  "main": "index.html",
+  "author": "Krzysztof Janicki",
+  "license": "MIT",
+  "dependencies": {
+    "parcel-bundler": "^1.12.4"
+  }
+}
