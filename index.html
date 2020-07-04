@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html lang="pl">
+  <head>
+    <script async src="https://www.googletagmanager.com/gtag/js?id=UA-53881857-2"></script>
+    <script>
+      window.dataLayer = window.dataLayer || [];
+      function gtag() {
+        dataLayer.push(arguments);
+      }
+      gtag('js', new Date());
+
+      gtag('config', 'UA-53881857-2');
+    </script>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Symulator gry LOTTO</title>
+    <meta
+      name="description"
+      content="Symulator popularnej gry losowej LOTTO. Program symuluje ilość potrzebnych losowań do wygrania tzw. szóstki"
+    />
+    <meta name="author" content="Krzysztof Janicki" />
+    <meta name="robots" content="index,follow" />
+    <link rel="stylesheet" href="style.css" />
+  </head>
+
+  <body>
+    <header>
+      <h1>Symulator Gry LOTTO</h1>
+    </header>
+    <div class="wrapper">
+      <section class="numbersTable">
+        <p class="selectNumbersTip">(Wybierz sześć liczb)</p>
+        <div class="numbersList itemsList">
+          <div class="numberItem item1">1</div>
+          <div class="numberItem item2">2</div>
+          <div class="numberItem item3">3</div>
+          <div class="numberItem item4">4</div>
+          <div class="numberItem item5">5</div>
+          <div class="numberItem item6">6</div>
+          <div class="numberItem item7">7</div>
+          <div class="numberItem item8">8</div>
+          <div class="numberItem item9">9</div>
+          <div class="numberItem item10">10</div>
+          <div class="numberItem item11">11</div>
+          <div class="numberItem item12">12</div>
+          <div class="numberItem item13">13</div>
+          <div class="numberItem item14">14</div>
+          <div class="numberItem item15">15</div>
+          <div class="numberItem item16">16</div>
+          <div class="numberItem item17">17</div>
+          <div class="numberItem item18">18</div>
+          <div class="numberItem item19">19</div>
+          <div class="numberItem item20">20</div>
+          <div class="numberItem item21">21</div>
+          <div class="numberItem item22">22</div>
+          <div class="numberItem item23">23</div>
+          <div class="numberItem item24">24</div>
+          <div class="numberItem item25">25</div>
+          <div class="numberItem item26">26</div>
+          <div class="numberItem item27">27</div>
+          <div class="numberItem item28">28</div>
+          <div class="numberItem item29">29</div>
+          <div class="numberItem item30">30</div>
+          <div class="numberItem item31">31</div>
+          <div class="numberItem item32">32</div>
+          <div class="numberItem item33">33</div>
+          <div class="numberItem item34">34</div>
+          <div class="numberItem item35">35</div>
+          <div class="numberItem item36">36</div>
+          <div class="numberItem item37">37</div>
+          <div class="numberItem item38">38</div>
+          <div class="numberItem item39">39</div>
+          <div class="numberItem item40">40</div>
+          <div class="numberItem item41">41</div>
+          <div class="numberItem item42">42</div>
+          <div class="numberItem item43">43</div>
+          <div class="numberItem item44">44</div>
+          <div class="numberItem item45">45</div>
+          <div class="numberItem item46">46</div>
+          <div class="numberItem item47">47</div>
+          <div class="numberItem item48">48</div>
+          <div class="numberItem item49">49</div>
+        </div>
+
+        <div class="selectedItemsBlock inactive">
+          <h2 class="selectedItemsLabel">Twoje liczby:</h2>
+          <div class="itemsList selectedItems"></div>
+          <p class="selectedItemsTip">(Kliknij w wybraną liczbę aby ją usunąć)</p>
+        </div>
+      </section>
+      <section class="lotteryStartButton">
+        <button class="inactive">Rozpocznij symulacje</button>
+        <div class="simulationProgress inactive"></div>
+      </section>
+      <section class="result">
+        <p class="simulationProgressMessage inactive">
+          W zależności od przelądarki i sprzętu, może to zająć nawet do kilku minut
+        </p>
+        <div class="winResult inactive">
+          <h2>Wygrałeś!</h2>
+          <p>Padły liczby: <span class="resultTicketNumbers"></span>.</p>
+          <p>Trafiłeś "szóstkę" w losowaniu nr. <span class="resultCounterTotal"></span></p>
+          <p class="meanwhile">W międzyczasie trafiłeś również:</p>
+          <ul>
+            <li><span class="resultThrees">0</span> trójek</li>
+            <li><span class="resultFours">0</span> czwórek</li>
+            <li><span class="resultFives">0</span> piątek</li>
+          </ul>
+          <p class="simulationTime">Symulacja trwała <span class="resultSimulationTime"></span> sekundy.</p>
+        </div>
+      </section>
+    </div>
+    <script src="index.js" type="module"></script>
+  </body>
+</html>

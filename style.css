@@ -1,0 +1,183 @@
+@import url('https://fonts.googleapis.com/css2?family=Poiret+One&family=Roboto:ital,wght@0,100;0,300;0,400;1,100&display=swap');
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+body {
+  font-family: 'Roboto', sans-serif;
+  font-weight: 100;
+  line-height: 1.5rem;
+}
+
+.wrapper {
+  border: 1px dotted black;
+  margin: 15px auto;
+  width: 800px;
+}
+
+header {
+  text-align: center;
+  margin: 20px 10px;
+  font-family: 'Poiret One', cursive;
+  letter-spacing: 1.3px;
+}
+
+@media (max-width: 1024px) {
+  .wrapper {
+    width: 100vw;
+  }
+}
+
+.numbersTable {
+  margin: 15px auto;
+  min-height: 40vh;
+  padding: 10px;
+}
+
+.itemsList {
+  display: flex;
+  flex-direction: row;
+  flex-wrap: wrap;
+  padding: 20px;
+}
+
+.numberItem {
+  margin: 5px;
+  padding: 10px;
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  border: 1px solid black;
+  text-align: center;
+  font-size: 20px;
+  background-color: #ffff00;
+  transition: 1s;
+  font-weight: 300;
+}
+
+.selectedItem {
+  margin: 5px;
+  padding: 10px;
+  height: 50px;
+  width: 50px;
+  border-radius: 50%;
+  border: 1px solid black;
+  text-align: center;
+  font-size: 20px;
+  background-color: #ffff00;
+  font-weight: 300;
+}
+
+.itemsListDisabled > .numberItem {
+  background-color: #828282;
+}
+
+.numbersList > .inactiveNumber {
+  background-color: #13b91c;
+}
+
+@media (max-width: 450px) {
+  .selectedItem {
+    height: 42px;
+    width: 42px;
+    font-size: 18px;
+  }
+}
+
+@media (max-width: 370px) {
+  .selectedItem {
+    height: 30px;
+    width: 30px;
+    font-size: 14px;
+    padding: 5px;
+  }
+}
+
+.selectedItemsLabel {
+  margin-left: 20px;
+}
+
+.lotteryStartButton {
+  margin: 15px auto;
+  height: 40px;
+}
+
+button {
+  width: 100%;
+  height: 40px;
+  font-size: 20px;
+  background-color: rgb(113, 204, 21);
+  padding: 5px;
+  letter-spacing: 2px;
+  text-transform: uppercase;
+  cursor: pointer;
+}
+
+.simulationProgress {
+  width: 100%;
+  height: 40px;
+  font-size: 18px;
+  background-color: rgb(226, 226, 10);
+  padding: 8px;
+  letter-spacing: 2px;
+  text-align: center;
+  border: 1px solid black;
+  text-transform: uppercase;
+  text-shadow: lightgray;
+}
+
+.inactive {
+  display: none;
+}
+
+.selectedItemsTip {
+  margin-left: 20px;
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: 1.2px;
+  color: #4b4949;
+}
+
+.selectNumbersTip {
+  text-align: center;
+  margin-left: 20px;
+  font-size: 16px;
+  font-style: italic;
+  letter-spacing: 1.2px;
+  color: #4b4949;
+}
+
+.result {
+  padding: 20px;
+}
+
+.simulationProgressMessage {
+  text-align: center;
+  font-style: italic;
+  font-size: 16px;
+  letter-spacing: 1.2px;
+}
+
+ul {
+  padding: 5px 20px;
+  list-style: none;
+}
+
+.winResult > h2 {
+  margin-bottom: 10px;
+}
+
+.resultCounterTotal {
+  font-weight: bold;
+}
+
+.meanwhile {
+  margin-top: 5px;
+}
+
+.simulationTime {
+  margin-top: 10px;
+  font-style: italic;
+}
