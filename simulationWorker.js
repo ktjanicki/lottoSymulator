@@ -1,9 +1,11 @@
 const simulation = (ticketNumbers) => {
+  let operationsCounter = 0;
   const numbersDraw = () => {
     const result = new Set();
 
     while (result.size < 6) {
       result.add(parseInt(Math.random() * (50 - 1) + 1));
+      operationsCounter++;
     }
 
     return result;
@@ -13,6 +15,7 @@ const simulation = (ticketNumbers) => {
     let matchNumbersQuantity = 0;
 
     ticketNumbers.forEach((number) => {
+      operationsCounter++;
       if (object.has(parseInt(number))) {
         matchNumbersQuantity++;
       }
@@ -49,6 +52,7 @@ const simulation = (ticketNumbers) => {
           counters.threeNumbers++;
           break;
       }
+      operationsCounter++;
     };
 
     do {
@@ -64,6 +68,7 @@ const simulation = (ticketNumbers) => {
       fours: counters.fourNumbers,
       fives: counters.fiveNumbers,
       time: ((getEndTime - getStartTime) / 1000).toFixed(1),
+      operations: operationsCounter,
     };
   };
 

@@ -11,6 +11,7 @@ const resultSimulationTime = document.querySelector('.resultSimulationTime');
 const resultTicketNumbers = document.querySelector('.resultTicketNumbers');
 const simulationProgressElement = document.querySelector('.simulationProgress');
 const simulationProgressMessage = document.querySelector('.simulationProgressMessage');
+const operationsCounter = document.querySelector('.operationsCount');
 const winResultElement = document.querySelector('.winResult');
 const ticketNumbers = new Array();
 
@@ -103,6 +104,7 @@ const simulationButtonHandler = () => {
     resultFours.textContent = showFormatedNumber(data.fours);
     resultFives.textContent = showFormatedNumber(data.fives);
     resultSimulationTime.textContent = data.time;
+    operationsCounter.textContent = showFormatedNumber(data.operations);
     simulationWorker.terminate();
 
     buttonDisabled(false);
