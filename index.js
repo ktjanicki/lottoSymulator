@@ -109,7 +109,6 @@ const simulationButtonHandler = () => {
 
     buttonDisabled(false);
     winResultShow(true);
-    console.log(data);
   });
 
   buttonDisabled(true, 'symulacja w toku ...');
