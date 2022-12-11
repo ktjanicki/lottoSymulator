@@ -13,11 +13,11 @@ const simulationProgressElement = document.querySelector('.simulationProgress');
 const simulationProgressMessage = document.querySelector('.simulationProgressMessage');
 const operationsCounter = document.querySelector('.operationsCount');
 const winResultElement = document.querySelector('.winResult');
-const ticketNumbers = new Array();
+const ticketNumbers = [];
 
 const showFormatedNumber = (number) => {
   const reverseNumber = number.toString().split('').reverse();
-  const result = new Array();
+  const result = [];
   let count = 1;
 
   reverseNumber.forEach((item, index) => {
