@@ -6,6 +6,7 @@
   "author": "Krzysztof Janicki",
   "license": "MIT",
   "dependencies": {
+    "build-image": "^1.0.16",
     "parcel-bundler": "^1.8.1"
   }
 }
