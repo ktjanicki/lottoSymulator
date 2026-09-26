@@ -2,6 +2,22 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.0.3] — 2026-09-26
+
+### Zmienione
+
+- Symulator konsolowy: `lottoSymulatorConsole.txt` → `lottoSymulatorConsole.js`.
+
+### Poprawione
+
+- Symulator konsolowy wypisuje każde losowanie z flagą `full`, zgodnie
+  z opisem (wcześniej działała tylko nieopisana `-dev`).
+- Literówka w komunikacie o wygranej („WYGRAŁEŚ”).
+
+### Usunięte
+
+- Flaga `-dev` symulatora konsolowego.
+
 ## [1.0.2] — 2026-09-26
 
 ### Poprawione
