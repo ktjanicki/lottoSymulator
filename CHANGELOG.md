@@ -2,6 +2,16 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.0.2] — 2026-09-26
+
+### Poprawione
+
+- Symulator konsolowy losuje liczby z zakresu 1–49 (wcześniej 1–48).
+
+### Usunięte
+
+- Google Analytics (Universal Analytics) z `index.html`.
+
 ## [1.0.1] — 2026-09-26
 
 ### Zmienione
