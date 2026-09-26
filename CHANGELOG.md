@@ -2,6 +2,14 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.1.1] — 2026-09-26
+
+### Poprawione
+
+- Strona podana bez buildu (tak publikuje ją produkcja) znowu działa:
+  w 1.1.0 nie działały wybór liczb ani symulacja, a stopka nie miała numeru.
+- Numer w stopce pobierany z pliku `VERSION` w czasie działania strony.
+
 ## [1.1.0] — 2026-09-26
 
 ### Dodane
