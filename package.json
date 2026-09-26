@@ -9,7 +9,6 @@
     "test": "node --test"
   },
   "dependencies": {
-    "build-image": "^1.0.16",
     "parcel-bundler": "^1.12.5"
   }
 }
