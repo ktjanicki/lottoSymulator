@@ -95,7 +95,9 @@ const removeItemHandler = ({ target }) => {
 // Start simulation button handler
 const simulationButtonHandler = () => {
   document.querySelector('.result').style.minHeight = '229px';
-  const simulationWorker = new Worker('simulationWorker.js');
+  // Parcel 2 dołącza plik workera do paczki tylko z postaci new URL(…, import.meta.url);
+  // sam napis ('simulationWorker.js') przerywa `npm run build` błędem.
+  const simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url));
 
   simulationWorker.addEventListener('message', ({ data }) => {
     resultTicketNumbers.textContent = data.ticketNumbers;
