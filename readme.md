@@ -26,6 +26,6 @@ The release number lives in the `VERSION` file; release notes are in `CHANGELOG.
 
 ## Tests
 
-Requires Node.js 18 or newer:
+Node.js version is pinned in `.node-version`; CI (GitHub Actions) runs the same tests on every push and pull request:
 
 \$ npm test
