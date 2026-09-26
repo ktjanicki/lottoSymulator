@@ -2,6 +2,13 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.1.0] — 2026-09-26
+
+### Dodane
+
+- Stopka z numerem wersji („wersja X.Y.Z”), wyrównana do prawej.
+- Build produkcyjny (`npm run build`) w CI.
+
 ## [1.0.4] — 2026-09-26
 
 ### Dodane
