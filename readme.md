@@ -9,6 +9,16 @@ Production build goes to `dist/`:
 
 \$ npm run build
 
+## Console version
+
+Terminal simulator with a fixed ticket (12, 33, 17, 41, 27, 6):
+
+\$ node lottoSymulatorConsole.js
+
+Add `full` to log every draw (millions of lines):
+
+\$ node lottoSymulatorConsole.js full
+
 ## Versioning
 
 The release number lives in the `VERSION` file; release notes are in `CHANGELOG.md`.

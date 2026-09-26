@@ -77,7 +77,7 @@ const startSimulation = () => {
         break;
     }
 
-    if (process.argv[2] === '-dev') {
+    if (process.argv[2] === 'full') {
       console.log(
         `${showFormatedNumber(
           drawCounter.toString()
@@ -91,7 +91,7 @@ const startSimulation = () => {
     if (win) {
       const getEndTime = new Date().getTime();
       console.log(`---------------------------------------------
-               BRAWO WYRAŁEŚ!
+               BRAWO WYGRAŁEŚ!
 
           Trafiłeś szóstkę w ${showFormatedNumber(drawCounter.toString())} losowaniu.
           W międzyczasie trafiłeś:
