@@ -9,6 +9,10 @@ Production build goes to `dist/`:
 
 \$ npm run build
 
+The page must also work served as-is, without a build: production publishes
+the raw repository files. Browser modules may import only relative paths;
+`npm test` checks this.
+
 ## Console version
 
 Terminal simulator with a fixed ticket (12, 33, 17, 41, 27, 6):

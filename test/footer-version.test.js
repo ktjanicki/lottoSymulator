@@ -1,7 +1,8 @@
-// Stopka pokazuje numer z pliku VERSION, wstawiany przez Parcel w czasie buildu.
-// Awaria, przed którą chroni: numer wpisany na sztywno albo wzięty z innego
-// miejsca — stopka pokazuje wtedy starą wersję po każdym kolejnym wydaniu.
-// Dlatego build idzie na kopii źródeł z podmienionym VERSION (9.9.9): numer
+// Stopka pokazuje numer z pliku VERSION, pobierany przez stronę w czasie
+// działania; build Parcela kopiuje ten plik do dist/ pod nazwą z sumą.
+// Awaria, przed którą chroni: numer wpisany na sztywno albo plik zgubiony
+// w buildzie — stopka pokazuje wtedy starą wersję albo samo „wersja”.
+// Build idzie na kopii źródeł z podmienionym VERSION (9.9.9): numer
 // z repozytorium mógłby trafić do paczki także z literału.
 
 const { test } = require('node:test');
@@ -17,7 +18,7 @@ const ROOT = path.join(__dirname, '..');
 const SOURCES = ['index.html', 'index.js', 'simulationWorker.js', 'style.css', 'package.json'];
 const FAKE_VERSION = '9.9.9';
 
-test('zbudowana strona niesie numer z VERSION — inaczej stopka kłamie po kolejnym wydaniu', () => {
+test('zbudowana strona pobiera numer z VERSION — inaczej stopka kłamie po kolejnym wydaniu', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lotto-footer-'));
   try {
     for (const file of SOURCES) fs.copyFileSync(path.join(ROOT, file), path.join(dir, file));
@@ -33,14 +34,19 @@ test('zbudowana strona niesie numer z VERSION — inaczej stopka kłamie po kole
     const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
     assert.match(html, /<footer[^>]*>[\s\S]*class=["']?appVersion/, 'Brak stopki z elementem .appVersion w index.html.');
 
-    const bundle = fs
-      .readdirSync(dist)
+    const files = fs.readdirSync(dist);
+    const versionFile = files.find((file) => fs.readFileSync(path.join(dist, file), 'utf8') === `${FAKE_VERSION}\n`);
+    assert.ok(versionFile, `Build nie skopiował VERSION (${FAKE_VERSION}) do dist/ — stopka dostanie 404.`);
+
+    const bundle = files
       .filter((file) => file.endsWith('.js'))
       .map((file) => fs.readFileSync(path.join(dist, file), 'utf8'))
       .join('\n');
-    assert.ok(bundle.includes(FAKE_VERSION), `Paczka JS nie zawiera numeru ${FAKE_VERSION} z VERSION kopii.`);
+    // Parcel wpisuje nazwę pliku do importmapy w index.html, a skrypt sięga po nią
+    // przez import.meta.resolve — dlatego szukamy w obu miejscach.
+    assert.ok((html + bundle).includes(versionFile), `Strona nie odwołuje się do ${versionFile}.`);
     const repoVersion = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
-    assert.ok(!bundle.includes(`"${repoVersion}`), `Paczka zawiera numer ${repoVersion} z repozytorium — jest wpisany na sztywno.`);
+    assert.ok(!bundle.includes(repoVersion), `Paczka zawiera numer ${repoVersion} z repozytorium — jest wpisany na sztywno.`);
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

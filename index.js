@@ -1,8 +1,3 @@
-// Parcel zamienia readFileSync w buildzie na treść pliku VERSION — jedynego
-// źródła numeru wydania. Wpisany tu literał rozjechałby się ze stopką przy
-// pierwszym wydaniu; do przeglądarki nie trafia żadne `fs`.
-import fs from 'fs';
-
 const numbersList = document.querySelector('.numbersList');
 const itemList = document.querySelector('.itemsList');
 const selectedItems = document.querySelector('.selectedItems');
@@ -20,7 +15,13 @@ const operationsCounter = document.querySelector('.operationsCount');
 const winResultElement = document.querySelector('.winResult');
 const ticketNumbers = [];
 
-document.querySelector('.appVersion').textContent = fs.readFileSync(__dirname + '/VERSION', 'utf8').trim();
+// Numer z pliku VERSION — jedynego źródła numeru wydania. Produkcja podaje
+// surowe pliki bez buildu, więc tylko ścieżka względna działa w obu trybach
+// (Parcel kopiuje VERSION do dist/). Import rozwiązywany przez bundler, np.
+// `fs`, unieważnia w przeglądarce cały moduł — tak padło wydanie 1.1.0.
+fetch(new URL('VERSION', import.meta.url))
+  .then((response) => (response.ok ? response.text() : ''))
+  .then((version) => (document.querySelector('.appVersion').textContent = version.trim()));
 
 const showFormatedNumber = (number) => {
   const reverseNumber = number.toString().split('').reverse();
