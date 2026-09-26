@@ -14,7 +14,7 @@ const numbersDraw = () => {
   const result = new Set();
 
   while (result.size < 6) {
-    result.add(parseInt(Math.random() * (49 - 1) + 1));
+    result.add(parseInt(Math.random() * (50 - 1) + 1));
   }
 
   showDrawResult = [...result].join(', ');
