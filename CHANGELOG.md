@@ -2,6 +2,14 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.0.4] — 2026-09-26
+
+### Dodane
+
+- CI na GitHub Actions: `npm ci` i `npm test` przy pushu do `master`,
+  tagach `v*` i pull requestach.
+- Plik `.node-version` z przypiętą wersją Node.js (26.8.2).
+
 ## [1.0.3] — 2026-09-26
 
 ### Zmienione
