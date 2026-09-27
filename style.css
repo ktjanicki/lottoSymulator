@@ -117,7 +117,9 @@ body {
 .wrapper {
   border: 1px dotted black;
   margin: 15px auto;
-  width: 800px;
+  /* max-width zamiast width + 100vw w media query: 100vw liczy też pasek
+     przewijania i na wąskim ekranie strona przewijała się w poziomie. */
+  max-width: 800px;
 }
 
 header {
@@ -129,7 +131,7 @@ header {
 
 .appFooter {
   margin: 0 auto 15px;
-  width: 800px;
+  max-width: 800px;
   text-align: right;
   font-size: 14px;
   font-style: italic;
@@ -137,12 +139,8 @@ header {
   color: #4b4949;
 }
 
-@media (max-width: 1024px) {
-  .wrapper,
-  .appFooter {
-    width: 100vw;
-  }
-
+/* Gdy ramka sięga brzegów ekranu, stopka odsuwa się od krawędzi. */
+@media (max-width: 800px) {
   .appFooter {
     padding: 0 10px;
   }
@@ -250,7 +248,6 @@ button {
   text-align: center;
   border: 1px solid black;
   text-transform: uppercase;
-  text-shadow: lightgray;
 }
 
 .inactive {
