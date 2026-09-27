@@ -2,6 +2,15 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.4.0] — 2026-09-27
+
+### Dodane
+
+- Postęp w trakcie symulacji: liczba losowań i czas, odświeżane co milion
+  losowań.
+- Przycisk „Przerwij”: zatrzymuje symulację i podaje, po ilu losowaniach
+  została przerwana.
+
 ## [1.3.0] — 2026-09-27
 
 ### Dodane
