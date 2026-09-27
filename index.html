@@ -6,10 +6,11 @@
     <title>Symulator gry LOTTO</title>
     <meta
       name="description"
-      content="Symulator popularnej gry losowej LOTTO. Program symuluje ilość potrzebnych losowań do wygrania tzw. szóstki"
+      content="Symulator popularnej gry losowej LOTTO. Program symuluje liczbę losowań potrzebnych do wygrania tzw. szóstki"
     />
     <meta name="author" content="Krzysztof Janicki" />
     <meta name="robots" content="index,follow" />
+    <link rel="icon" href="favicon.svg" type="image/svg+xml" />
     <link rel="stylesheet" href="style.css" />
   </head>
 
@@ -29,17 +30,17 @@
         </div>
       </section>
       <section class="lotteryStartButton">
-        <button type="button" class="startButton inactive">Rozpocznij symulacje</button>
+        <button type="button" class="startButton inactive">Rozpocznij symulację</button>
         <div class="simulationProgress inactive">symulacja w toku ...</div>
       </section>
       <section class="result" role="status" aria-live="polite">
         <p class="simulationProgressMessage inactive">
-          W zależności od przelądarki i sprzętu, może to zająć nawet do kilku minut
+          W zależności od przeglądarki i sprzętu, może to zająć nawet do kilku minut
         </p>
         <div class="winResult inactive">
           <h2>Wygrałeś!</h2>
           <p>Padły liczby: <span class="resultTicketNumbers"></span>.</p>
-          <p>Trafiłeś "szóstkę" w losowaniu nr. <span class="resultCounterTotal"></span></p>
+          <p>Trafiłeś "szóstkę" w losowaniu nr <span class="resultCounterTotal"></span></p>
           <p class="meanwhile">W międzyczasie trafiłeś również:</p>
           <ul>
             <li><span class="resultThrees">0</span> trójek</li>
