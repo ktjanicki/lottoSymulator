@@ -50,6 +50,25 @@ const checkModule = (file, read, exists, seen = new Set()) => {
   return errors;
 };
 
+// Arkusz stylów: każdy url(…) i @import ma wskazywać plik z repozytorium.
+// Zewnętrzny adres (np. fonts.googleapis.com) blokuje renderowanie i wysyła
+// IP odwiedzającego do obcej firmy — tak ładowały się czcionki do 1.2.0.
+const checkStylesheet = (file, read, exists) => {
+  const errors = [];
+  // Bez komentarzy: słowo „@import” w objaśnieniu to nie odwołanie do pliku.
+  const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '');
+  const refs = [...css.matchAll(/@import\s+(?:url\()?\s*['"]?([^'")\s;]+)|url\(\s*['"]?([^'")]+)['"]?\s*\)/g)].map((m) => m[1] || m[2]);
+  for (const ref of new Set(refs)) {
+    if (/^[a-z]+:|^\/\//i.test(ref)) {
+      errors.push(`${file}: zasób zewnętrzny „${ref}” — skopiuj go do repozytorium.`);
+      continue;
+    }
+    const target = path.join(path.dirname(file), ref);
+    if (!exists(target)) errors.push(`${file}: „${ref}” wskazuje nieistniejący plik ${target}.`);
+  }
+  return errors;
+};
+
 const checkPage = (read, exists) => {
   const errors = [];
   for (const asset of pageAssets(read('index.html'))) {
@@ -58,11 +77,12 @@ const checkPage = (read, exists) => {
       continue;
     }
     if (asset.endsWith('.js')) errors.push(...checkModule(path.normalize(asset), read, exists));
+    if (asset.endsWith('.css')) errors.push(...checkStylesheet(path.normalize(asset), read, exists));
   }
   return errors;
 };
 
-test('strona podana wprost ładuje wszystkie moduły — inaczej produkcja wyświetla martwą stronę', () => {
+test('strona podana wprost ładuje wszystkie moduły i style z repozytorium — inaczej wyświetla martwą stronę albo sięga do obcych serwerów', () => {
   const read = (file) => fs.readFileSync(path.join(ROOT, file), 'utf8');
   const exists = (file) => fs.existsSync(path.join(ROOT, file));
   assert.deepEqual(checkPage(read, exists), []);
@@ -81,4 +101,16 @@ test('kontrola odrzuca import pakietu (także w workerze), brakujący plik i bra
   assert.match(errors.join('\n'), /„fs”/);
   assert.match(errors.join('\n'), /missing\.js/);
   assert.match(errors.join('\n'), /core\.js: import „lodash”/);
+});
+
+test('kontrola arkusza odrzuca zewnętrzny @import i brakującą czcionkę', () => {
+  const files = {
+    'index.html': '<link rel="stylesheet" href="style.css">',
+    'style.css': "/* @import w komentarzu się nie liczy */\n@import url('https://fonts.googleapis.com/css2?family=Roboto');\n@font-face { src: url('fonts/a.woff2') format('woff2'); }\n@font-face { src: url(fonts/missing.woff2); }",
+    'fonts/a.woff2': '',
+  };
+  const errors = checkPage((file) => files[file], (file) => file in files);
+  assert.equal(errors.length, 2, errors.join('\n'));
+  assert.match(errors.join('\n'), /zasób zewnętrzny „https:\/\/fonts\.googleapis\.com/);
+  assert.match(errors.join('\n'), /missing\.woff2/);
 });
