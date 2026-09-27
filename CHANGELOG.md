@@ -2,6 +2,26 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.3.0] — 2026-09-27
+
+### Dodane
+
+- Wybór liczb klawiaturą i czytnikiem ekranu: liczby są przyciskami, wynik
+  symulacji ogłaszany jest jako komunikat stanu.
+- Ponowne kliknięcie wybranej liczby zdejmuje ją z kuponu.
+- Ikona strony (favicon).
+
+### Zmienione
+
+- Czcionki (Roboto, Poiret One) podawane z serwera strony zamiast Google Fonts.
+- Przy szerokości ekranu 801–1024 px ramka ma 800 px i jest wyśrodkowana.
+
+### Poprawione
+
+- Czas symulacji z przecinkiem dziesiętnym („2,3 s”).
+- Przewijanie strony w poziomie na wąskich ekranach.
+- Opis strony i literówki w tekstach („przeglądarki”, „symulację”, „nr”).
+
 ## [1.2.0] — 2026-09-27
 
 ### Zmienione
