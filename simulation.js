@@ -60,13 +60,14 @@ export const simulateUntilWin = (ticketNumbers, random = Math.random) => {
   return { drawsNumber: draws, threes: hits[3], fours: hits[4], fives: hits[5] };
 };
 
-// Wejście i wyjście workera strony: kupon jako napisy z DOM, wynik z czasem trwania.
+// Wejście i wyjście workera strony: kupon jako napisy z DOM, wynik z czasem
+// trwania w milisekundach (formatowanie należy do strony, format.js).
 export const simulation = (ticketNumbers, random = Math.random) => {
   const start = performance.now();
   const result = simulateUntilWin(ticketNumbers, random);
   return {
     ticketNumbers: [...ticketNumbers].sort((a, b) => a - b).join(', '),
     ...result,
-    time: ((performance.now() - start) / 1000).toFixed(1),
+    durationMs: performance.now() - start,
   };
 };

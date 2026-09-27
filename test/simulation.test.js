@@ -82,6 +82,6 @@ test('zły kupon zgłasza błąd zamiast kręcić się bez końca', () => {
 test('wynik dla strony: kupon posortowany liczbowo, czas, bez licznika operacji', () => {
   const result = simulation(['49', '5', '4', '3', '2', '1'], scripted([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43 / 44 + 1e-9]));
   assert.equal(result.ticketNumbers, '1, 2, 3, 4, 5, 49');
-  assert.match(result.time, /^\d+\.\d$/);
+  assert.ok(Number.isFinite(result.durationMs) && result.durationMs >= 0, `durationMs: ${result.durationMs}`);
   assert.equal('operations' in result, false);
 });

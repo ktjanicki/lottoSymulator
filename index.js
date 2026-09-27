@@ -1,4 +1,4 @@
-import { formatNumber } from './format.js';
+import { formatNumber, formatSeconds } from './format.js';
 import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
@@ -97,7 +97,7 @@ startButton.addEventListener('click', () => {
     resultThrees.textContent = formatNumber(data.threes);
     resultFours.textContent = formatNumber(data.fours);
     resultFives.textContent = formatNumber(data.fives);
-    resultSimulationTime.textContent = data.time;
+    resultSimulationTime.textContent = formatSeconds(data.durationMs);
     simulationWorker.terminate();
 
     simulationRunning = false;

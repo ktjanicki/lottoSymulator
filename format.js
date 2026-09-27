@@ -12,3 +12,8 @@ export const formatNumber = (number) => {
 
   return result.reverse().join('');
 };
+
+// Sekundy z jedną cyfrą po przecinku: 2345 ms → „2,3”. Przecinek wstawiamy
+// sami — toLocaleString zależy od języka przeglądarki i pokazałby „2.3”
+// odwiedzającemu z angielskim interfejsem.
+export const formatSeconds = (milliseconds) => (milliseconds / 1000).toFixed(1).replace('.', ',');

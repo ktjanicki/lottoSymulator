@@ -1,9 +1,9 @@
-// Grupowanie cyfr w podsumowaniu (format.js). Awaria: spacja w złym miejscu
-// albo na początku liczby, np. „ 819 580” przy liczbach podzielnych po trzy cyfry.
+// Formatowanie liczb w podsumowaniu (format.js). Awarie: spacja w złym miejscu
+// albo na początku liczby („ 819 580”); kropka dziesiętna zamiast przecinka.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { formatNumber } = require('../format.js');
+const { formatNumber, formatSeconds } = require('../format.js');
 
 test('liczby grupowane po trzy cyfry od prawej, bez spacji na brzegach', () => {
   const cases = [
@@ -16,4 +16,15 @@ test('liczby grupowane po trzy cyfry od prawej, bez spacji na brzegach', () => {
     [123456789, '123 456 789'],
   ];
   for (const [input, expected] of cases) assert.equal(formatNumber(input), expected);
+});
+
+test('czas w sekundach z przecinkiem dziesiętnym, niezależnie od języka przeglądarki', () => {
+  const cases = [
+    [0, '0,0'],
+    [49, '0,0'],
+    [50, '0,1'],
+    [2345, '2,3'],
+    [61000, '61,0'],
+  ];
+  for (const [input, expected] of cases) assert.equal(formatSeconds(input), expected);
 });
