@@ -2,6 +2,21 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.2.0] — 2026-09-27
+
+### Zmienione
+
+- Symulacja szybsza (w Firefoksie ok. 2–3×): losowanie częściowym tasowaniem
+  Fishera-Yatesa.
+- Rdzeń symulacji w module `simulation.js`, formatowanie liczb w `format.js`;
+  worker jest modułem ES.
+- Podsumowanie symulacji podaje tylko czas trwania.
+
+### Usunięte
+
+- Licznik operacji w podsumowaniu symulacji.
+- Symulator konsolowy (`lottoSymulatorConsole.js`).
+
 ## [1.1.2] — 2026-09-27
 
 ### Poprawione
