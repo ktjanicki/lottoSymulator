@@ -1,10 +1,11 @@
 import { formatNumber } from './format.js';
+import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
-const itemList = document.querySelector('.itemsList');
 const selectedItems = document.querySelector('.selectedItems');
 const selectedItemsBlock = document.querySelector('.selectedItemsBlock');
-const button = document.querySelector('button');
+const startButton = document.querySelector('.startButton');
+const resultSection = document.querySelector('.result');
 const resultCounterTotal = document.querySelector('.resultCounterTotal');
 const resultThrees = document.querySelector('.resultThrees');
 const resultFours = document.querySelector('.resultFours');
@@ -15,6 +16,7 @@ const simulationProgressElement = document.querySelector('.simulationProgress');
 const simulationProgressMessage = document.querySelector('.simulationProgressMessage');
 const winResultElement = document.querySelector('.winResult');
 const ticketNumbers = [];
+let simulationRunning = false;
 
 // Numer z pliku VERSION — jedynego źródła numeru wydania. Strona ma działać
 // i po buildzie (produkcja; Parcel kopiuje VERSION do dist/), i podana wprost
@@ -25,72 +27,65 @@ fetch(new URL('VERSION', import.meta.url))
   .then((response) => (response.ok ? response.text() : ''))
   .then((version) => (document.querySelector('.appVersion').textContent = version.trim()));
 
-// Function for start simulation button toggle, use 'message' argument only for simulation progress div enable.
-const buttonDisabled = (value, message) => {
-  if (value) {
-    button.classList.add('inactive');
-    if (message) {
-      simulationProgressElement.classList.remove('inactive');
-      simulationProgressElement.innerText = message;
-    }
-  } else {
-    button.classList.remove('inactive');
-    if (!message) simulationProgressElement.classList.add('inactive');
+// Liczby to przyciski (<button>), a nie <div>: dają się wybrać klawiaturą
+// i czytnik ekranu ogłasza je razem ze stanem aria-pressed.
+const createBall = (number, label) => {
+  const ball = document.createElement('button');
+  ball.type = 'button';
+  ball.className = 'ball';
+  ball.dataset.number = number;
+  ball.textContent = number;
+  if (label) ball.setAttribute('aria-label', label);
+  return ball;
+};
+
+for (let number = 1; number <= MAX_NUMBER; number++) numbersList.append(createBall(number));
+
+// Jedyne miejsce, które ustawia wygląd i dostępność kontrolek na podstawie
+// kuponu i trwającej symulacji. Przełączanie klas w kilku procedurach naraz
+// rozjeżdżało się przy kolejności kliknięć, której nikt nie przewidział.
+const render = () => {
+  const full = ticketNumbers.length === TICKET_SIZE;
+  for (const ball of numbersList.children) {
+    const selected = ticketNumbers.includes(ball.dataset.number);
+    ball.setAttribute('aria-pressed', String(selected));
+    ball.disabled = simulationRunning || (full && !selected);
   }
+  selectedItems.replaceChildren(
+    ...ticketNumbers.map((number) => {
+      const ball = createBall(number, `Usuń liczbę ${number}`);
+      ball.disabled = simulationRunning;
+      return ball;
+    })
+  );
+  selectedItemsBlock.classList.toggle('inactive', ticketNumbers.length === 0);
+  startButton.classList.toggle('inactive', !full || simulationRunning);
+  simulationProgressElement.classList.toggle('inactive', !simulationRunning);
+  simulationProgressMessage.classList.toggle('inactive', !simulationRunning);
 };
 
-const numbersListDisable = (value) => {
-  return value ? itemList.classList.add('itemsListDisabled') : itemList.classList.remove('itemsListDisabled');
+// Kliknięcie wybranej liczby zdejmuje ją z kuponu; siódma nie wchodzi.
+const toggleNumber = (number) => {
+  const index = ticketNumbers.indexOf(number);
+  if (index >= 0) ticketNumbers.splice(index, 1);
+  else if (ticketNumbers.length < TICKET_SIZE) ticketNumbers.push(number);
+  render();
 };
 
-const winResultShow = (showResult, simulation) => {
-  showResult ? winResultElement.classList.remove('inactive') : winResultElement.classList.add('inactive');
-  simulation ? simulationProgressMessage.classList.remove('inactive') : simulationProgressMessage.classList.add('inactive');
-};
+numbersList.addEventListener('click', ({ target }) => {
+  const ball = target.closest('.ball');
+  if (ball) toggleNumber(ball.dataset.number);
+});
 
-// Select items handler
-const selectItemHandler = ({ target }) => {
-  if (
-    !itemList.classList.contains('itemsListDisabled') &&
-    !target.classList.contains('inactiveNumber') &&
-    target.classList.contains('numberItem')
-  ) {
-    const item = document.createElement('div');
-    item.className = `selectedItem`;
-    item.textContent = target.textContent;
-    target.classList.add('inactiveNumber');
-    selectedItemsBlock.classList.remove('inactive');
-    selectedItems.appendChild(item);
-    ticketNumbers.push(item.textContent);
+selectedItems.addEventListener('click', ({ target }) => {
+  const ball = target.closest('.ball');
+  if (!ball) return;
+  toggleNumber(ball.dataset.number);
+  // Usunięty przycisk znika z DOM; bez tego fokus klawiatury spada na <body>.
+  numbersList.querySelector(`[data-number="${ball.dataset.number}"]`).focus();
+});
 
-    if (ticketNumbers.length === 6) {
-      numbersListDisable(true);
-      buttonDisabled(false);
-    }
-  }
-};
-
-// Removing selected items handler
-const removeItemHandler = ({ target }) => {
-  if (target.classList.contains('selectedItem') && simulationProgressElement.classList.contains('inactive')) {
-    document.querySelector(`.item${target.textContent}`).classList.remove('inactiveNumber');
-    selectedItems.removeChild(target);
-    ticketNumbers.splice(ticketNumbers.indexOf(target.textContent), 1);
-
-    if (ticketNumbers.length !== 6) {
-      numbersListDisable(false);
-      buttonDisabled(true);
-    }
-  }
-
-  if (document.querySelectorAll('.selectedItem').length === 0) {
-    selectedItemsBlock.classList.add('inactive');
-  }
-};
-
-// Start simulation button handler
-const simulationButtonHandler = () => {
-  document.querySelector('.result').style.minHeight = '229px';
+startButton.addEventListener('click', () => {
   // Parcel 2 dołącza plik workera do paczki tylko z postaci new URL(…, import.meta.url);
   // sam napis ('simulationWorker.js') przerywa `npm run build` błędem. Worker jest
   // modułem (importuje simulation.js); bez `type: 'module'` przeglądarka odrzuci import.
@@ -105,15 +100,16 @@ const simulationButtonHandler = () => {
     resultSimulationTime.textContent = data.time;
     simulationWorker.terminate();
 
-    buttonDisabled(false);
-    winResultShow(true);
+    simulationRunning = false;
+    winResultElement.classList.remove('inactive');
+    render();
   });
 
-  buttonDisabled(true, 'symulacja w toku ...');
-  winResultShow(false, true);
-  simulationWorker.postMessage(ticketNumbers);
-};
+  simulationRunning = true;
+  resultSection.classList.add('started');
+  winResultElement.classList.add('inactive');
+  render();
+  simulationWorker.postMessage([...ticketNumbers]);
+});
 
-numbersList.addEventListener('click', selectItemHandler);
-selectedItems.addEventListener('click', removeItemHandler);
-button.addEventListener('click', simulationButtonHandler);
+render();

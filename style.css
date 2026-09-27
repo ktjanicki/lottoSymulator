@@ -51,14 +51,14 @@ header {
   padding: 10px;
 }
 
-.itemsList {
+.ballList {
   display: flex;
   flex-direction: row;
   flex-wrap: wrap;
   padding: 20px;
 }
 
-.numberItem {
+.ball {
   margin: 5px;
   padding: 10px;
   height: 50px;
@@ -66,35 +66,42 @@ header {
   border-radius: 50%;
   border: 1px solid black;
   text-align: center;
+  font-family: inherit;
   font-size: 20px;
+  font-weight: 300;
+  /* Kulka to <button>: bez tego dziedziczy odstępy liter przycisku startu. */
+  letter-spacing: normal;
+  color: inherit;
   background-color: #ffff00;
+  cursor: pointer;
+}
+
+.numbersList > .ball {
   transition: 1s;
-  font-weight: 300;
 }
 
-.selectedItem {
-  margin: 5px;
-  padding: 10px;
-  height: 50px;
-  width: 50px;
-  border-radius: 50%;
-  border: 1px solid black;
-  text-align: center;
-  font-size: 20px;
-  background-color: #ffff00;
-  font-weight: 300;
+.ball:focus-visible {
+  outline: 3px solid #1a5fb4;
+  outline-offset: 2px;
 }
 
-.itemsListDisabled > .numberItem {
+.numbersList > .ball:disabled {
   background-color: #828282;
+  cursor: default;
 }
 
-.numbersList > .inactiveNumber {
+/* Po :disabled: wybrana liczba zostaje zielona także w trakcie symulacji,
+   gdy cała lista jest zablokowana. */
+.numbersList > .ball[aria-pressed='true'] {
   background-color: #13b91c;
 }
 
+.selectedItems > .ball:disabled {
+  cursor: default;
+}
+
 @media (max-width: 450px) {
-  .selectedItem {
+  .selectedItems > .ball {
     height: 42px;
     width: 42px;
     font-size: 18px;
@@ -102,7 +109,7 @@ header {
 }
 
 @media (max-width: 370px) {
-  .selectedItem {
+  .selectedItems > .ball {
     height: 30px;
     width: 30px;
     font-size: 14px;
@@ -166,6 +173,12 @@ button {
 
 .result {
   padding: 20px;
+}
+
+/* Rezerwuje miejsce na wynik od pierwszego startu — bez tego przycisk
+   i stopka skaczą, gdy wynik znika na czas kolejnej symulacji. */
+.result.started {
+  min-height: 229px;
 }
 
 .simulationProgressMessage {
