@@ -2,6 +2,13 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.1.2] — 2026-09-27
+
+### Poprawione
+
+- Dokumentacja: produkcja podaje build Parcela; wymóg działania strony
+  bez buildu zostaje.
+
 ## [1.1.1] — 2026-09-26
 
 ### Poprawione
