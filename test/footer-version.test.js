@@ -13,15 +13,17 @@ const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
 const ROOT = path.join(__dirname, '..');
-// Źródła aplikacji; nowy plik importowany przez stronę trzeba dopisać tutaj,
-// inaczej build kopii przerwie się błędem „cannot resolve”.
-const SOURCES = ['index.html', 'index.js', 'simulationWorker.js', 'style.css', 'package.json'];
+// Kopiujemy całe drzewo poza wynikami buildu i zależnościami — ręczna lista
+// plików gubiła każdy nowy moduł i build kopii padał na „cannot resolve”.
+const SKIP = new Set(['.git', 'node_modules', 'dist', '.parcel-cache', 'plan']);
 const FAKE_VERSION = '9.9.9';
 
 test('zbudowana strona pobiera numer z VERSION — inaczej stopka kłamie po kolejnym wydaniu', () => {
   const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lotto-footer-'));
   try {
-    for (const file of SOURCES) fs.copyFileSync(path.join(ROOT, file), path.join(dir, file));
+    for (const entry of fs.readdirSync(ROOT)) {
+      if (!SKIP.has(entry)) fs.cpSync(path.join(ROOT, entry), path.join(dir, entry), { recursive: true });
+    }
     fs.writeFileSync(path.join(dir, 'VERSION'), `${FAKE_VERSION}\n`);
     fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
 

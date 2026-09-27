@@ -26,8 +26,14 @@ const pageAssets = (html) =>
     .map((match) => match[1])
     .filter((ref) => !/^[a-z]+:|^\/\//i.test(ref));
 
-// Zwraca błędy dla modułu `file` o treści `source`; exists(ścieżka) mówi, czy plik jest w repozytorium.
-const checkModule = (file, source, exists) => {
+// Zwraca błędy dla modułu `file` i — rekurencyjnie — modułów, które wczytuje
+// (worker importuje rdzeń symulacji; zły import tam zabija tylko worker, więc
+// strona wygląda na sprawną, dopóki ktoś nie kliknie „Rozpocznij”).
+// exists(ścieżka) mówi, czy plik jest w repozytorium.
+const checkModule = (file, read, exists, seen = new Set()) => {
+  if (seen.has(file)) return [];
+  seen.add(file);
+  const source = read(file);
   const errors = [];
   for (const pattern of SPECIFIERS) {
     for (const [, spec] of source.matchAll(pattern)) {
@@ -38,6 +44,7 @@ const checkModule = (file, source, exists) => {
       }
       const target = path.join(path.dirname(file), spec);
       if (!exists(target)) errors.push(`${file}: „${spec}” wskazuje nieistniejący plik ${target}.`);
+      else if (target.endsWith('.js')) errors.push(...checkModule(target, read, exists, seen));
     }
   }
   return errors;
@@ -50,7 +57,7 @@ const checkPage = (read, exists) => {
       errors.push(`index.html wczytuje „${asset}”, którego nie ma w repozytorium.`);
       continue;
     }
-    if (asset.endsWith('.js')) errors.push(...checkModule(asset, read(asset), exists));
+    if (asset.endsWith('.js')) errors.push(...checkModule(path.normalize(asset), read, exists));
   }
   return errors;
 };
@@ -61,15 +68,17 @@ test('strona podana wprost ładuje wszystkie moduły — inaczej produkcja wyśw
   assert.deepEqual(checkPage(read, exists), []);
 });
 
-test('kontrola odrzuca import pakietu, brakujący plik i brakujący zasób strony', () => {
+test('kontrola odrzuca import pakietu (także w workerze), brakujący plik i brakujący zasób strony', () => {
   const files = {
     'index.html': '<link rel="stylesheet" href="style.css"><script src="index.js" type="module"></script>',
     'index.js': "import fs from 'fs';\nimport './missing.js';\nnew Worker(new URL('worker.js', import.meta.url));",
-    'worker.js': '',
+    'worker.js': "import './core.js';",
+    'core.js': "import { shuffle } from 'lodash';",
   };
   const errors = checkPage((file) => files[file], (file) => file in files);
-  assert.equal(errors.length, 3, errors.join('\n'));
+  assert.equal(errors.length, 4, errors.join('\n'));
   assert.match(errors.join('\n'), /style\.css/);
   assert.match(errors.join('\n'), /„fs”/);
   assert.match(errors.join('\n'), /missing\.js/);
+  assert.match(errors.join('\n'), /core\.js: import „lodash”/);
 });

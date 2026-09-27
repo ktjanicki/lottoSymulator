@@ -1,3 +1,5 @@
+import { formatNumber } from './format.js';
+
 const numbersList = document.querySelector('.numbersList');
 const itemList = document.querySelector('.itemsList');
 const selectedItems = document.querySelector('.selectedItems');
@@ -23,20 +25,6 @@ const ticketNumbers = [];
 fetch(new URL('VERSION', import.meta.url))
   .then((response) => (response.ok ? response.text() : ''))
   .then((version) => (document.querySelector('.appVersion').textContent = version.trim()));
-
-const showFormatedNumber = (number) => {
-  const reverseNumber = number.toString().split('').reverse();
-  const result = [];
-  let count = 1;
-
-  reverseNumber.forEach((item, index) => {
-    result.push(item);
-    if (count === 3 && index !== reverseNumber.length - 1) result.push(' ');
-    count === 3 ? (count = 1) : count++;
-  });
-
-  return result.reverse().join('');
-};
 
 // Function for start simulation button toggle, use 'message' argument only for simulation progress div enable.
 const buttonDisabled = (value, message) => {
@@ -105,17 +93,18 @@ const removeItemHandler = ({ target }) => {
 const simulationButtonHandler = () => {
   document.querySelector('.result').style.minHeight = '229px';
   // Parcel 2 dołącza plik workera do paczki tylko z postaci new URL(…, import.meta.url);
-  // sam napis ('simulationWorker.js') przerywa `npm run build` błędem.
-  const simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url));
+  // sam napis ('simulationWorker.js') przerywa `npm run build` błędem. Worker jest
+  // modułem (importuje simulation.js); bez `type: 'module'` przeglądarka odrzuci import.
+  const simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url), { type: 'module' });
 
   simulationWorker.addEventListener('message', ({ data }) => {
     resultTicketNumbers.textContent = data.ticketNumbers;
-    resultCounterTotal.textContent = showFormatedNumber(data.drawsNumber);
-    resultThrees.textContent = showFormatedNumber(data.threes);
-    resultFours.textContent = showFormatedNumber(data.fours);
-    resultFives.textContent = showFormatedNumber(data.fives);
+    resultCounterTotal.textContent = formatNumber(data.drawsNumber);
+    resultThrees.textContent = formatNumber(data.threes);
+    resultFours.textContent = formatNumber(data.fours);
+    resultFives.textContent = formatNumber(data.fives);
     resultSimulationTime.textContent = data.time;
-    operationsCounter.textContent = showFormatedNumber(data.operations);
+    operationsCounter.textContent = formatNumber(data.operations);
     simulationWorker.terminate();
 
     buttonDisabled(false);
