@@ -92,6 +92,7 @@ startButton.addEventListener('click', () => {
   const simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url), { type: 'module' });
 
   simulationWorker.addEventListener('message', ({ data }) => {
+    if (data.type !== 'result') return;
     resultTicketNumbers.textContent = data.ticketNumbers;
     resultCounterTotal.textContent = formatNumber(data.drawsNumber);
     resultThrees.textContent = formatNumber(data.threes);

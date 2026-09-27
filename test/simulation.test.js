@@ -8,7 +8,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { createPool, drawSix, simulateUntilWin, simulation, MAX_NUMBER } = require('../simulation.js');
+const { createPool, drawSix, simulateUntilWin, simulation, MAX_NUMBER, PROGRESS_EVERY } = require('../simulation.js');
 
 // mulberry32: mały generator z ziarnem, wystarczający do testu rozkładu.
 const seeded = (seed) => () => {
@@ -84,4 +84,47 @@ test('wynik dla strony: kupon posortowany liczbowo, czas, bez licznika operacji'
   assert.equal(result.ticketNumbers, '1, 2, 3, 4, 5, 49');
   assert.ok(Number.isFinite(result.durationMs) && result.durationMs >= 0, `durationMs: ${result.durationMs}`);
   assert.equal('operations' in result, false);
+});
+
+// `losing` losowań 1–6 (dla kuponu 1–5 + 49 to piątki), potem losowanie 1–5 + 49.
+// Pula po losowaniach z random = 0 zostaje nieruszona, więc skrypt jest dokładny.
+const losingThenWin = (losing) => {
+  let calls = 0;
+  const winning = [0, 0, 0, 0, 0, 43 / 44 + 1e-9];
+  return () => (calls < losing * 6 ? (calls++, 0) : winning[calls++ - losing * 6]);
+};
+const TICKET = ['1', '2', '3', '4', '5', '49'];
+
+test('postęp co progressEvery losowań, bez zgłoszenia w losowaniu z wygraną — inaczej licznik na stronie kłamie albo stoi', () => {
+  const every2 = [];
+  const result = simulateUntilWin(TICKET, losingThenWin(5), { onProgress: (p) => every2.push(p), progressEvery: 2 });
+  assert.equal(result.drawsNumber, 6);
+  assert.deepEqual(every2, [
+    { drawsNumber: 2, threes: 0, fours: 0, fives: 2 },
+    { drawsNumber: 4, threes: 0, fours: 0, fives: 4 },
+  ]);
+  const every3 = [];
+  simulateUntilWin(TICKET, losingThenWin(5), { onProgress: (p) => every3.push(p.drawsNumber), progressEvery: 3 });
+  assert.deepEqual(every3, [3], 'Losowanie 6 to wygrana — zgłasza ją wynik, nie postęp.');
+});
+
+test('worker wysyła postęp i wynik oznaczone polem type — inaczej strona pomyli postęp z wynikiem', () => {
+  const messages = [];
+  const originalRandom = Math.random;
+  globalThis.onmessage = null;
+  globalThis.postMessage = (message) => messages.push(message);
+  Math.random = losingThenWin(PROGRESS_EVERY + 1);
+  try {
+    require('../simulationWorker.js');
+    globalThis.onmessage({ data: TICKET });
+  } finally {
+    Math.random = originalRandom;
+    delete globalThis.postMessage;
+    delete globalThis.onmessage;
+  }
+  assert.deepEqual(messages.map((m) => [m.type, m.drawsNumber]), [
+    ['progress', PROGRESS_EVERY],
+    ['result', PROGRESS_EVERY + 2],
+  ]);
+  assert.ok(Number.isFinite(messages[0].durationMs), 'Postęp bez czasu trwania.');
 });

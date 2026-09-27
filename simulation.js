@@ -4,6 +4,10 @@
 
 export const MAX_NUMBER = 49;
 export const TICKET_SIZE = 6;
+// Co tyle losowań rdzeń zgłasza postęp: ok. 0,25 s przy 4 mln losowań/s.
+// Częściej — wiadomości z workera zaczynają kosztować więcej niż losowanie;
+// rzadziej — licznik na stronie stoi i wygląda na zawieszony.
+export const PROGRESS_EVERY = 1_000_000;
 
 // Pula 1–49 przestawiana w miejscu przez kolejne losowania. Nie trzeba jej
 // przywracać: tasowanie Fishera-Yatesa daje równomierny wybór z dowolnego
@@ -40,14 +44,16 @@ const toTicket = (ticketNumbers) => {
 };
 
 // Losuje do trafienia szóstki; zwraca numer losowania z wygraną i liczbę
-// trafionych trójek, czwórek i piątek po drodze.
-export const simulateUntilWin = (ticketNumbers, random = Math.random) => {
+// trafionych trójek, czwórek i piątek po drodze. onProgress dostaje te same
+// liczniki co progressEvery losowań (nie w losowaniu z wygraną).
+export const simulateUntilWin = (ticketNumbers, random = Math.random, { onProgress, progressEvery = PROGRESS_EVERY } = {}) => {
   const onTicket = new Uint8Array(MAX_NUMBER + 1);
   for (const n of toTicket(ticketNumbers)) onTicket[n] = 1;
 
   const pool = createPool();
   const hits = [0, 0, 0, 0, 0, 0, 0];
   let draws = 0;
+  let untilProgress = progressEvery;
   let matched;
   do {
     draws++;
@@ -55,16 +61,23 @@ export const simulateUntilWin = (ticketNumbers, random = Math.random) => {
     matched = 0;
     for (let i = 0; i < TICKET_SIZE; i++) matched += onTicket[drawn[i]];
     hits[matched]++;
+    if (--untilProgress === 0 && matched < TICKET_SIZE) {
+      untilProgress = progressEvery;
+      onProgress?.({ drawsNumber: draws, threes: hits[3], fours: hits[4], fives: hits[5] });
+    }
   } while (matched < TICKET_SIZE);
 
   return { drawsNumber: draws, threes: hits[3], fours: hits[4], fives: hits[5] };
 };
 
-// Wejście i wyjście workera strony: kupon jako napisy z DOM, wynik z czasem
-// trwania w milisekundach (formatowanie należy do strony, format.js).
-export const simulation = (ticketNumbers, random = Math.random) => {
+// Wejście i wyjście workera strony: kupon jako napisy z DOM, wynik i postęp
+// z czasem trwania w milisekundach (formatowanie należy do strony, format.js).
+export const simulation = (ticketNumbers, random = Math.random, { onProgress, progressEvery } = {}) => {
   const start = performance.now();
-  const result = simulateUntilWin(ticketNumbers, random);
+  const result = simulateUntilWin(ticketNumbers, random, {
+    onProgress: onProgress && ((progress) => onProgress({ ...progress, durationMs: performance.now() - start })),
+    progressEvery,
+  });
   return {
     ticketNumbers: [...ticketNumbers].sort((a, b) => a - b).join(', '),
     ...result,
