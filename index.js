@@ -15,8 +15,13 @@ const resultTicketNumbers = document.querySelector('.resultTicketNumbers');
 const simulationProgressElement = document.querySelector('.simulationProgress');
 const simulationProgressMessage = document.querySelector('.simulationProgressMessage');
 const winResultElement = document.querySelector('.winResult');
+const progressCount = document.querySelector('.progressCount');
+const abortButton = document.querySelector('.abortButton');
+const abortedElement = document.querySelector('.simulationAborted');
 const ticketNumbers = [];
 let simulationRunning = false;
+let simulationWorker = null;
+let lastProgress = null;
 
 // Numer z pliku VERSION — jedynego źródła numeru wydania. Strona ma działać
 // i po buildzie (produkcja; Parcel kopiuje VERSION do dist/), i podana wprost
@@ -89,10 +94,16 @@ startButton.addEventListener('click', () => {
   // Parcel 2 dołącza plik workera do paczki tylko z postaci new URL(…, import.meta.url);
   // sam napis ('simulationWorker.js') przerywa `npm run build` błędem. Worker jest
   // modułem (importuje simulation.js); bez `type: 'module'` przeglądarka odrzuci import.
-  const simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url), { type: 'module' });
+  simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url), { type: 'module' });
 
   simulationWorker.addEventListener('message', ({ data }) => {
-    if (data.type !== 'result') return;
+    if (data.type === 'progress') {
+      lastProgress = data;
+      // Postęp przychodzi co milion losowań, więc liczba kończy się na „000”
+      // i zawsze pasuje do niej forma „losowań”.
+      progressCount.textContent = `${formatNumber(data.drawsNumber)} losowań · ${formatSeconds(data.durationMs)} s`;
+      return;
+    }
     resultTicketNumbers.textContent = data.ticketNumbers;
     resultCounterTotal.textContent = formatNumber(data.drawsNumber);
     resultThrees.textContent = formatNumber(data.threes);
@@ -100,6 +111,7 @@ startButton.addEventListener('click', () => {
     resultFives.textContent = formatNumber(data.fives);
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
     simulationWorker.terminate();
+    simulationWorker = null;
 
     simulationRunning = false;
     winResultElement.classList.remove('inactive');
@@ -107,10 +119,29 @@ startButton.addEventListener('click', () => {
   });
 
   simulationRunning = true;
+  lastProgress = null;
+  progressCount.textContent = '';
   resultSection.classList.add('started');
   winResultElement.classList.add('inactive');
+  abortedElement.classList.add('inactive');
   render();
   simulationWorker.postMessage([...ticketNumbers]);
+});
+
+// Pętla workera jest synchroniczna — nie odbierze wiadomości „stop”, więc
+// przerwanie to zabicie wątku. Liczba losowań pochodzi z ostatniego postępu,
+// stąd „ponad”: worker zdążył wylosować więcej, zanim zginął.
+abortButton.addEventListener('click', () => {
+  simulationWorker.terminate();
+  simulationWorker = null;
+  simulationRunning = false;
+  abortedElement.textContent = lastProgress
+    ? `Symulacja przerwana po ponad ${formatNumber(lastProgress.drawsNumber)} losowaniach (${formatSeconds(lastProgress.durationMs)} s).`
+    : 'Symulacja przerwana.';
+  abortedElement.classList.remove('inactive');
+  render();
+  // Przycisk „Przerwij” znika; bez tego fokus klawiatury spada na <body>.
+  startButton.focus();
 });
 
 render();

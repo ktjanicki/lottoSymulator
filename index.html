@@ -31,12 +31,17 @@
       </section>
       <section class="lotteryStartButton">
         <button type="button" class="startButton inactive">Rozpocznij symulację</button>
-        <div class="simulationProgress inactive">symulacja w toku ...</div>
+        <div class="simulationProgress inactive">
+          <span class="progressLabel">symulacja w toku</span>
+          <span class="progressCount"></span>
+          <button type="button" class="abortButton">Przerwij</button>
+        </div>
       </section>
       <section class="result" role="status" aria-live="polite">
         <p class="simulationProgressMessage inactive">
           W zależności od przeglądarki i sprzętu, może to zająć nawet do kilku minut
         </p>
+        <p class="simulationAborted inactive"></p>
         <div class="winResult inactive">
           <h2>Wygrałeś!</h2>
           <p>Padły liczby: <span class="resultTicketNumbers"></span>.</p>
