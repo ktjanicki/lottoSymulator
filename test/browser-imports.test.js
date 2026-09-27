@@ -1,7 +1,9 @@
-// Produkcja (grossnet-vps-iac, rodzaj `static`) podaje surowe pliki repozytorium,
-// bez buildu Parcela. Import, który rozwiązuje tylko bundler (np. `import fs from
-// 'fs'`), przechodzi `npm run build` i CI, a w przeglądarce unieważnia cały moduł:
-// strona się wyświetla, ale nic na niej nie działa. Tak wyglądało wydanie 1.1.0.
+// Strona ma działać także podana wprost, bez buildu Parcela (serwer statyczny
+// przy pracy nad kodem; zapas na wypadek powrotu produkcji do publikacji
+// surowych plików). Import, który rozwiązuje tylko bundler (np. `import fs from
+// 'fs'`), przechodzi `npm run build` i CI, a bez buildu unieważnia w przeglądarce
+// cały moduł: strona się wyświetla, ale nic na niej nie działa. Tak padła
+// produkcja w 1.1.0, gdy podawała surowe pliki.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');

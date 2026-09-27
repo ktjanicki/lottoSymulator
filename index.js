@@ -15,10 +15,11 @@ const operationsCounter = document.querySelector('.operationsCount');
 const winResultElement = document.querySelector('.winResult');
 const ticketNumbers = [];
 
-// Numer z pliku VERSION — jedynego źródła numeru wydania. Produkcja podaje
-// surowe pliki bez buildu, więc tylko ścieżka względna działa w obu trybach
-// (Parcel kopiuje VERSION do dist/). Import rozwiązywany przez bundler, np.
-// `fs`, unieważnia w przeglądarce cały moduł — tak padło wydanie 1.1.0.
+// Numer z pliku VERSION — jedynego źródła numeru wydania. Strona ma działać
+// i po buildzie (produkcja; Parcel kopiuje VERSION do dist/), i podana wprost
+// bez buildu — ścieżka względna działa w obu trybach. Import rozwiązywany
+// przez bundler, np. `fs`, bez buildu unieważnia w przeglądarce cały moduł:
+// tak padła produkcja w 1.1.0, gdy jeszcze podawała surowe pliki.
 fetch(new URL('VERSION', import.meta.url))
   .then((response) => (response.ok ? response.text() : ''))
   .then((version) => (document.querySelector('.appVersion').textContent = version.trim()));

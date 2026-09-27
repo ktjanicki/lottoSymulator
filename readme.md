@@ -9,9 +9,9 @@ Production build goes to `dist/`:
 
 \$ npm run build
 
-The page must also work served as-is, without a build: production publishes
-the raw repository files. Browser modules may import only relative paths;
-`npm test` checks this.
+Production serves the Parcel build. The page must still work served as-is,
+without a build (e.g. a plain static server during development): browser
+modules may import only relative paths; `npm test` checks this.
 
 ## Console version
 
