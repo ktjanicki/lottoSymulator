@@ -166,14 +166,28 @@ h1 {
 @media (min-width: 900px) {
   .layout {
     grid-template-columns: minmax(0, 1fr) 360px;
-    align-items: start;
   }
 
-  /* Panel jedzie za przewijaną stroną — przycisk startu i wynik zostają
-     w zasięgu wzroku także na niskim oknie. */
+  /* Kolumny równej wysokości (domyślne stretch), a karta wyniku wypełnia
+     resztę panelu: dolna krawędź planszy i wyniku w jednej linii, niezależnie
+     od tego, która kolumna jest wyższa. Panel przyklejony (sticky) tego nie
+     da — ma wtedy własną wysokość i krawędzie się rozjeżdżają. */
   .sidePanel {
-    position: sticky;
-    top: 20px;
+    grid-template-rows: auto 1fr;
+  }
+
+  /* Rozciągnięta plansza: nadmiar wysokości po równo nad i pod kulami,
+     zamiast pustego pasa pod ostatnim rzędem. */
+  .numbersTable {
+    display: flex;
+    flex-direction: column;
+  }
+
+  /* Selektor z rodzicem: bazowa reguła .numbersList (margin: 0 auto) stoi
+     w pliku niżej i przy równej specyficzności wygrałaby z tą. */
+  .numbersTable > .numbersList {
+    margin: auto;
+    width: 100%;
   }
 }
 
