@@ -2,6 +2,18 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.5.2] — 2026-09-28
+
+### Dodane
+
+- W stopce: „© Krzysztof Janicki 2020–<bieżący rok>”, imię z odnośnikiem
+  `mailto:`.
+
+### Poprawione
+
+- Pusta karta wyniku przed pierwszą symulacją i w jej trakcie; karta
+  pojawia się dopiero z wynikiem albo komunikatem o przerwaniu.
+
 ## [1.5.1] — 2026-09-28
 
 ### Poprawione
