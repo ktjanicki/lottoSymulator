@@ -1,4 +1,6 @@
-// Grupuje cyfry po trzy spacją: 1819580 → „1 819 580”.
+// Grupuje cyfry po trzy twardą spacją (U+00A0): 1819580 → „1 819 580”.
+// Zwykła spacja pozwala przeglądarce złamać liczbę w środku wiersza —
+// „po ponad 3 000 / 000 losowaniach” czyta się jak dwie liczby.
 export const formatNumber = (number) => {
   const reverseNumber = number.toString().split('').reverse();
   const result = [];
@@ -6,7 +8,7 @@ export const formatNumber = (number) => {
 
   reverseNumber.forEach((item, index) => {
     result.push(item);
-    if (count === 3 && index !== reverseNumber.length - 1) result.push(' ');
+    if (count === 3 && index !== reverseNumber.length - 1) result.push('\u00a0');
     count === 3 ? (count = 1) : count++;
   });
 

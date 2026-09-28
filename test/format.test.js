@@ -1,12 +1,13 @@
 // Formatowanie liczb w podsumowaniu (format.js). Awarie: spacja w złym miejscu
-// albo na początku liczby („ 819 580”); kropka dziesiętna zamiast przecinka;
+// albo na początku liczby („ 819 580”); zwykła spacja zamiast twardej — liczba
+// łamie się w środku wiersza; kropka dziesiętna zamiast przecinka;
 // data bez zer wiodących albo z miesiącem liczonym od zera; „22 losowań”.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const { formatNumber, formatSeconds, formatDateTime, drawsNoun } = require('../format.js');
 
-test('liczby grupowane po trzy cyfry od prawej, bez spacji na brzegach', () => {
+test('liczby grupowane po trzy cyfry od prawej twardą spacją, bez spacji na brzegach', () => {
   const cases = [
     [0, '0'],
     [7, '7'],
@@ -16,7 +17,8 @@ test('liczby grupowane po trzy cyfry od prawej, bez spacji na brzegach', () => {
     [1819580, '1 819 580'],
     [123456789, '123 456 789'],
   ];
-  for (const [input, expected] of cases) assert.equal(formatNumber(input), expected);
+  // W przypadkach zwykła spacja dla czytelności; formatNumber daje twardą.
+  for (const [input, expected] of cases) assert.equal(formatNumber(input), expected.replaceAll(' ', '\u00a0'));
 });
 
 test('czas w sekundach z przecinkiem dziesiętnym, niezależnie od języka przeglądarki', () => {
@@ -56,4 +58,8 @@ test('odmiana „losowanie” po liczbie, także dla nastek i dużych liczb', ()
     [18452322, 'losowania'],
   ];
   for (const [count, expected] of cases) assert.equal(drawsNoun(count), expected, `${count}`);
+});
+
+test('liczba nie ma zwykłej spacji, w której przeglądarka mogłaby złamać wiersz', () => {
+  assert.doesNotMatch(formatNumber(3000000), / /);
 });
