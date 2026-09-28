@@ -631,7 +631,7 @@ h2 {
   grid-template-areas: 'balls date draws';
   align-items: center;
   row-gap: 8px;
-  padding: 14px 4px;
+  padding: 22px 4px;
 }
 
 .historyItem + .historyItem {
@@ -639,16 +639,19 @@ h2 {
   border-image: linear-gradient(90deg, transparent, var(--border) 12%, var(--border) 88%, transparent) 1;
 }
 
-/* Wpisy wjeżdżają po kolei (opóźnienie ustawia index.js). `both` trzyma
-   wpis niewidoczny do jego kolejki — bez tego mignąłby, zanim wjedzie. */
+/* Wpisy wjeżdżają po kolei (opóźnienie i czas trwania ustawia index.js).
+   `both` trzyma wpis niewidoczny do jego kolejki — bez tego mignąłby,
+   zanim wjedzie. */
 .historyItem.entering {
-  animation: historyIn 0.35s ease both;
+  animation-name: historyIn;
+  animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  animation-fill-mode: both;
 }
 
 @keyframes historyIn {
   from {
     opacity: 0;
-    transform: translateY(8px);
+    transform: translateY(14px);
   }
 
   to {

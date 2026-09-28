@@ -97,9 +97,50 @@ const createHistoryItem = ({ numbers, drawsNumber, date }) => {
   return item;
 };
 
-// Odstęp między kolejnymi wpisami wjeżdżającymi na listę. Przy 15 wpisach
-// porcja kończy się po ~0,6 s; dłużej — „więcej” wygląda na zawieszone.
-const HISTORY_STAGGER_MS = 40;
+// Wpisy wjeżdżają jeden po drugim: kolejny rusza co HISTORY_STAGGER_MS,
+// każdy wjeżdża przez HISTORY_ENTER_MS (czas animacji ustawia stąd JS, CSS
+// ma tylko jej przebieg). Porcja 15 wpisów trwa ~2 s; dłużej — „więcej”
+// wygląda na zawieszone, krócej — wpisy zlewają się w jeden błysk.
+const HISTORY_STAGGER_MS = 100;
+const HISTORY_ENTER_MS = 550;
+// Pierwszy nowy wpis staje tyle pikseli pod górną krawędzią okna.
+const HISTORY_SCROLL_OFFSET_PX = 24;
+const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
+
+// Przewija stronę w tempie wjeżdżania wpisów tak, żeby pierwszy nowy stanął
+// tuż pod górną krawędzią okna — tylko gdy nowe wpisy nie mieszczą się
+// w oknie (inaczej widać je bez przewijania). Kółko, dotyk albo klawisz
+// przerywają przewijanie: bez tego strona szarpałaby się z odwiedzającym.
+const scrollToNewEntries = (first, last, count) => {
+  // getBoundingClientRect liczy z przesunięciem z początku animacji (wpis
+  // startuje niżej) — bez odjęcia go wpis staje o tyle za wysoko.
+  const shift = new DOMMatrixReadOnly(getComputedStyle(first).transform).m42;
+  const top = first.getBoundingClientRect().top - shift;
+  if (last.getBoundingClientRect().bottom <= window.innerHeight) return;
+  const start = window.scrollY;
+  const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
+  const target = Math.min(start + top - HISTORY_SCROLL_OFFSET_PX, maxScroll);
+  if (target <= start) return;
+  if (reducedMotion.matches) {
+    window.scrollTo(0, target);
+    return;
+  }
+  const duration = (count - 1) * HISTORY_STAGGER_MS + HISTORY_ENTER_MS;
+  const began = performance.now();
+  let cancelled = false;
+  const cancel = () => (cancelled = true);
+  const events = ['wheel', 'touchstart', 'keydown'];
+  for (const type of events) window.addEventListener(type, cancel, { once: true, passive: true });
+  const step = (now) => {
+    const progress = Math.min((now - began) / duration, 1);
+    // Łagodny start i koniec (ease-in-out), jak wjazd wpisów.
+    const eased = progress < 0.5 ? 2 * progress ** 2 : 1 - (-2 * progress + 2) ** 2 / 2;
+    if (!cancelled) window.scrollTo(0, start + (target - start) * eased);
+    if (progress < 1 && !cancelled) requestAnimationFrame(step);
+    else for (const type of events) window.removeEventListener(type, cancel);
+  };
+  requestAnimationFrame(step);
+};
 
 // Jedyne miejsce, które ustawia listę historii na podstawie `history`
 // i liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
@@ -114,6 +155,7 @@ const renderHistory = (animateFrom = 0, animateTo = 0) => {
       if (index >= animateFrom && index < animateTo) {
         item.classList.add('entering');
         item.style.animationDelay = `${(index - animateFrom) * HISTORY_STAGGER_MS}ms`;
+        item.style.animationDuration = `${HISTORY_ENTER_MS}ms`;
       }
       return item;
     })
@@ -131,18 +173,22 @@ historyToggle.addEventListener('click', () => {
   historyLabel.textContent = expanded ? 'Ukryj historię' : 'Pokaż historię';
   if (expanded) renderHistory(0, historyShown);
   historyBody.classList.toggle('inactive', !expanded);
+  // Po odsłonięciu — ukryta lista nie ma jeszcze położenia do przewinięcia.
+  if (expanded) scrollToNewEntries(historyList.firstElementChild, historyList.lastElementChild, historyList.children.length);
 });
 
 historyMore.addEventListener('click', () => {
   const firstNew = historyShown;
   historyShown += HISTORY_PAGE;
   renderHistory(firstNew, historyShown);
+  const firstItem = historyList.children[firstNew];
+  scrollToNewEntries(firstItem, historyList.lastElementChild, historyList.children.length - firstNew);
   // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
   // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
+  // preventScroll: fokus przewinąłby stronę skokiem, w poprzek przewijania wyżej.
   if (historyShown >= history.length) {
-    const item = historyList.children[firstNew];
-    item.tabIndex = -1;
-    item.focus();
+    firstItem.tabIndex = -1;
+    firstItem.focus({ preventScroll: true });
   }
 });
 
