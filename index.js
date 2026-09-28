@@ -21,6 +21,7 @@ const abortButton = document.querySelector('.abortButton');
 const abortedElement = document.querySelector('.simulationAborted');
 const historySection = document.querySelector('.history');
 const historyToggle = document.querySelector('.historyToggle');
+const historyLabel = document.querySelector('.historyLabel');
 const historyCount = document.querySelector('.historyCount');
 const historyBody = document.querySelector('.historyBody');
 const historyList = document.querySelector('.historyList');
@@ -96,12 +97,27 @@ const createHistoryItem = ({ numbers, drawsNumber, date }) => {
   return item;
 };
 
+// Odstęp między kolejnymi wpisami wjeżdżającymi na listę. Przy 15 wpisach
+// porcja kończy się po ~0,6 s; dłużej — „więcej” wygląda na zawieszone.
+const HISTORY_STAGGER_MS = 40;
+
 // Jedyne miejsce, które ustawia listę historii na podstawie `history`
 // i liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
-const renderHistory = () => {
+// Wpisy o indeksach [animateFrom, animateTo) wjeżdżają po kolei — tylko
+// nowo pokazane; reszta stoi, inaczej każde „więcej” migałoby całą listą.
+const renderHistory = (animateFrom = 0, animateTo = 0) => {
   historySection.classList.toggle('inactive', history.length === 0);
   historyCount.textContent = history.length;
-  historyList.replaceChildren(...history.slice(0, historyShown).map(createHistoryItem));
+  historyList.replaceChildren(
+    ...history.slice(0, historyShown).map((entry, index) => {
+      const item = createHistoryItem(entry);
+      if (index >= animateFrom && index < animateTo) {
+        item.classList.add('entering');
+        item.style.animationDelay = `${(index - animateFrom) * HISTORY_STAGGER_MS}ms`;
+      }
+      return item;
+    })
+  );
   historyMore.classList.toggle('inactive', historyShown >= history.length);
 };
 
@@ -112,13 +128,15 @@ renderHistory();
 historyToggle.addEventListener('click', () => {
   const expanded = historyToggle.getAttribute('aria-expanded') !== 'true';
   historyToggle.setAttribute('aria-expanded', String(expanded));
+  historyLabel.textContent = expanded ? 'Ukryj historię' : 'Pokaż historię';
+  if (expanded) renderHistory(0, historyShown);
   historyBody.classList.toggle('inactive', !expanded);
 });
 
 historyMore.addEventListener('click', () => {
   const firstNew = historyShown;
   historyShown += HISTORY_PAGE;
-  renderHistory();
+  renderHistory(firstNew, historyShown);
   // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
   // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
   if (historyShown >= history.length) {
@@ -228,7 +246,8 @@ startButton.addEventListener('click', () => {
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
     // Bez zgody recordWin niczego nie zapisuje i zwraca historię bez zmian.
     history = recordWin(storage, { numbers: ticketNumbers, drawsNumber: data.drawsNumber, date: Date.now() });
-    renderHistory();
+    // Nowa wygrana wjeżdża na górę listy; pozostałe wpisy stoją.
+    renderHistory(0, 1);
     simulationWorker.terminate();
     simulationWorker = null;
 

@@ -541,29 +541,49 @@ h2 {
 
 /* ---------- historia ---------- */
 
-/* Pod planszą i panelem, na całą szerokość układu dwukolumnowego. */
+/* Bez karty: sekcja leży wprost na tle strony, pod planszą i panelem,
+   na całą szerokość układu dwukolumnowego. */
 .history {
   grid-column: 1 / -1;
 }
 
+/* Przełącznik jako linia z napisem pośrodku: „——— Pokaż historię ———”.
+   Linie wygaszają się ku brzegom, jak separatory wierszy niżej. */
 .historyToggle {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 12px;
   width: 100%;
-  padding: 4px 0;
+  padding: 10px 0;
   border: none;
-  font-weight: inherit;
-  text-align: left;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--muted);
   background: none;
   cursor: pointer;
 }
 
+.historyToggle::before,
+.historyToggle::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, var(--border));
+}
+
+.historyToggle::after {
+  background: linear-gradient(90deg, var(--border), transparent);
+}
+
+.historyToggle:hover {
+  color: var(--text);
+}
+
 .historyCount {
-  min-width: 28px;
-  padding: 2px 8px;
+  min-width: 26px;
+  padding: 1px 8px;
   border-radius: 999px;
-  font-size: 0.8rem;
+  font-size: 0.75rem;
   font-weight: 600;
   text-align: center;
   font-variant-numeric: tabular-nums;
@@ -573,37 +593,68 @@ h2 {
 }
 
 .chevron {
-  width: 9px;
-  height: 9px;
-  margin: 0 4px 4px auto;
-  border-right: 2px solid var(--muted);
-  border-bottom: 2px solid var(--muted);
+  width: 8px;
+  height: 8px;
+  margin-bottom: 4px;
+  border-right: 2px solid currentColor;
+  border-bottom: 2px solid currentColor;
   transform: rotate(45deg);
   transition: transform 0.2s ease;
 }
 
 .historyToggle[aria-expanded='true'] .chevron {
-  margin-bottom: -4px;
+  margin: 4px 0 0;
   transform: rotate(-135deg);
 }
 
 .historyBody {
-  margin-top: 12px;
+  margin-top: 4px;
 }
 
+/* Jedna siatka na całą listę, wiersze dzielą jej kolumny (subgrid): przy
+   siatce w każdym wierszu osobno szerokość liczby losowań przesuwała datę
+   o kilka pikseli między wierszami. */
 .historyList {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  column-gap: 16px;
   list-style: none;
 }
 
-/* Od lewej kule i data, liczba losowań przy prawej krawędzi. */
+/* Od lewej kule, data pośrodku wolnego miejsca, liczba losowań przy prawej
+   krawędzi. Separator między wierszami (nie nad pierwszym — tam jest linia
+   przełącznika) wygasa ku brzegom. */
 .historyItem {
   display: grid;
-  grid-template-columns: auto 1fr auto;
+  grid-column: 1 / -1;
+  grid-template-columns: subgrid;
   grid-template-areas: 'balls date draws';
   align-items: center;
-  gap: 8px 16px;
-  padding: 12px 0;
-  border-top: 1px solid var(--border);
+  row-gap: 8px;
+  padding: 14px 4px;
+}
+
+.historyItem + .historyItem {
+  border-top: 1px solid;
+  border-image: linear-gradient(90deg, transparent, var(--border) 12%, var(--border) 88%, transparent) 1;
+}
+
+/* Wpisy wjeżdżają po kolei (opóźnienie ustawia index.js). `both` trzyma
+   wpis niewidoczny do jego kolejki — bez tego mignąłby, zanim wjedzie. */
+.historyItem.entering {
+  animation: historyIn 0.35s ease both;
+}
+
+@keyframes historyIn {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+
+  to {
+    opacity: 1;
+    transform: none;
+  }
 }
 
 /* Odstęp większy niż dwie obwódki kul (2 × 3 px) — przy mniejszym stykają się. */
@@ -627,6 +678,7 @@ h2 {
 
 .historyDate {
   grid-area: date;
+  text-align: center;
   font-size: 0.85rem;
   color: var(--muted);
   font-variant-numeric: tabular-nums;
@@ -650,11 +702,18 @@ h2 {
 /* Na telefonie kule w pierwszym wierszu, data i liczba losowań pod nimi —
    w jednym wierszu liczba losowań wyszłaby poza kartę. */
 @media (max-width: 600px) {
-  .historyItem {
+  .historyList {
     grid-template-columns: 1fr auto;
+  }
+
+  .historyItem {
     grid-template-areas:
       'balls balls'
       'date draws';
+  }
+
+  .historyDate {
+    text-align: left;
   }
 
   .historyBalls > .ball {

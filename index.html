@@ -81,14 +81,12 @@
         </section>
       </div>
 
-      <section class="card history inactive" aria-labelledby="historyTitle">
-        <h2 id="historyTitle">
-          <button type="button" class="historyToggle" aria-expanded="false" aria-controls="historyBody">
-            <span>Historia losowań</span>
-            <span class="historyCount"></span>
-            <span class="chevron" aria-hidden="true"></span>
-          </button>
-        </h2>
+      <section class="history inactive" aria-label="Historia losowań">
+        <button type="button" class="historyToggle" aria-expanded="false" aria-controls="historyBody">
+          <span class="historyLabel">Pokaż historię</span>
+          <span class="historyCount"></span>
+          <span class="chevron" aria-hidden="true"></span>
+        </button>
         <div id="historyBody" class="historyBody inactive">
           <ol class="historyList"></ol>
           <button type="button" class="historyMore">więcej</button>
