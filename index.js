@@ -32,6 +32,10 @@ fetch(new URL('VERSION', import.meta.url))
   .then((response) => (response.ok ? response.text() : ''))
   .then((version) => (document.querySelector('.appVersion').textContent = version.trim()));
 
+// Bieżący rok z zegara odwiedzającego; w HTML stoi rok wydania na wypadek
+// strony bez skryptów. Wpisany na sztywno zestarzałby się z Sylwestrem.
+document.querySelector('.copyrightYear').textContent = new Date().getFullYear();
+
 // Liczby to przyciski (<button>), a nie <div>: dają się wybrać klawiaturą
 // i czytnik ekranu ogłasza je razem ze stanem aria-pressed.
 const createBall = (number, label) => {

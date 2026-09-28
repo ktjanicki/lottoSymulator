@@ -532,12 +532,24 @@ h2 {
 /* ---------- stopka ---------- */
 
 .appFooter {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 4px 16px;
   max-width: 1080px;
   margin: 0 auto;
   padding: 28px 0 32px;
-  text-align: right;
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+.appFooter a {
+  color: inherit;
+  text-underline-offset: 2px;
+}
+
+.appFooter a:hover {
+  color: var(--text);
 }
 
 /* Bez ruchu dla osób, które wyłączyły animacje w systemie; wskaźnik postępu
