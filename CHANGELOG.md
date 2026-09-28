@@ -2,6 +2,14 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.6] — 2026-09-28
+
+### Poprawione
+
+- Strona nie przesuwa się przy ładowaniu: plansza, kupon i podpowiedź mają
+  miejsce zarezerwowane, zanim wypełni je skrypt (Lighthouse mobile:
+  CLS 0,36 → 0, wynik 80 → 98).
+
 ## [1.6.5] — 2026-09-28
 
 ### Zmienione
