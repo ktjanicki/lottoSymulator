@@ -543,9 +543,11 @@ h2 {
   color: var(--muted);
 }
 
+/* Bez podkreślenia; odnośnik zdradza się kolorem po najechaniu i ramką
+   fokusu przy klawiaturze. */
 .appFooter a {
   color: inherit;
-  text-underline-offset: 2px;
+  text-decoration: none;
 }
 
 .appFooter a:hover {
