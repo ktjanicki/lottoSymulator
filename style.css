@@ -245,12 +245,23 @@ h2 {
 
 /* Siatka 7×7 zamiast zawijanego wiersza: kolumny równe na każdej szerokości,
    a kule rosną z ekranem do górnej granicy szerokości planszy. */
+/* aspect-ratio rezerwuje wysokość, zanim skrypt wstawi kule: pusta plansza
+   miała zero wysokości, a po wstawieniu 49 kul spychała na telefonie całą
+   resztę strony o ~350 px (CLS 0,36 w Lighthouse). Siatka 7×7 z równymi
+   odstępami w obu osiach jest kwadratem — przy innej liczbie rzędów
+   (MAX_NUMBER w simulation.js) proporcja przestanie się zgadzać. */
 .numbersList {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
   gap: clamp(6px, 1.8vw, 12px);
   max-width: 500px;
   margin: 0 auto;
+  aspect-ratio: 1;
+}
+
+/* Szerokość karty kuponu dla min-height miejsc niżej (jednostki cqw). */
+.selectedItemsBlock {
+  container-type: inline-size;
 }
 
 .selectedItems {
@@ -259,6 +270,11 @@ h2 {
   gap: 8px;
   /* Jedna kolumna na tablecie rozciągnęłaby kule kuponu do ~100 px. */
   max-width: 360px;
+  /* Wysokość rzędu kul (szerokość jednej z sześciu kolumn) jeszcze przed
+     wstawieniem miejsc przez skrypt — bez niej kupon rósł po starcie
+     i spychał wynik, historię i stopkę. Musi liczyć tak jak siatka wyżej:
+     szerokość (do max-width) minus 5 odstępów, przez 6. */
+  min-height: calc((min(100cqw, 360px) - 5 * 8px) / 6);
 }
 
 .ball,
@@ -366,8 +382,11 @@ h2 {
   cursor: not-allowed;
 }
 
+/* Pusty napis nie ma wysokości: skrypt wpisujący podpowiedź po starcie
+   przesuwał wszystko pod nią. Rezerwa jednej linii zawsze. */
 .startHint {
   margin-top: 8px;
+  min-height: 1.5em;
   text-align: center;
 }
 
@@ -507,11 +526,6 @@ h2 {
   .simulationProgress.inactive {
     display: flex !important;
     visibility: hidden;
-  }
-
-  /* Pusty napis nie ma wysokości; rezerwa ma mieć jedną linię zawsze. */
-  .startHint {
-    min-height: 1.5em;
   }
 }
 
