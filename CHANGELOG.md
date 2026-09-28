@@ -2,6 +2,13 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.5] — 2026-09-28
+
+### Zmienione
+
+- Przewijanie historii trwa zawsze 1 s.
+- Aktywny przycisk „Rozpocznij symulację” jest zielony.
+
 ## [1.6.4] — 2026-09-28
 
 ### Poprawione
