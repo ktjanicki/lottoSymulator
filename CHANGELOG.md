@@ -2,6 +2,17 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.2] — 2026-09-28
+
+### Zmienione
+
+- Nagłówek planszy: „Maszyna losująca”.
+- Historia: większe odstępy między wpisami a separatorami, wolniejsze
+  pojawianie się wpisów jeden po drugim.
+- Po rozwinięciu historii i po „więcej” strona przewija się w tempie
+  pojawiania się wpisów, aż pierwszy nowy stanie tuż pod górną krawędzią
+  okna — gdy nowe wpisy nie mieszczą się w oknie.
+
 ## [1.6.1] — 2026-09-28
 
 ### Zmienione
