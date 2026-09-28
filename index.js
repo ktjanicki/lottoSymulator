@@ -117,16 +117,15 @@ const HISTORY_STAGGER_MS = 100;
 const HISTORY_ENTER_MS = 550;
 // Pierwszy nowy wpis staje tyle pikseli pod górną krawędzią okna.
 const HISTORY_SCROLL_OFFSET_PX = 24;
-// Przewijanie kończy się nieco przed ostatnim wpisem: przy równym czasie
-// strona dojeżdżała, gdy wpisy już stały, i ruch wyglądał na spóźniony.
-const HISTORY_SCROLL_PACE = 0.8;
+// Przewijanie trwa zawsze tyle samo, niezależnie od liczby nowych wpisów.
+const HISTORY_SCROLL_MS = 1000;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-// Przewija stronę w tempie wjeżdżania wpisów tak, żeby pierwszy nowy stanął
+// Przewija stronę (przez HISTORY_SCROLL_MS) tak, żeby pierwszy nowy stanął
 // tuż pod górną krawędzią okna — tylko gdy nowe wpisy nie mieszczą się
 // w oknie (inaczej widać je bez przewijania). Kółko, dotyk albo klawisz
 // przerywają przewijanie: bez tego strona szarpałaby się z odwiedzającym.
-const scrollToNewEntries = (first, last, count) => {
+const scrollToNewEntries = (first, last) => {
   // getBoundingClientRect liczy z przesunięciem z początku animacji (wpis
   // startuje niżej) — bez odjęcia go wpis staje o tyle za wysoko.
   const shift = new DOMMatrixReadOnly(getComputedStyle(first).transform).m42;
@@ -140,14 +139,13 @@ const scrollToNewEntries = (first, last, count) => {
     window.scrollTo(0, target);
     return;
   }
-  const duration = ((count - 1) * HISTORY_STAGGER_MS + HISTORY_ENTER_MS) * HISTORY_SCROLL_PACE;
   const began = performance.now();
   let cancelled = false;
   const cancel = () => (cancelled = true);
   const events = ['wheel', 'touchstart', 'keydown'];
   for (const type of events) window.addEventListener(type, cancel, { once: true, passive: true });
   const step = (now) => {
-    const progress = Math.min((now - began) / duration, 1);
+    const progress = Math.min((now - began) / HISTORY_SCROLL_MS, 1);
     // Łagodny start i koniec (ease-in-out), jak wjazd wpisów.
     const eased = progress < 0.5 ? 2 * progress ** 2 : 1 - (-2 * progress + 2) ** 2 / 2;
     if (!cancelled) window.scrollTo(0, start + (target - start) * eased);
@@ -189,7 +187,7 @@ historyToggle.addEventListener('click', () => {
   if (expanded) renderHistory(0, historyShown);
   historyBody.classList.toggle('inactive', !expanded);
   // Po odsłonięciu — ukryta lista nie ma jeszcze położenia do przewinięcia.
-  if (expanded) scrollToNewEntries(historyList.firstElementChild, historyList.lastElementChild, historyList.children.length);
+  if (expanded) scrollToNewEntries(historyList.firstElementChild, historyList.lastElementChild);
 });
 
 historyMore.addEventListener('click', () => {
@@ -197,7 +195,7 @@ historyMore.addEventListener('click', () => {
   historyShown += HISTORY_PAGE;
   renderHistory(firstNew, historyShown);
   const firstItem = historyList.children[firstNew];
-  scrollToNewEntries(firstItem, historyList.lastElementChild, historyList.children.length - firstNew);
+  scrollToNewEntries(firstItem, historyList.lastElementChild);
   // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
   // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
   // preventScroll: fokus przewinąłby stronę skokiem, w poprzek przewijania wyżej.

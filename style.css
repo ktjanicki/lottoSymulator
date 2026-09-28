@@ -38,6 +38,11 @@
   --primary: #4f46e5;
   --primary-hover: #4338ca;
   --on-primary: #ffffff;
+  /* Zielony przycisku startu: jaśniejszy odcień z białym tekstem nie ma
+     kontrastu 4,5:1. */
+  --go: #15803d;
+  --go-hover: #166534;
+  --on-go: #ffffff;
   --danger: #c62828;
   --danger-hover: #a51f1f;
   --on-danger: #ffffff;
@@ -67,6 +72,9 @@
     --primary: #818cf8;
     --primary-hover: #a5b4fc;
     --on-primary: #0b0d1a;
+    --go: #22c55e;
+    --go-hover: #4ade80;
+    --on-go: #0b0d1a;
     --danger: #f87171;
     --danger-hover: #fca5a5;
     --on-danger: #0b0d1a;
@@ -338,12 +346,12 @@ h2 {
   min-height: 56px;
   padding: 12px 20px;
   font-size: 1.05rem;
-  color: var(--on-primary);
-  background: var(--primary);
+  color: var(--on-go);
+  background: var(--go);
 }
 
 .startButton:hover:not(:disabled) {
-  background: var(--primary-hover);
+  background: var(--go-hover);
 }
 
 .startButton:active:not(:disabled),
