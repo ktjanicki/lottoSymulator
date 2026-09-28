@@ -6,7 +6,6 @@ const selectedItems = document.querySelector('.selectedItems');
 const selectedCount = document.querySelector('.selectedCount');
 const startButton = document.querySelector('.startButton');
 const startHint = document.querySelector('.startHint');
-const resultSection = document.querySelector('.result');
 const resultCounterTotal = document.querySelector('.resultCounterTotal');
 const resultThrees = document.querySelector('.resultThrees');
 const resultFours = document.querySelector('.resultFours');
@@ -145,7 +144,6 @@ startButton.addEventListener('click', () => {
   simulationRunning = true;
   lastProgress = null;
   progressCount.textContent = '';
-  resultSection.classList.add('started');
   winResultElement.classList.add('inactive');
   abortedElement.classList.add('inactive');
   render();

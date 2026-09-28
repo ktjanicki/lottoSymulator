@@ -416,13 +416,20 @@ h2 {
 
 /* ---------- wynik ---------- */
 
-/* Karta wyniku istnieje od początku (obszar role="status" musi być w drzewie
-   dostępności, zanim coś ogłosi), ale do pierwszego startu jest pusta —
-   bez ramki i odstępów, żeby nie wisiała pusta ramka. */
-.result:not(.started) {
+/* Obszar role="status" istnieje od początku (musi być w drzewie dostępności,
+   zanim coś ogłosi), ale kartą staje się dopiero z wynikiem albo komunikatem
+   o przerwaniu. Bez tła też: od 900 px panel rozciąga go do dołu planszy
+   i samo tło wisiałoby jako pusta karta (błąd 1.5.1). Komunikat w trakcie
+   symulacji zostaje zwykłym tekstem pod kuponem. */
+.result:not(:has(.winResult:not(.inactive), .simulationAborted:not(.inactive))) {
   padding: 0;
   border: none;
+  background: none;
   box-shadow: none;
+}
+
+.simulationProgressMessage {
+  text-align: center;
 }
 
 .simulationProgressMessage,
