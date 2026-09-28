@@ -2,6 +2,20 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.3] — 2026-09-28
+
+### Zmienione
+
+- Baner zgody wyszarza i blokuje stronę do kliknięcia „Akceptuję”.
+- Przycisk „więcej” w stylu przełącznika historii.
+- Przewijanie historii nieco szybsze.
+- Większe logo w nagłówku.
+
+### Poprawione
+
+- Od 900 px plansza nie zmienia wysokości, gdy wynik znika na czas
+  losowania, po wybraniu szóstej liczby ani gdy licznik postępu zawija się.
+
 ## [1.6.2] — 2026-09-28
 
 ### Zmienione
