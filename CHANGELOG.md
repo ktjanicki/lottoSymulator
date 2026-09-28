@@ -2,6 +2,25 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.5.0] — 2026-09-28
+
+### Dodane
+
+- Ciemny motyw, wybierany według ustawień systemu.
+- Kupon z sześcioma miejscami i licznikiem wybranych liczb („3/6”).
+- Podpowiedź pod przyciskiem startu, ile liczb jeszcze brakuje.
+
+### Zmienione
+
+- Nowy wygląd strony: plansza 7×7, kule z połyskiem, karty; od 900 px
+  plansza i panel kuponu obok siebie, węższe ekrany w jednej kolumnie.
+- Przycisk startu widoczny od początku, zablokowany do wybrania sześciu liczb.
+- Wynik: liczba losowań wyróżniona, trójki, czwórki i piątki w kafelkach.
+- Czcionka Inter zamiast Roboto i Poiret One.
+- Fokus klawiatury po starcie przechodzi na „Przerwij”, po wygranej wraca
+  na przycisk startu.
+- Bez animacji przy systemowym ograniczeniu ruchu.
+
 ## [1.4.0] — 2026-09-27
 
 ### Dodane
