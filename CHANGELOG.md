@@ -2,6 +2,27 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.0] — 2026-09-28
+
+### Dodane
+
+- Historia losowań pod planszą: kupon, data z godziną i liczba losowań
+  każdej wygranej; domyślnie zwinięta, „więcej” dokłada po 15 wpisów.
+- Historia w pamięci przeglądarki (localStorage), do 500 najnowszych
+  wygranych.
+- Baner zgody z przyciskiem „Akceptuję”; historia zapisuje się dopiero
+  po akceptacji.
+
+### Poprawione
+
+- Podwójny odstęp pod kuponem na wąskich ekranach.
+
+### Znane ograniczenia
+
+- Historii nie da się wyczyścić ani wycofać zgody ze strony — tylko
+  przez usunięcie danych witryny w przeglądarce.
+- Przerwane symulacje nie trafiają do historii.
+
 ## [1.5.3] — 2026-09-28
 
 ### Zmienione
