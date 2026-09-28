@@ -2,6 +2,12 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.4] — 2026-09-28
+
+### Poprawione
+
+- Liczby z odstępami („3 000 000”) nie łamią się w środku wiersza.
+
 ## [1.6.3] — 2026-09-28
 
 ### Zmienione
