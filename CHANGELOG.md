@@ -2,6 +2,13 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.5.3] — 2026-09-28
+
+### Zmienione
+
+- Stopka: imię bez podkreślenia, lata ze spacjami wokół myślnika
+  („2020 – 2026”).
+
 ## [1.5.2] — 2026-09-28
 
 ### Dodane
