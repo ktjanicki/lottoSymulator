@@ -23,6 +23,63 @@
   unicode-range: U+0000-00FF,U+0131,U+0152-0153,U+02BB-02BC,U+02C6,U+02DA,U+02DC,U+0304,U+0308,U+0329,U+2000-206F,U+20AC,U+2122,U+2191,U+2193,U+2212,U+2215,U+FEFF,U+FFFD;
 }
 
+/* Kolory tylko tutaj, jako tokeny; drugi komplet dla ciemnego motywu systemu.
+   Kolor wpisany wprost w regule zostaje taki sam w obu motywach — np. ciemny
+   tekst na ciemnym tle. Tekst ma kontrast co najmniej 4,5:1 do swojego tła. */
+:root {
+  color-scheme: light dark;
+  --bg: #f3f4fa;
+  --bg-glow: rgba(99, 102, 241, 0.14);
+  --surface: #ffffff;
+  --surface-2: #f5f6fb;
+  --border: #e2e4ef;
+  --text: #171a2c;
+  --muted: #5a6078;
+  --primary: #4f46e5;
+  --primary-hover: #4338ca;
+  --on-primary: #ffffff;
+  --danger: #c62828;
+  --danger-hover: #a51f1f;
+  --on-danger: #ffffff;
+  --focus: #4f46e5;
+  --ball: #e9ebf5;
+  --ball-hi: #ffffff;
+  --ball-lo: #cfd3e6;
+  --ball-text: #171a2c;
+  --gold: #fbbf24;
+  --gold-hi: #fef3c7;
+  --gold-lo: #d97706;
+  --gold-text: #1f1500;
+  --gold-ring: rgba(217, 119, 6, 0.35);
+  --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 12px 32px rgba(16, 24, 40, 0.07);
+  --radius: 20px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg: #0b0d1a;
+    --bg-glow: rgba(129, 140, 248, 0.2);
+    --surface: #151829;
+    --surface-2: #1c2036;
+    --border: #272c47;
+    --text: #e8eaf6;
+    --muted: #a0a6c3;
+    --primary: #818cf8;
+    --primary-hover: #a5b4fc;
+    --on-primary: #0b0d1a;
+    --danger: #f87171;
+    --danger-hover: #fca5a5;
+    --on-danger: #0b0d1a;
+    --focus: #a5b4fc;
+    --ball: #262b45;
+    --ball-hi: #3a4066;
+    --ball-lo: #1a1e33;
+    --ball-text: #e8eaf6;
+    --gold-ring: rgba(251, 191, 36, 0.4);
+    --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
+  }
+}
+
 * {
   margin: 0;
   padding: 0;
@@ -30,228 +87,446 @@
 }
 
 body {
+  min-height: 100vh;
+  padding: 0 16px;
   font-family: 'Inter Variable', system-ui, sans-serif;
-  font-weight: 100;
-  line-height: 1.5rem;
+  font-size: 1rem;
+  line-height: 1.5;
+  color: var(--text);
+  background: radial-gradient(ellipse 80% 420px at 50% -120px, var(--bg-glow), transparent) no-repeat, var(--bg);
+  -webkit-font-smoothing: antialiased;
 }
 
-.wrapper {
-  border: 1px dotted black;
-  margin: 15px auto;
-  /* max-width zamiast width + 100vw w media query: 100vw liczy też pasek
-     przewijania i na wąskim ekranie strona przewijała się w poziomie. */
-  max-width: 800px;
-}
-
-header {
-  text-align: center;
-  margin: 20px 10px;
-  font-weight: 300;
-  letter-spacing: 1.3px;
-}
-
-.appFooter {
-  margin: 0 auto 15px;
-  max-width: 800px;
-  text-align: right;
-  font-size: 14px;
-  font-style: italic;
-  letter-spacing: 1.2px;
-  color: #4b4949;
-}
-
-/* Gdy ramka sięga brzegów ekranu, stopka odsuwa się od krawędzi. */
-@media (max-width: 800px) {
-  .appFooter {
-    padding: 0 10px;
-  }
-}
-
-.numbersTable {
-  margin: 15px auto;
-  min-height: 40vh;
-  padding: 10px;
-}
-
-.ballList {
-  display: flex;
-  flex-direction: row;
-  flex-wrap: wrap;
-  padding: 20px;
-}
-
-.ball {
-  margin: 5px;
-  padding: 10px;
-  height: 50px;
-  width: 50px;
-  border-radius: 50%;
-  border: 1px solid black;
-  text-align: center;
-  font-family: inherit;
-  font-size: 20px;
-  font-weight: 300;
-  /* Kulka to <button>: bez tego dziedziczy odstępy liter przycisku startu. */
-  letter-spacing: normal;
+/* Kontrolki nie dziedziczą kroju strony — bez tego przyciski mają czcionkę
+   systemu. */
+button {
+  font: inherit;
   color: inherit;
-  background-color: #ffff00;
-  cursor: pointer;
 }
 
-.numbersList > .ball {
-  transition: 1s;
-}
-
-.ball:focus-visible {
-  outline: 3px solid #1a5fb4;
+:focus-visible {
+  outline: 3px solid var(--focus);
   outline-offset: 2px;
 }
 
-.numbersList > .ball:disabled {
-  background-color: #828282;
-  cursor: default;
+/* Ukrywa element, któremu stan (render() w index.js) nic nie zostawił do
+   pokazania. */
+.inactive {
+  display: none !important;
 }
 
-/* Po :disabled: wybrana liczba zostaje zielona także w trakcie symulacji,
-   gdy cała lista jest zablokowana. */
-.numbersList > .ball[aria-pressed='true'] {
-  background-color: #13b91c;
+/* ---------- nagłówek ---------- */
+
+.appHeader {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 40px 0 28px;
 }
 
-.selectedItems > .ball:disabled {
-  cursor: default;
+.logo {
+  display: grid;
+  flex: none;
+  place-items: center;
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  font-size: 1.6rem;
+  font-weight: 800;
+  color: var(--gold-text);
+  background: radial-gradient(circle at 32% 28%, var(--gold-hi), var(--gold) 45%, var(--gold-lo));
+  box-shadow: inset 0 -4px 8px rgba(0, 0, 0, 0.15), 0 6px 18px var(--gold-ring);
 }
 
-@media (max-width: 450px) {
-  .selectedItems > .ball {
-    height: 42px;
-    width: 42px;
-    font-size: 18px;
+h1 {
+  font-size: clamp(1.6rem, 4.5vw, 2.25rem);
+  font-weight: 800;
+  line-height: 1.15;
+  letter-spacing: -0.02em;
+}
+
+.tagline {
+  margin-top: 4px;
+  color: var(--muted);
+}
+
+/* ---------- układ i karty ---------- */
+
+/* Jedna kolumna na telefonie; od 900 px plansza po lewej, kupon i wynik
+   w bocznym panelu obok, żeby wynik był widać bez przewijania. */
+.layout {
+  display: grid;
+  gap: 20px;
+  max-width: 1080px;
+  margin: 0 auto;
+}
+
+@media (min-width: 900px) {
+  .layout {
+    grid-template-columns: minmax(0, 1fr) 360px;
+    align-items: start;
+  }
+
+  /* Panel jedzie za przewijaną stroną — przycisk startu i wynik zostają
+     w zasięgu wzroku także na niskim oknie. */
+  .sidePanel {
+    position: sticky;
+    top: 20px;
   }
 }
 
-@media (max-width: 370px) {
-  .selectedItems > .ball {
-    height: 30px;
-    width: 30px;
-    font-size: 14px;
-    padding: 5px;
-  }
+.sidePanel {
+  display: grid;
+  gap: 20px;
 }
 
-.selectedItemsLabel {
-  margin-left: 20px;
+.card {
+  padding: clamp(16px, 4vw, 28px);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  background: var(--surface);
+  box-shadow: var(--shadow);
 }
+
+.cardHeader {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 4px 12px;
+  margin-bottom: 20px;
+}
+
+h2 {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+
+.selectedItemsTip {
+  margin-top: 12px;
+}
+
+.selectNumbersTip,
+.selectedItemsTip,
+.startHint {
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* ---------- kule ---------- */
+
+/* Siatka 7×7 zamiast zawijanego wiersza: kolumny równe na każdej szerokości,
+   a kule rosną z ekranem do górnej granicy szerokości planszy. */
+.numbersList {
+  display: grid;
+  grid-template-columns: repeat(7, minmax(0, 1fr));
+  gap: clamp(6px, 1.8vw, 12px);
+  max-width: 500px;
+  margin: 0 auto;
+}
+
+.selectedItems {
+  display: grid;
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  gap: 8px;
+  /* Jedna kolumna na tablecie rozciągnęłaby kule kuponu do ~100 px. */
+  max-width: 360px;
+}
+
+.ball,
+.slot {
+  display: grid;
+  place-items: center;
+  width: 100%;
+  aspect-ratio: 1;
+  border-radius: 50%;
+}
+
+.ball {
+  border: none;
+  font-size: clamp(0.9rem, 3.4vw, 1.15rem);
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--ball-text);
+  background: radial-gradient(circle at 32% 28%, var(--ball-hi), var(--ball) 55%, var(--ball-lo));
+  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.1), 0 1px 2px rgba(0, 0, 0, 0.12);
+  cursor: pointer;
+  transition:
+    transform 0.15s ease,
+    box-shadow 0.15s ease,
+    opacity 0.2s ease;
+}
+
+.ball:hover:not(:disabled) {
+  transform: translateY(-2px);
+  box-shadow: inset 0 -3px 6px rgba(0, 0, 0, 0.1), 0 6px 14px rgba(0, 0, 0, 0.15);
+}
+
+.ball:active:not(:disabled) {
+  transform: scale(0.94);
+}
+
+/* Wybrana liczba i kule kuponu: złota kula z obwódką — obwódka odróżnia
+   wybór także bez rozróżniania kolorów. */
+.numbersList > .ball[aria-pressed='true'],
+.selectedItems > .ball {
+  color: var(--gold-text);
+  background: radial-gradient(circle at 32% 28%, var(--gold-hi), var(--gold) 45%, var(--gold-lo));
+  box-shadow: 0 0 0 3px var(--gold-ring), inset 0 -3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.ball:disabled {
+  cursor: default;
+}
+
+/* Po regule wybranej liczby i tylko dla niewybranych: wybrana zostaje złota
+   także w trakcie symulacji, gdy cała plansza jest zablokowana. */
+.numbersList > .ball:disabled:not([aria-pressed='true']) {
+  opacity: 0.35;
+}
+
+.selectedItems > .ball {
+  font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+}
+
+.slot {
+  border: 2px dashed var(--border);
+}
+
+/* ---------- start i postęp ---------- */
 
 .lotteryStartButton {
-  margin: 15px auto;
-  min-height: 40px;
+  margin-top: 20px;
 }
 
-button {
-  width: 100%;
-  height: 40px;
-  font-size: 20px;
-  background-color: rgb(113, 204, 21);
-  padding: 5px;
-  letter-spacing: 2px;
-  text-transform: uppercase;
+.startButton,
+.abortButton {
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
   cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    transform 0.1s ease;
+}
+
+.startButton {
+  width: 100%;
+  min-height: 52px;
+  padding: 12px 20px;
+  font-size: 1.05rem;
+  color: var(--on-primary);
+  background: var(--primary);
+}
+
+.startButton:hover:not(:disabled) {
+  background: var(--primary-hover);
+}
+
+.startButton:active:not(:disabled),
+.abortButton:active {
+  transform: scale(0.98);
+}
+
+.startButton:disabled {
+  color: var(--muted);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  cursor: not-allowed;
+}
+
+.startHint {
+  margin-top: 8px;
+  text-align: center;
 }
 
 .simulationProgress {
   display: flex;
-  flex-wrap: wrap;
   align-items: center;
-  justify-content: center;
-  gap: 4px 16px;
-  width: 100%;
-  min-height: 40px;
-  font-size: 18px;
-  background-color: rgb(226, 226, 10);
-  padding: 8px;
-  letter-spacing: 2px;
-  text-align: center;
-  border: 1px solid black;
-  text-transform: uppercase;
+  gap: 12px;
+  min-height: 52px;
+  padding: 10px 10px 10px 14px;
+  border-radius: 12px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.spinner {
+  flex: none;
+  width: 22px;
+  height: 22px;
+  border: 3px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.progressText {
+  display: flex;
+  flex: 1;
+  flex-direction: column;
+  min-width: 0;
+  line-height: 1.3;
+}
+
+.progressLabel {
+  font-weight: 600;
 }
 
 .progressCount {
-  text-transform: none;
-  letter-spacing: normal;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
+  color: var(--muted);
 }
 
 .abortButton {
-  width: auto;
-  height: 32px;
+  flex: none;
+  min-height: 40px;
   padding: 0 16px;
-  font-size: 16px;
-  letter-spacing: 1px;
-  background-color: rgb(230, 110, 90);
+  color: var(--on-danger);
+  background: var(--danger);
 }
 
+.abortButton:hover {
+  background: var(--danger-hover);
+}
+
+/* ---------- wynik ---------- */
+
+/* Karta wyniku istnieje od początku (obszar role="status" musi być w drzewie
+   dostępności, zanim coś ogłosi), ale do pierwszego startu jest pusta —
+   bez ramki i odstępów, żeby nie wisiała pusta ramka. */
+.result:not(.started) {
+  padding: 0;
+  border: none;
+  box-shadow: none;
+}
+
+.simulationProgressMessage,
 .simulationAborted {
-  text-align: center;
-  font-style: italic;
+  font-size: 0.95rem;
+  color: var(--muted);
 }
 
-.inactive {
-  display: none;
-}
-
-.selectedItemsTip {
-  margin-left: 20px;
-  font-size: 16px;
-  font-style: italic;
-  letter-spacing: 1.2px;
-  color: #4b4949;
-}
-
-.selectNumbersTip {
-  text-align: center;
-  margin-left: 20px;
-  font-size: 16px;
-  font-style: italic;
-  letter-spacing: 1.2px;
-  color: #4b4949;
-}
-
-.result {
-  padding: 20px;
-}
-
-/* Rezerwuje miejsce na wynik od pierwszego startu — bez tego przycisk
-   i stopka skaczą, gdy wynik znika na czas kolejnej symulacji. */
-.result.started {
-  min-height: 229px;
-}
-
-.simulationProgressMessage {
-  text-align: center;
-  font-style: italic;
-  font-size: 16px;
-  letter-spacing: 1.2px;
-}
-
-ul {
-  padding: 5px 20px;
-  list-style: none;
+.winResult {
+  display: grid;
+  gap: 12px;
 }
 
 .winResult > h2 {
-  margin-bottom: 10px;
+  font-size: 1.5rem;
+  font-weight: 800;
+  background: linear-gradient(90deg, var(--gold-lo), var(--gold));
+  background-clip: text;
+  -webkit-background-clip: text;
+  color: transparent;
 }
 
+.winDraw {
+  color: var(--muted);
+}
+
+/* Liczba losowań to najważniejsza informacja wyniku; nowrap, bo spacje
+   grupujące cyfry (format.js) pozwoliłyby jej się złamać. */
 .resultCounterTotal {
-  font-weight: bold;
+  display: block;
+  font-size: clamp(2rem, 9vw, 2.6rem);
+  font-weight: 800;
+  line-height: 1.1;
+  letter-spacing: -0.02em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+  color: var(--text);
+}
+
+.resultTicketNumbers {
+  font-weight: 600;
 }
 
 .meanwhile {
-  margin-top: 5px;
+  margin-top: 4px;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 8px;
+  list-style: none;
+}
+
+.stats > li {
+  display: flex;
+  flex-direction: column;
+  padding: 12px 8px;
+  border-radius: 12px;
+  text-align: center;
+  background: var(--surface-2);
+}
+
+/* nowrap jak przy liczbie losowań: „327 104” złamane w pół czyta się jak
+   dwie liczby. */
+.statValue {
+  font-size: 1.2rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+/* Na wąskim telefonie trzy kafelki nie mieszczą sześciocyfrowych liczb —
+   wiersze „trójek … 327 104” zamiast kolumn. */
+@media (max-width: 420px) {
+  .stats {
+    grid-template-columns: 1fr;
+  }
+
+  .stats > li {
+    flex-direction: row-reverse;
+    align-items: baseline;
+    justify-content: space-between;
+    padding: 10px 14px;
+  }
+}
+
+.statLabel {
+  font-size: 0.85rem;
+  color: var(--muted);
 }
 
 .simulationTime {
-  margin-top: 10px;
-  font-style: italic;
+  font-size: 0.9rem;
+  color: var(--muted);
+}
+
+/* ---------- stopka ---------- */
+
+.appFooter {
+  max-width: 1080px;
+  margin: 0 auto;
+  padding: 28px 0 32px;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--muted);
+}
+
+/* Bez ruchu dla osób, które wyłączyły animacje w systemie; wskaźnik postępu
+   zostaje jako nieruchomy pierścień, a licznik losowań i tak mówi, że
+   symulacja trwa. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation: none !important;
+    transition: none !important;
+  }
 }

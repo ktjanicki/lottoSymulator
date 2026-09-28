@@ -3,8 +3,9 @@ import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
 const selectedItems = document.querySelector('.selectedItems');
-const selectedItemsBlock = document.querySelector('.selectedItemsBlock');
+const selectedCount = document.querySelector('.selectedCount');
 const startButton = document.querySelector('.startButton');
+const startHint = document.querySelector('.startHint');
 const resultSection = document.querySelector('.result');
 const resultCounterTotal = document.querySelector('.resultCounterTotal');
 const resultThrees = document.querySelector('.resultThrees');
@@ -46,6 +47,20 @@ const createBall = (number, label) => {
 
 for (let number = 1; number <= MAX_NUMBER; number++) numbersList.append(createBall(number));
 
+// Puste miejsce na kuponie: sam wygląd, czytnik ekranu go pomija (liczbę
+// wybranych podaje licznik obok nagłówka).
+const createSlot = () => {
+  const slot = document.createElement('span');
+  slot.className = 'slot';
+  slot.setAttribute('aria-hidden', 'true');
+  return slot;
+};
+
+// „Wybierz jeszcze 1 liczbę / 2 liczby / 5 liczb” — odmiana dla 1–6, więcej
+// brakujących liczb nie bywa.
+const missingNumbersHint = (missing) =>
+  `Wybierz jeszcze ${missing} ${missing === 1 ? 'liczbę' : missing <= 4 ? 'liczby' : 'liczb'}.`;
+
 // Jedyne miejsce, które ustawia wygląd i dostępność kontrolek na podstawie
 // kuponu i trwającej symulacji. Przełączanie klas w kilku procedurach naraz
 // rozjeżdżało się przy kolejności kliknięć, której nikt nie przewidział.
@@ -61,10 +76,16 @@ const render = () => {
       const ball = createBall(number, `Usuń liczbę ${number}`);
       ball.disabled = simulationRunning;
       return ball;
-    })
+    }),
+    ...Array.from({ length: TICKET_SIZE - ticketNumbers.length }, createSlot)
   );
-  selectedItemsBlock.classList.toggle('inactive', ticketNumbers.length === 0);
-  startButton.classList.toggle('inactive', !full || simulationRunning);
+  selectedCount.textContent = `${ticketNumbers.length}/${TICKET_SIZE}`;
+  // Przycisk stoi na miejscu od początku (zablokowany), żeby układ nie skakał
+  // po wybraniu szóstej liczby; podpowiedź mówi, czego jeszcze brakuje.
+  startButton.disabled = !full;
+  startButton.classList.toggle('inactive', simulationRunning);
+  startHint.textContent = full ? '' : missingNumbersHint(TICKET_SIZE - ticketNumbers.length);
+  startHint.classList.toggle('inactive', full || simulationRunning);
   simulationProgressElement.classList.toggle('inactive', !simulationRunning);
   simulationProgressMessage.classList.toggle('inactive', !simulationRunning);
 };
@@ -115,7 +136,10 @@ startButton.addEventListener('click', () => {
 
     simulationRunning = false;
     winResultElement.classList.remove('inactive');
+    const abortFocused = document.activeElement === abortButton;
     render();
+    // Jak po przerwaniu: znikający „Przerwij” zrzuciłby fokus na <body>.
+    if (abortFocused) startButton.focus();
   });
 
   simulationRunning = true;
@@ -125,6 +149,9 @@ startButton.addEventListener('click', () => {
   winResultElement.classList.add('inactive');
   abortedElement.classList.add('inactive');
   render();
+  // Przycisk startu znika na czas symulacji; fokus przechodzi na jego
+  // następcę w tym samym miejscu, zamiast spaść na <body>.
+  abortButton.focus();
   simulationWorker.postMessage([...ticketNumbers]);
 });
 
