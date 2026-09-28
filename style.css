@@ -130,10 +130,10 @@ button {
   display: grid;
   flex: none;
   place-items: center;
-  width: 56px;
-  height: 56px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
-  font-size: 1.6rem;
+  font-size: 1.85rem;
   font-weight: 800;
   color: var(--gold-text);
   background: radial-gradient(circle at 32% 28%, var(--gold-hi), var(--gold) 45%, var(--gold-lo));
@@ -333,7 +333,9 @@ h2 {
 
 .startButton {
   width: 100%;
-  min-height: 52px;
+  /* Tyle co pasek postępu z dwiema liniami: zamiana jednego na drugie
+     nie zmienia wysokości panelu (a od 900 px — planszy). */
+  min-height: 56px;
   padding: 12px 20px;
   font-size: 1.05rem;
   color: var(--on-primary);
@@ -365,8 +367,8 @@ h2 {
   display: flex;
   align-items: center;
   gap: 12px;
-  min-height: 52px;
-  padding: 10px 10px 10px 14px;
+  min-height: 56px;
+  padding: 8px 10px 8px 14px;
   border-radius: 12px;
   background: var(--surface-2);
   box-shadow: inset 0 0 0 1px var(--border);
@@ -426,20 +428,87 @@ h2 {
    i samo tło wisiałoby jako pusta karta (błąd 1.5.1). Komunikat w trakcie
    symulacji zostaje zwykłym tekstem pod kuponem. */
 .result:not(:has(.winResult:not(.inactive), .simulationAborted:not(.inactive))) {
-  padding: 0;
-  border: none;
+  border-color: transparent;
   background: none;
   box-shadow: none;
 }
 
-.simulationProgressMessage {
-  text-align: center;
+@media (max-width: 899px) {
+  .result:not(:has(.winResult:not(.inactive), .simulationAborted:not(.inactive))) {
+    padding: 0;
+    border: none;
+  }
+
+  /* Obszar bez widocznej treści ma zerową wysokość, ale panel i tak dolicza
+     mu odstęp — pod kuponem wisiał podwójny odstęp przed historią. */
+  .sidePanel > .result:not(:has(> :not(.inactive))) {
+    margin-top: -20px;
+  }
 }
 
-/* Obszar bez widocznej treści ma zerową wysokość, ale panel i tak dolicza
-   mu odstęp — pod kuponem wisiał podwójny odstęp przed historią. */
-.sidePanel > .result:not(:has(> :not(.inactive))) {
-  margin-top: -20px;
+/* Od 900 px plansza ma wysokość wiersza, a wiersz — wyższej kolumny. Gdy
+   wynik znikał na czas kolejnego losowania (albo podpowiedź po szóstej
+   liczbie), panel się skracał, plansza z nim i strona skakała. Miejsce na
+   wynik i podpowiedź jest więc zarezerwowane zawsze: ukryte są przez
+   visibility (niewidoczne także dla czytnika ekranu), nie przez display.
+   Komunikaty wyniku leżą w jednej komórce siatki, na sobie — obszar ma
+   wysokość najwyższego, czyli wygranej. */
+@media (min-width: 900px) {
+  .result {
+    display: grid;
+    align-content: start;
+  }
+
+  .result > * {
+    grid-area: 1 / 1;
+  }
+
+  .winResult.inactive,
+  .startHint.inactive {
+    display: grid !important;
+    visibility: hidden;
+  }
+
+  /* Przycisk startu z podpowiedzią i pasek postępu w tych samych wierszach
+     siatki: pasek wypełnia ich wysokość, a ukryty element nadal ją trzyma.
+     Licznik losowań zawija się na wąskim panelu do trzech linii — pasek
+     mierzony własną treścią wydłużał panel na czas losowania. */
+  .lotteryStartButton {
+    display: grid;
+    row-gap: 8px;
+  }
+
+  .startButton {
+    grid-area: 1 / 1;
+  }
+
+  .startHint {
+    grid-area: 2 / 1;
+    margin-top: 0;
+  }
+
+  .simulationProgress {
+    grid-area: 1 / 1 / 3 / 2;
+  }
+
+  .startButton.inactive {
+    display: block !important;
+    visibility: hidden;
+  }
+
+  .simulationProgress.inactive {
+    display: flex !important;
+    visibility: hidden;
+  }
+
+  /* Pusty napis nie ma wysokości; rezerwa ma mieć jedną linię zawsze. */
+  .startHint {
+    min-height: 1.5em;
+  }
+}
+
+.simulationProgressMessage {
+  text-align: center;
 }
 
 .simulationProgressMessage,
@@ -481,6 +550,11 @@ h2 {
 
 .resultTicketNumbers {
   font-weight: 600;
+}
+
+/* Jedna linia: zawinięta dołożyłaby wysokości i od 900 px plansza by skoczyła. */
+.winNumbers {
+  white-space: nowrap;
 }
 
 .meanwhile {
@@ -547,9 +621,10 @@ h2 {
   grid-column: 1 / -1;
 }
 
-/* Przełącznik jako linia z napisem pośrodku: „——— Pokaż historię ———”.
-   Linie wygaszają się ku brzegom, jak separatory wierszy niżej. */
-.historyToggle {
+/* Przełącznik historii i „więcej” jako linia z napisem pośrodku:
+   „——— Pokaż historię ———”. Linie wygaszają się ku brzegom, jak separatory
+   wierszy niżej. */
+.divider {
   display: flex;
   align-items: center;
   gap: 12px;
@@ -563,19 +638,19 @@ h2 {
   cursor: pointer;
 }
 
-.historyToggle::before,
-.historyToggle::after {
+.divider::before,
+.divider::after {
   content: '';
   flex: 1;
   height: 1px;
   background: linear-gradient(90deg, transparent, var(--border));
 }
 
-.historyToggle::after {
+.divider::after {
   background: linear-gradient(90deg, var(--border), transparent);
 }
 
-.historyToggle:hover {
+.divider:hover {
   color: var(--text);
 }
 
@@ -726,20 +801,7 @@ h2 {
 }
 
 .historyMore {
-  display: block;
-  min-height: 44px;
-  margin: 4px auto 0;
-  padding: 0 20px;
-  border: none;
-  border-radius: 12px;
-  font-weight: 600;
-  color: var(--primary);
-  background: none;
-  cursor: pointer;
-}
-
-.historyMore:hover {
-  background: var(--surface-2);
+  margin-top: 8px;
 }
 
 /* ---------- stopka ---------- */
@@ -769,25 +831,39 @@ h2 {
 
 /* ---------- baner zgody ---------- */
 
-/* Przyklejony do dołu okna, ale jako ostatni element strony: przy końcu
-   przewijania staje pod stopką zamiast ją zasłaniać (position: fixed
-   zakryłby numer wersji i odnośnik). */
-.cookieBanner {
-  position: sticky;
-  bottom: 16px;
+/* Modalny <dialog> przy dolnej krawędzi okna. Tło (::backdrop) wyszarza
+   stronę, a overflow na <html> wstrzymuje jej przewijanie, dopóki baner
+   jest otwarty. scrollbar-gutter trzyma miejsce paska przewijania —
+   bez tego strona skakałaby w bok przy otwarciu i zamknięciu banera. */
+html {
+  scrollbar-gutter: stable;
+}
+
+html:has(.cookieBanner[open]) {
+  overflow: hidden;
+}
+
+.cookieBanner[open] {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
   justify-content: space-between;
   gap: 12px 20px;
+  width: calc(100% - 32px);
   max-width: 1080px;
-  margin: 0 auto 16px;
+  margin: auto auto 16px;
   padding: 16px 20px;
   border: 1px solid var(--border);
   border-radius: 16px;
   font-size: 0.9rem;
+  color: var(--text);
   background: var(--surface);
   box-shadow: 0 12px 40px rgba(0, 0, 0, 0.25);
+}
+
+.cookieBanner::backdrop {
+  background: rgba(11, 13, 26, 0.55);
+  backdrop-filter: blur(2px);
 }
 
 .cookieBanner > p {

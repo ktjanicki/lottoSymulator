@@ -58,15 +58,27 @@ const storage = (() => {
   }
 })();
 
-// Baner jest w HTML ukryty: bez tego odwiedzający po akceptacji widziałby
-// go przez mgnienie przy każdym wejściu, zanim skrypt sprawdzi zgodę.
-cookieBanner.classList.toggle('inactive', hasConsent(storage));
+// Baner to modalny <dialog>: reszta strony jest wyszarzona i nieaktywna
+// (inert — klawiatura i czytnik ekranu też jej nie dosięgną), dopóki nie
+// padnie „Akceptuję”. Zamknięty w HTML: odwiedzający po akceptacji nie widzi
+// go nawet przez mgnienie, zanim skrypt sprawdzi zgodę.
+let consentGiven = hasConsent(storage);
+if (!consentGiven) cookieBanner.showModal();
+
+// Esc zamyka modalny dialog; przeglądarka potrafi zignorować anulowanie
+// zdarzenia `cancel` (np. przy drugim Esc), więc zamknięty bez zgody
+// otwiera się od nowa.
+cookieBanner.addEventListener('cancel', (event) => event.preventDefault());
+cookieBanner.addEventListener('close', () => {
+  if (!consentGiven) cookieBanner.showModal();
+});
 
 cookieAccept.addEventListener('click', () => {
   // Gdy magazyn odmówi, zgoda trwa do końca wizyty (baner znika), ale
   // historia i tak się nie zapisze, a baner wróci przy następnym wejściu.
   giveConsent(storage);
-  cookieBanner.classList.add('inactive');
+  consentGiven = true;
+  cookieBanner.close();
   // Baner znika razem z fokusem; bez tego fokus klawiatury spada na <body>.
   numbersList.querySelector('.ball:not(:disabled)')?.focus({ preventScroll: true });
 });
@@ -105,6 +117,9 @@ const HISTORY_STAGGER_MS = 100;
 const HISTORY_ENTER_MS = 550;
 // Pierwszy nowy wpis staje tyle pikseli pod górną krawędzią okna.
 const HISTORY_SCROLL_OFFSET_PX = 24;
+// Przewijanie kończy się nieco przed ostatnim wpisem: przy równym czasie
+// strona dojeżdżała, gdy wpisy już stały, i ruch wyglądał na spóźniony.
+const HISTORY_SCROLL_PACE = 0.8;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // Przewija stronę w tempie wjeżdżania wpisów tak, żeby pierwszy nowy stanął
@@ -125,7 +140,7 @@ const scrollToNewEntries = (first, last, count) => {
     window.scrollTo(0, target);
     return;
   }
-  const duration = (count - 1) * HISTORY_STAGGER_MS + HISTORY_ENTER_MS;
+  const duration = ((count - 1) * HISTORY_STAGGER_MS + HISTORY_ENTER_MS) * HISTORY_SCROLL_PACE;
   const began = performance.now();
   let cancelled = false;
   const cancel = () => (cancelled = true);

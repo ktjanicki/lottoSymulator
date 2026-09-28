@@ -67,29 +67,32 @@
             <h2>Wygrałeś!</h2>
             <p class="winDraw">
               „Szóstka” w losowaniu nr
-              <span class="resultCounterTotal"></span>
+              <span class="resultCounterTotal">0</span>
             </p>
-            <p class="winNumbers">Padły liczby: <span class="resultTicketNumbers"></span>.</p>
+            <p class="winNumbers">Padły liczby: <span class="resultTicketNumbers">–</span>.</p>
             <p class="meanwhile">W międzyczasie trafiłeś również:</p>
             <ul class="stats">
               <li><span class="statValue resultThrees">0</span> <span class="statLabel">trójek</span></li>
               <li><span class="statValue resultFours">0</span> <span class="statLabel">czwórek</span></li>
               <li><span class="statValue resultFives">0</span> <span class="statLabel">piątek</span></li>
             </ul>
-            <p class="simulationTime">Symulacja trwała <span class="resultSimulationTime"></span> s.</p>
+            <p class="simulationTime">Symulacja trwała <span class="resultSimulationTime">0,0</span> s.</p>
           </div>
         </section>
       </div>
 
       <section class="history inactive" aria-label="Historia losowań">
-        <button type="button" class="historyToggle" aria-expanded="false" aria-controls="historyBody">
+        <button type="button" class="historyToggle divider" aria-expanded="false" aria-controls="historyBody">
           <span class="historyLabel">Pokaż historię</span>
           <span class="historyCount"></span>
           <span class="chevron" aria-hidden="true"></span>
         </button>
         <div id="historyBody" class="historyBody inactive">
           <ol class="historyList"></ol>
-          <button type="button" class="historyMore">więcej</button>
+          <button type="button" class="historyMore divider">
+            <span>więcej</span>
+            <span class="chevron" aria-hidden="true"></span>
+          </button>
         </div>
       </section>
     </main>
@@ -101,13 +104,13 @@
       </p>
       <p>wersja <span class="appVersion"></span></p>
     </footer>
-    <div class="cookieBanner inactive" role="region" aria-label="Zgoda na zapis danych">
+    <dialog class="cookieBanner" aria-label="Zgoda na zapis danych">
       <p>
         Strona zapisuje historię Twoich losowań w pamięci przeglądarki (localStorage), żeby pokazać ją przy
         kolejnej wizycie. Dane nie są wysyłane na serwer.
       </p>
       <button type="button" class="cookieAccept">Akceptuję</button>
-    </div>
+    </dialog>
     <script src="index.js" type="module"></script>
   </body>
 </html>
