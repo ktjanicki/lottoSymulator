@@ -1,5 +1,5 @@
-import { formatNumber, formatSeconds } from './format.js';
-import { giveConsent, hasConsent } from './history.js';
+import { drawsNoun, formatDateTime, formatNumber, formatSeconds } from './format.js';
+import { HISTORY_PAGE, giveConsent, hasConsent, readHistory, recordWin } from './history.js';
 import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
@@ -19,12 +19,20 @@ const winResultElement = document.querySelector('.winResult');
 const progressCount = document.querySelector('.progressCount');
 const abortButton = document.querySelector('.abortButton');
 const abortedElement = document.querySelector('.simulationAborted');
+const historySection = document.querySelector('.history');
+const historyToggle = document.querySelector('.historyToggle');
+const historyCount = document.querySelector('.historyCount');
+const historyBody = document.querySelector('.historyBody');
+const historyList = document.querySelector('.historyList');
+const historyMore = document.querySelector('.historyMore');
 const cookieBanner = document.querySelector('.cookieBanner');
 const cookieAccept = document.querySelector('.cookieAccept');
 const ticketNumbers = [];
 let simulationRunning = false;
 let simulationWorker = null;
 let lastProgress = null;
+let history = [];
+let historyShown = HISTORY_PAGE;
 
 // Numer z pliku VERSION — jedynego źródła numeru wydania. Strona ma działać
 // i po buildzie (produkcja; Parcel kopiuje VERSION do dist/), i podana wprost
@@ -60,6 +68,64 @@ cookieAccept.addEventListener('click', () => {
   cookieBanner.classList.add('inactive');
   // Baner znika razem z fokusem; bez tego fokus klawiatury spada na <body>.
   numbersList.querySelector('.ball:not(:disabled)')?.focus({ preventScroll: true });
+});
+
+// Kule historii to <span>, nie przyciski: wyglądają jak na kuponie, ale nic
+// się na nie nie klika.
+const createHistoryItem = ({ numbers, drawsNumber, date }) => {
+  const item = document.createElement('li');
+  item.className = 'historyItem';
+  const balls = document.createElement('div');
+  balls.className = 'historyBalls';
+  for (const number of numbers) {
+    const ball = document.createElement('span');
+    ball.className = 'ball';
+    ball.textContent = number;
+    balls.append(ball);
+  }
+  const time = document.createElement('time');
+  time.className = 'historyDate';
+  time.dateTime = new Date(date).toISOString();
+  time.textContent = formatDateTime(new Date(date));
+  const draws = document.createElement('p');
+  draws.className = 'historyDraws';
+  const count = document.createElement('strong');
+  count.textContent = formatNumber(drawsNumber);
+  draws.append(count, ` ${drawsNoun(drawsNumber)}`);
+  item.append(balls, time, draws);
+  return item;
+};
+
+// Jedyne miejsce, które ustawia listę historii na podstawie `history`
+// i liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
+const renderHistory = () => {
+  historySection.classList.toggle('inactive', history.length === 0);
+  historyCount.textContent = history.length;
+  historyList.replaceChildren(...history.slice(0, historyShown).map(createHistoryItem));
+  historyMore.classList.toggle('inactive', historyShown >= history.length);
+};
+
+history = readHistory(storage);
+renderHistory();
+
+// Zwinięta przy każdym wejściu (tak stoi w HTML) — stanu nie zapamiętujemy.
+historyToggle.addEventListener('click', () => {
+  const expanded = historyToggle.getAttribute('aria-expanded') !== 'true';
+  historyToggle.setAttribute('aria-expanded', String(expanded));
+  historyBody.classList.toggle('inactive', !expanded);
+});
+
+historyMore.addEventListener('click', () => {
+  const firstNew = historyShown;
+  historyShown += HISTORY_PAGE;
+  renderHistory();
+  // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
+  // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
+  if (historyShown >= history.length) {
+    const item = historyList.children[firstNew];
+    item.tabIndex = -1;
+    item.focus();
+  }
 });
 
 // Liczby to przyciski (<button>), a nie <div>: dają się wybrać klawiaturą
@@ -160,6 +226,9 @@ startButton.addEventListener('click', () => {
     resultFours.textContent = formatNumber(data.fours);
     resultFives.textContent = formatNumber(data.fives);
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
+    // Bez zgody recordWin niczego nie zapisuje i zwraca historię bez zmian.
+    history = recordWin(storage, { numbers: ticketNumbers, drawsNumber: data.drawsNumber, date: Date.now() });
+    renderHistory();
     simulationWorker.terminate();
     simulationWorker = null;
 

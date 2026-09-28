@@ -172,8 +172,8 @@ h1 {
      resztę panelu: dolna krawędź planszy i wyniku w jednej linii, niezależnie
      od tego, która kolumna jest wyższa. Panel przyklejony (sticky) tego nie
      da — ma wtedy własną wysokość i krawędzie się rozjeżdżają. */
-  .sidePanel {
-    grid-template-rows: auto 1fr;
+  .sidePanel > .result {
+    flex: 1;
   }
 
   /* Rozciągnięta plansza: nadmiar wysokości po równo nad i pod kulami,
@@ -191,8 +191,11 @@ h1 {
   }
 }
 
+/* Flex, nie grid: pusty obszar wyniku cofa odstęp ujemnym marginesem
+   (niżej), a w siatce wiersz nie kurczy się poniżej zera i odstęp zostaje. */
 .sidePanel {
-  display: grid;
+  display: flex;
+  flex-direction: column;
   gap: 20px;
 }
 
@@ -286,7 +289,8 @@ h2 {
 /* Wybrana liczba i kule kuponu: złota kula z obwódką — obwódka odróżnia
    wybór także bez rozróżniania kolorów. */
 .numbersList > .ball[aria-pressed='true'],
-.selectedItems > .ball {
+.selectedItems > .ball,
+.historyBalls > .ball {
   color: var(--gold-text);
   background: radial-gradient(circle at 32% 28%, var(--gold-hi), var(--gold) 45%, var(--gold-lo));
   box-shadow: 0 0 0 3px var(--gold-ring), inset 0 -3px 6px rgba(0, 0, 0, 0.15);
@@ -432,6 +436,12 @@ h2 {
   text-align: center;
 }
 
+/* Obszar bez widocznej treści ma zerową wysokość, ale panel i tak dolicza
+   mu odstęp — pod kuponem wisiał podwójny odstęp przed historią. */
+.sidePanel > .result:not(:has(> :not(.inactive))) {
+  margin-top: -20px;
+}
+
 .simulationProgressMessage,
 .simulationAborted {
   font-size: 0.95rem;
@@ -527,6 +537,147 @@ h2 {
 .simulationTime {
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+/* ---------- historia ---------- */
+
+/* Pod planszą i panelem, na całą szerokość układu dwukolumnowego. */
+.history {
+  grid-column: 1 / -1;
+}
+
+.historyToggle {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  width: 100%;
+  padding: 4px 0;
+  border: none;
+  font-weight: inherit;
+  text-align: left;
+  background: none;
+  cursor: pointer;
+}
+
+.historyCount {
+  min-width: 28px;
+  padding: 2px 8px;
+  border-radius: 999px;
+  font-size: 0.8rem;
+  font-weight: 600;
+  text-align: center;
+  font-variant-numeric: tabular-nums;
+  color: var(--muted);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.chevron {
+  width: 9px;
+  height: 9px;
+  margin: 0 4px 4px auto;
+  border-right: 2px solid var(--muted);
+  border-bottom: 2px solid var(--muted);
+  transform: rotate(45deg);
+  transition: transform 0.2s ease;
+}
+
+.historyToggle[aria-expanded='true'] .chevron {
+  margin-bottom: -4px;
+  transform: rotate(-135deg);
+}
+
+.historyBody {
+  margin-top: 12px;
+}
+
+.historyList {
+  list-style: none;
+}
+
+/* Od lewej kule i data, liczba losowań przy prawej krawędzi. */
+.historyItem {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  grid-template-areas: 'balls date draws';
+  align-items: center;
+  gap: 8px 16px;
+  padding: 12px 0;
+  border-top: 1px solid var(--border);
+}
+
+/* Odstęp większy niż dwie obwódki kul (2 × 3 px) — przy mniejszym stykają się. */
+.historyBalls {
+  grid-area: balls;
+  display: flex;
+  gap: 8px;
+}
+
+/* Kule historii nie są przyciskami: bez kursora rączki i podskoku. */
+.historyBalls > .ball {
+  width: 40px;
+  font-size: 0.95rem;
+  cursor: default;
+}
+
+.historyBalls > .ball:hover {
+  transform: none;
+  box-shadow: 0 0 0 3px var(--gold-ring), inset 0 -3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.historyDate {
+  grid-area: date;
+  font-size: 0.85rem;
+  color: var(--muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.historyDraws {
+  grid-area: draws;
+  text-align: right;
+  font-size: 0.85rem;
+  color: var(--muted);
+  white-space: nowrap;
+}
+
+.historyDraws > strong {
+  font-size: 1rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+}
+
+/* Na telefonie kule w pierwszym wierszu, data i liczba losowań pod nimi —
+   w jednym wierszu liczba losowań wyszłaby poza kartę. */
+@media (max-width: 600px) {
+  .historyItem {
+    grid-template-columns: 1fr auto;
+    grid-template-areas:
+      'balls balls'
+      'date draws';
+  }
+
+  .historyBalls > .ball {
+    width: 36px;
+    font-size: 0.9rem;
+  }
+}
+
+.historyMore {
+  display: block;
+  min-height: 44px;
+  margin: 4px auto 0;
+  padding: 0 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  color: var(--primary);
+  background: none;
+  cursor: pointer;
+}
+
+.historyMore:hover {
+  background: var(--surface-2);
 }
 
 /* ---------- stopka ---------- */
