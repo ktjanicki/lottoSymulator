@@ -1,4 +1,5 @@
 import { formatNumber, formatSeconds } from './format.js';
+import { giveConsent, hasConsent } from './history.js';
 import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
@@ -18,6 +19,8 @@ const winResultElement = document.querySelector('.winResult');
 const progressCount = document.querySelector('.progressCount');
 const abortButton = document.querySelector('.abortButton');
 const abortedElement = document.querySelector('.simulationAborted');
+const cookieBanner = document.querySelector('.cookieBanner');
+const cookieAccept = document.querySelector('.cookieAccept');
 const ticketNumbers = [];
 let simulationRunning = false;
 let simulationWorker = null;
@@ -35,6 +38,29 @@ fetch(new URL('VERSION', import.meta.url))
 // Bieżący rok z zegara odwiedzającego; w HTML stoi rok wydania na wypadek
 // strony bez skryptów. Wpisany na sztywno zestarzałby się z Sylwestrem.
 document.querySelector('.copyrightYear').textContent = new Date().getFullYear();
+
+// Sam dostęp do window.localStorage rzuca przy zablokowanych danych witryny;
+// null dalej obsługuje history.js jak magazyn, który odmawia.
+const storage = (() => {
+  try {
+    return window.localStorage;
+  } catch {
+    return null;
+  }
+})();
+
+// Baner jest w HTML ukryty: bez tego odwiedzający po akceptacji widziałby
+// go przez mgnienie przy każdym wejściu, zanim skrypt sprawdzi zgodę.
+cookieBanner.classList.toggle('inactive', hasConsent(storage));
+
+cookieAccept.addEventListener('click', () => {
+  // Gdy magazyn odmówi, zgoda trwa do końca wizyty (baner znika), ale
+  // historia i tak się nie zapisze, a baner wróci przy następnym wejściu.
+  giveConsent(storage);
+  cookieBanner.classList.add('inactive');
+  // Baner znika razem z fokusem; bez tego fokus klawiatury spada na <body>.
+  numbersList.querySelector('.ball:not(:disabled)')?.focus({ preventScroll: true });
+});
 
 // Liczby to przyciski (<button>), a nie <div>: dają się wybrać klawiaturą
 // i czytnik ekranu ogłasza je razem ze stanem aria-pressed.
