@@ -2,6 +2,16 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.1] — 2026-09-28
+
+### Zmienione
+
+- Historia bez karty: przełącznik „Pokaż historię” / „Ukryj historię” jako
+  linia z napisem pośrodku, wiersze rozdzielone wygaszanymi separatorami.
+- Wpisy historii pojawiają się po kolei przy rozwinięciu, po „więcej”
+  i po nowej wygranej.
+- Data i godzina wyśrodkowane między liczbami a liczbą losowań.
+
 ## [1.6.0] — 2026-09-28
 
 ### Dodane
