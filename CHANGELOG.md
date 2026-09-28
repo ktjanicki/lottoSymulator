@@ -2,6 +2,17 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.5.1] — 2026-09-28
+
+### Poprawione
+
+- Od 900 px dolna krawędź planszy i karty wyniku w jednej linii; kule
+  wyśrodkowane w pionie na planszy.
+
+### Usunięte
+
+- Przyklejanie bocznego panelu przy przewijaniu.
+
 ## [1.5.0] — 2026-09-28
 
 ### Dodane
