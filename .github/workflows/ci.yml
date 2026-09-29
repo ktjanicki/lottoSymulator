@@ -27,3 +27,25 @@ jobs:
       - run: npm ci
       - run: npm test
       - run: npm run build
+
+  # Produkcja (web-build na epsilonie, repozytorium grossnet-vps-iac) co 5 min
+  # publikuje gałąź `production`, nie `master`. Przesuwa ją tylko ten job, po
+  # zielonych testach i buildzie — czerwony commit na master nie wychodzi.
+  # Bez --force: starszy przebieg, który skończy po nowszym, dostaje odmowę
+  # (non-fast-forward) zamiast cofnąć produkcję; ręczny push na `production`
+  # z pominięciem master też się wtedy ujawni czerwonym jobem.
+  publish:
+    needs: test
+    if: github.event_name == 'push' && github.ref == 'refs/heads/master'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    concurrency:
+      group: publish-production
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          fetch-depth: 0
+
+      - run: git push origin "HEAD:refs/heads/production"

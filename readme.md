@@ -15,11 +15,13 @@ modules may import only relative paths; `npm test` checks this.
 
 ## Deployment
 
-A push to GitHub deploys automatically to
-[lottosymulator.grossnet.pl](https://lottosymulator.grossnet.pl); the server
-builds and serves the Parcel bundle itself. The deployment is configured
-outside this repository — pushing is the release, so push only a commit that
-passed `npm test` and `npm run build`. Check the live version in the footer.
+Production at [lottosymulator.grossnet.pl](https://lottosymulator.grossnet.pl)
+is built and served from the `production` branch; the server polls it every
+5 minutes (configured in the `grossnet-vps-iac` repository). Only CI moves
+`production`: after `npm test` and `npm run build` pass on a push to
+`master`, the `publish` job fast-forwards it to that commit. A red commit on
+`master` therefore never reaches the site. Do not push to `production` by
+hand. Check the live version in the footer.
 
 ## Versioning
 
