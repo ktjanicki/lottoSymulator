@@ -5,6 +5,5 @@ node_modules
 .vscode
 .DS_Store
 plan
-CLAUDE.md
 test-results
 playwright-report
