@@ -12,6 +12,17 @@ permissions:
 jobs:
   test:
     runs-on: ubuntu-latest
+    # Serwer buduje produkcję własnym obrazem Node (grossnet-vps-iac,
+    # `10_versions.yml` → `images.node`), a nie wersją z `.node-version`. Kod
+    # zgodny tylko z nowszym Node przeszedłby CI i wywrócił build na serwerze —
+    # strona zostałaby na poprzednim wydaniu bez żadnego sygnału tutaj.
+    # Numer 24.21.0 przepisujemy z tamtego modelu; zmień go razem z obrazem.
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - node-version-file: .node-version
+          - node-version: '24.21.0'
     steps:
       # Pełna historia z tagami: przy domyślnym fetch-depth 1 `git tag` jest
       # pusty i test zgodności tagów z VERSION przechodzi, niczego nie sprawdzając.
@@ -21,10 +32,14 @@ jobs:
 
       - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
         with:
-          node-version-file: .node-version
+          node-version: ${{ matrix.node-version }}
+          node-version-file: ${{ matrix.node-version-file }}
           cache: npm
 
-      - run: npm ci
+      # Bez skryptów instalacyjnych, jak na serwerze: tam `npm ci` idzie
+      # z siecią, więc skrypty zależności są wyłączone. Zależność, która bez
+      # swojego skryptu nie działa, ma wywrócić CI, a nie dopiero build produkcji.
+      - run: npm ci --ignore-scripts
       - run: npm test
       - run: npm run build
 
