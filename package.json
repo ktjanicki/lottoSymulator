@@ -1,9 +1,10 @@
 {
-  "name": "lottoSymulator",
+  "name": "lotto-symulator",
   "version": "1.6.6",
-  "description": "Random game symulator",
+  "private": true,
+  "description": "Lotto draw simulator",
   "author": "Krzysztof Janicki",
-  "license": "MIT",
+  "license": "Apache-2.0",
   "scripts": {
     "start": "parcel index.html",
     "build": "parcel build index.html",

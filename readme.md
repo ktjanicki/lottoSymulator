@@ -31,3 +31,9 @@ The release number lives in the `VERSION` file; release notes are in `CHANGELOG.
 Node.js version is pinned in `.node-version`; CI (GitHub Actions) runs the same tests and the production build on every push and pull request:
 
 \$ npm test
+
+## License
+
+Code: [Apache License 2.0](LICENSE), © 2020–2026 Krzysztof Janicki.
+The Inter font in `fonts/` is under the SIL Open Font License 1.1
+(`fonts/LICENSE-inter.txt`).
