@@ -2,6 +2,13 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.7.3] — 2026-09-29
+
+### Poprawione
+
+- Test „Przerwij” w przeglądarce nie jest już zależny od tego, czy
+  symulacja wygra przed kliknięciem (losowo czerwone CI).
+
 ## [1.7.2] — 2026-09-29
 
 ### Dodane
