@@ -1,41 +1,56 @@
-An application created as a hobby while traveling. The purpose of the application is to simulate the random selection of numbers selected by the user until the so-called six.
+# Symulator LOTTO
 
-The application uses Parcel 2. Install dependencies and run the development server:
+Aplikacja napisana hobbystycznie w podróży. Losuje sześć liczb z 49 tak długo,
+aż padnie „szóstka” z kuponu wybranego przez użytkownika, i pokazuje, ile
+losowań to zajęło.
 
-\$ npm install
-\$ npm start
+## Uruchomienie
 
-Production build goes to `dist/`:
+Projekt używa Parcela 2. Instalacja zależności i serwer deweloperski:
 
-\$ npm run build
+```sh
+npm install
+npm start
+```
 
-Production serves the Parcel build. The page must still work served as-is,
-without a build (e.g. a plain static server during development): browser
-modules may import only relative paths; `npm test` checks this.
+Build produkcyjny trafia do `dist/`:
 
-## Deployment
+```sh
+npm run build
+```
 
-Production at [lottosymulator.grossnet.pl](https://lottosymulator.grossnet.pl)
-is built and served from the `production` branch; the server polls it every
-5 minutes (configured in the `grossnet-vps-iac` repository). Only CI moves
-`production`: after `npm test` and `npm run build` pass on a push to
-`master`, the `publish` job fast-forwards it to that commit. A red commit on
-`master` therefore never reaches the site. Do not push to `production` by
-hand. Check the live version in the footer.
+Produkcja podaje wynik buildu Parcela. Strona ma jednak działać także podana
+wprost, bez buildu (np. zwykły serwer statyczny przy pracy nad kodem): moduły
+przeglądarki importują wyłącznie ścieżki względne, czego pilnuje `npm test`.
 
-## Versioning
+## Wdrożenie
 
-The release number lives in the `VERSION` file; release notes are in `CHANGELOG.md`.
-`package.json`, `package-lock.json`, `CHANGELOG.md` and `v*` git tags must match it.
+Produkcję pod [lottosymulator.grossnet.pl](https://lottosymulator.grossnet.pl)
+serwer buduje i podaje z gałęzi `production`, którą odpytuje co 5 minut
+(konfiguracja w repozytorium `grossnet-vps-iac`). Gałąź `production` przesuwa
+wyłącznie CI: po zielonych `npm test` i `npm run build` na pushu do `master`
+job `publish` przesuwa ją na ten commit. Czerwony commit na `master` nie trafia
+więc na stronę. Nie pushuj na `production` ręcznie. Wersję na produkcji widać
+w stopce.
 
-## Tests
+## Wersjonowanie
 
-Node.js version is pinned in `.node-version`; CI (GitHub Actions) runs the same tests and the production build on every push and pull request:
+Numer wydania stoi w pliku `VERSION`, opis zmian w `CHANGELOG.md`.
+`package.json`, `package-lock.json`, `CHANGELOG.md` i tagi `v*` muszą się z nim
+zgadzać — pilnuje tego `npm test`.
 
-\$ npm test
+## Testy
 
-## License
+```sh
+npm test
+```
 
-Code: [Apache License 2.0](LICENSE), © 2020–2026 Krzysztof Janicki.
-The Inter font in `fonts/` is under the SIL Open Font License 1.1
+CI (GitHub Actions) uruchamia testy i build produkcyjny przy każdym pushu
+i pull requeście, na dwóch wersjach Node: z `.node-version` i na tej, którą
+serwer buduje produkcję.
+
+## Licencja
+
+Kod: [Apache License 2.0](LICENSE), © 2020–2026 Krzysztof Janicki.
+Czcionka Inter w `fonts/` jest na licencji SIL Open Font License 1.1
 (`fonts/LICENSE-inter.txt`).
