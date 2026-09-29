@@ -2,6 +2,20 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.8.0] — 2026-09-29
+
+### Dodane
+
+- Polityka Content-Security-Policy w zbudowanej stronie: skrypty, style,
+  czcionki i połączenia tylko z własnego źródła, skrypty inline tylko ze
+  skrótem z buildu.
+
+### Znane ograniczenia
+
+- Polityka jest znacznikiem `<meta>`, nie nagłówkiem: nie raportuje
+  naruszeń; ramkowanie nadal blokuje `X-Frame-Options` serwera.
+- `npm start` (serwer deweloperski) działa bez polityki.
+
 ## [1.7.3] — 2026-09-29
 
 ### Poprawione
