@@ -1,4 +1,5 @@
-// Build produkcyjny: Parcel, a potem Content-Security-Policy w dist/index.html.
+// Build produkcyjny: Parcel, a potem w dist/index.html pełny adres og:image
+// i Content-Security-Policy.
 // Tą funkcją budują serwer (`npm run build` w kontenerze bez sieci), testy
 // w przeglądarce (e2e/serve.mjs) i test stopki — inaczej testy sprawdzałyby
 // stronę bez polityki, a na produkcję szłaby inna.
@@ -54,6 +55,25 @@ export const injectCsp = (html) => {
   return html.slice(0, at) + meta + html.slice(at);
 };
 
+// <meta property=X content=…> — wartość w cudzysłowach albo bez nich
+// (minifikator zdejmuje zbędne). Grupa 1: cała wartość z cudzysłowami.
+const ogMeta = (property) =>
+  new RegExp(`(<meta\\s+property=["']?${property}["']?\\s+content=)("[^"]*"|'[^']*'|[^\\s>]+)`, 'i');
+const unquote = (value) => value.replace(/^["']|["']$/g, '');
+
+// og:image musi być pełnym adresem: Facebook, LinkedIn i komunikatory nie
+// rozwiązują ścieżki względnej i pokazują podgląd bez obrazka. Parcel daje
+// ścieżkę od korzenia (/og-image.png), a adres strony stoi w og:url — jedynym
+// miejscu z domeną, więc zmiana domeny to zmiana jednej linii w index.html.
+export const absolutizeOgImage = (html) => {
+  const image = ogMeta('og:image').exec(html);
+  if (!image) return html;
+  const url = ogMeta('og:url').exec(html);
+  if (!url) throw new Error('index.html ma og:image bez og:url — nie ma z czego policzyć pełnego adresu obrazka.');
+  const absolute = new URL(unquote(image[2]), unquote(url[2])).href;
+  return html.replace(ogMeta('og:image'), (_, prefix) => `${prefix}"${absolute}"`);
+};
+
 export const build = (distDir = join(ROOT, 'dist')) => {
   execFileSync(
     join(ROOT, 'node_modules', '.bin', 'parcel'),
@@ -64,7 +84,7 @@ export const build = (distDir = join(ROOT, 'dist')) => {
     }
   );
   const indexFile = join(distDir, 'index.html');
-  writeFileSync(indexFile, injectCsp(readFileSync(indexFile, 'utf8')));
+  writeFileSync(indexFile, injectCsp(absolutizeOgImage(readFileSync(indexFile, 'utf8'))));
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) build(process.argv[2]);

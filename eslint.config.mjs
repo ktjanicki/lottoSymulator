@@ -28,10 +28,10 @@ export default [
     files: ['scripts/**/*.mjs', 'e2e/serve.mjs', '*.config.mjs'],
     languageOptions: { globals: globals.node },
   },
-  // Scenariusze działają w Node, ale funkcje podawane do addInitScript
-  // i evaluate wykonują się w przeglądarce.
+  // Scenariusze i zrzut obrazka podglądu działają w Node, ale funkcje podawane
+  // do addInitScript i evaluate wykonują się w przeglądarce.
   {
-    files: ['e2e/*.spec.mjs'],
+    files: ['e2e/*.spec.mjs', 'scripts/og-image.mjs'],
     languageOptions: { globals: { ...globals.node, ...globals.browser } },
   },
 ];

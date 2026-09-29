@@ -25,6 +25,10 @@ inline tylko ze skrótem policzonym z buildu (Parcel wstawia importmapę). Nie
 wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
 `npm start` (serwer deweloperski) działa bez CSP.
 
+Build zamienia też ścieżkę `og:image` na pełny adres z domeny `og:url`
+(podgląd linku w komunikatorach). Obrazek `og-image.png` to zrzut strony —
+po zmianie wyglądu odśwież go: `node scripts/og-image.mjs`.
+
 Produkcja podaje wynik buildu Parcela. Strona ma jednak działać także podana
 wprost, bez buildu (np. zwykły serwer statyczny przy pracy nad kodem): moduły
 przeglądarki importują wyłącznie ścieżki względne, czego pilnuje `npm test`.

@@ -9,6 +9,22 @@
       content="Symulator popularnej gry losowej LOTTO. Program symuluje liczbę losowań potrzebnych do wygrania tzw. szóstki"
     />
     <meta name="author" content="Krzysztof Janicki" />
+    <!-- Podgląd linku (komunikatory, media społecznościowe). og:url to jedyne
+         miejsce z adresem strony: build liczy z niego bezwzględny og:image
+         (scripts/build.mjs). Obrazek: node scripts/og-image.mjs. -->
+    <meta property="og:type" content="website" />
+    <meta property="og:url" content="https://lottosymulator.grossnet.pl/" />
+    <meta property="og:title" content="Symulator gry LOTTO" />
+    <meta
+      property="og:description"
+      content="Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”."
+    />
+    <meta property="og:locale" content="pl_PL" />
+    <meta property="og:image" content="og-image.png" />
+    <meta property="og:image:width" content="1200" />
+    <meta property="og:image:height" content="630" />
+    <meta property="og:image:alt" content="Plansza symulatora z 49 liczbami i kupon z sześcioma wybranymi" />
+    <meta name="twitter:card" content="summary_large_image" />
     <meta name="color-scheme" content="light dark" />
     <meta name="theme-color" content="#f3f4fa" media="(prefers-color-scheme: light)" />
     <meta name="theme-color" content="#0b0d1a" media="(prefers-color-scheme: dark)" />

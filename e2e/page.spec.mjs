@@ -81,6 +81,22 @@ test(
   }
 );
 
+test(
+  'podgląd linku: og:image to pełny adres z domeny og:url i odpowiada obrazkiem PNG',
+  { tag: '@prod' },
+  async ({ page, request }) => {
+    await page.goto('/');
+    const ogUrl = await page.locator('meta[property="og:url"]').getAttribute('content');
+    const ogImage = new URL(await page.locator('meta[property="og:image"]').getAttribute('content'));
+    expect(ogImage.origin).toBe(new URL(ogUrl).origin);
+    // Plik pobieramy z testowanego serwera, nie z domeny og:url: lokalnie
+    // sprawdzamy ten build, a nie to, co akurat stoi na produkcji.
+    const response = await request.get(ogImage.pathname);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toMatch(/^image\/png/);
+  }
+);
+
 // Naruszenia CSP zgłoszone przez przeglądarkę od pierwszego bajtu strony
 // (skrypt startowy działa przed importmapą i skryptami strony).
 const recordViolations = () => {
