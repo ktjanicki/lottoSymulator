@@ -888,7 +888,16 @@ html:has(.cookieBanner[open]) {
   color: var(--muted);
 }
 
-.cookieAccept {
+/* Odmowa jest tak samo duża i tak samo blisko jak zgoda, tylko spokojniejsza
+   w kolorze: przycisk odmowy mniejszy albo schowany czyni zgodę wymuszoną. */
+.cookieActions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.cookieAccept,
+.cookieDecline {
   flex: none;
   min-height: 44px;
   padding: 0 22px;
@@ -902,6 +911,16 @@ html:has(.cookieBanner[open]) {
 
 .cookieAccept:hover {
   background: var(--primary-hover);
+}
+
+.cookieDecline {
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.cookieDecline:hover {
+  background: var(--border);
 }
 
 /* Bez ruchu dla osób, które wyłączyły animacje w systemie; wskaźnik postępu

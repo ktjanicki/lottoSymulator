@@ -106,10 +106,13 @@
     </footer>
     <dialog class="cookieBanner" aria-label="Zgoda na zapis danych">
       <p>
-        Strona zapisuje historię Twoich losowań w pamięci przeglądarki (localStorage), żeby pokazać ją przy
-        kolejnej wizycie. Dane nie są wysyłane na serwer.
+        Za Twoją zgodą strona zapisuje historię Twoich losowań w pamięci przeglądarki (localStorage), żeby
+        pokazać ją przy kolejnej wizycie. Dane nie są wysyłane na serwer. Bez zgody historia się nie zapisuje.
       </p>
-      <button type="button" class="cookieAccept">Akceptuję</button>
+      <div class="cookieActions">
+        <button type="button" class="cookieDecline">Nie zgadzam się</button>
+        <button type="button" class="cookieAccept">Akceptuję</button>
+      </div>
     </dialog>
     <script src="index.js" type="module"></script>
   </body>

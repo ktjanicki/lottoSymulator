@@ -2,6 +2,7 @@
 // - zapis przed akceptacją banera — dane lądują w przeglądarce bez zgody;
 // - historia rosnąca bez końca, aż przeglądarka odmówi każdego zapisu;
 // - uszkodzony albo obcy wpis w magazynie wysypuje stronę przy starcie;
+// - baner zgody wracający po każdej symulacji albo nigdy po odmowie;
 // - magazyn, który rzuca (zablokowane dane, pełny) — wyjątek w obsłudze wyniku
 //   zostawiłby stronę w stanie „symulacja w toku”.
 
@@ -15,6 +16,8 @@ const {
   HISTORY_KEY,
   CONSENT_KEY,
   HISTORY_LIMIT,
+  CONSENT_REMINDER_EVERY,
+  consentReminderDue,
 } = require('../history.js');
 
 // Minimalny odpowiednik localStorage: napisy pod kluczami.
@@ -105,4 +108,9 @@ test('wygrana z kuponem niepasującym do gry to błąd programu, nie cichy wpis'
   const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
   assert.throws(() => recordWin(storage, { numbers: ['1', '2'], drawsNumber: 5, date: 1 }), RangeError);
   assert.equal(storage.data.has(HISTORY_KEY), false);
+});
+
+test(`bez zgody baner wraca dokładnie po co ${CONSENT_REMINDER_EVERY}. ukończonej symulacji — inaczej zasłania każdy wynik albo odmowa jest ostateczna`, () => {
+  const due = Array.from({ length: 3 * CONSENT_REMINDER_EVERY + 1 }, (_, runs) => runs).filter(consentReminderDue);
+  assert.deepEqual(due, [1, 2, 3].map((n) => n * CONSENT_REMINDER_EVERY));
 });

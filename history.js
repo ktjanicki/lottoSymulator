@@ -39,6 +39,13 @@ export const readHistory = (storage) =>
     return Array.isArray(entries) ? entries.filter(isEntry) : [];
   }, []);
 
+// Bez zgody baner wraca po co piątej ukończonej symulacji w wizycie. Rzadziej —
+// odwiedzający zapomina, że historię da się włączyć; częściej — baner zasłania
+// wynik prawie za każdym razem i odmowa przestaje być wyborem.
+export const CONSENT_REMINDER_EVERY = 5;
+export const consentReminderDue = (completedRuns) =>
+  completedRuns > 0 && completedRuns % CONSENT_REMINDER_EVERY === 0;
+
 export const hasConsent = (storage) => safely(() => storage.getItem(CONSENT_KEY) === 'accepted', false);
 
 // Zwraca false, gdy magazyn odmówił — zgoda obowiązuje wtedy tylko do

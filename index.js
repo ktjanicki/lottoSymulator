@@ -1,5 +1,5 @@
 import { drawsNoun, formatDateTime, formatNumber, formatSeconds } from './format.js';
-import { HISTORY_PAGE, giveConsent, hasConsent, readHistory, recordWin } from './history.js';
+import { HISTORY_PAGE, consentReminderDue, giveConsent, hasConsent, readHistory, recordWin } from './history.js';
 import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
@@ -28,6 +28,7 @@ const historyList = document.querySelector('.historyList');
 const historyMore = document.querySelector('.historyMore');
 const cookieBanner = document.querySelector('.cookieBanner');
 const cookieAccept = document.querySelector('.cookieAccept');
+const cookieDecline = document.querySelector('.cookieDecline');
 const ticketNumbers = [];
 let simulationRunning = false;
 let simulationWorker = null;
@@ -59,18 +60,36 @@ const storage = (() => {
 })();
 
 // Baner to modalny <dialog>: reszta strony jest wyszarzona i nieaktywna
-// (inert — klawiatura i czytnik ekranu też jej nie dosięgną), dopóki nie
-// padnie „Akceptuję”. Zamknięty w HTML: odwiedzający po akceptacji nie widzi
-// go nawet przez mgnienie, zanim skrypt sprawdzi zgodę.
+// (inert — klawiatura i czytnik ekranu też jej nie dosięgną), dopóki
+// odwiedzający nie wybierze. Zamknięty w HTML: odwiedzający po akceptacji nie
+// widzi go nawet przez mgnienie, zanim skrypt sprawdzi zgodę. Odmowy nie
+// zapisujemy — bez zgody baner wraca przy każdym wejściu i po co piątej
+// ukończonej symulacji (consentReminderDue w history.js).
 let consentGiven = hasConsent(storage);
-if (!consentGiven) cookieBanner.showModal();
+// Ukończone symulacje w tej wizycie, liczone tylko, dopóki nie ma zgody.
+let completedWithoutConsent = 0;
+// Wygrana, po której baner wrócił. Odwiedzający patrzy na nią, klikając
+// „Akceptuję” — gdyby zgoda jej nie zapisała, historia zaczynałaby się od następnej.
+let unsavedWin = null;
+let focusBeforeBanner = null;
 
-// Esc zamyka modalny dialog; przeglądarka potrafi zignorować anulowanie
-// zdarzenia `cancel` (np. przy drugim Esc), więc zamknięty bez zgody
-// otwiera się od nowa.
-cookieBanner.addEventListener('cancel', (event) => event.preventDefault());
+const showBanner = () => {
+  focusBeforeBanner = document.activeElement;
+  cookieBanner.showModal();
+};
+
+if (!consentGiven) showBanner();
+
+// Zamyka go „Akceptuję”, „Nie zgadzam się” albo Esc (to też odmowa).
 cookieBanner.addEventListener('close', () => {
-  if (!consentGiven) cookieBanner.showModal();
+  unsavedWin = null;
+  // Baner znika razem z fokusem; bez tego fokus klawiatury spada na <body>.
+  // Przy wejściu fokusu nie było nigdzie — idzie na pierwszą wolną liczbę.
+  const target =
+    focusBeforeBanner?.isConnected && focusBeforeBanner !== document.body
+      ? focusBeforeBanner
+      : numbersList.querySelector('.ball:not(:disabled)');
+  target?.focus({ preventScroll: true });
 });
 
 cookieAccept.addEventListener('click', () => {
@@ -78,10 +97,14 @@ cookieAccept.addEventListener('click', () => {
   // historia i tak się nie zapisze, a baner wróci przy następnym wejściu.
   giveConsent(storage);
   consentGiven = true;
+  if (unsavedWin) {
+    history = recordWin(storage, unsavedWin);
+    renderHistory(0, 1);
+  }
   cookieBanner.close();
-  // Baner znika razem z fokusem; bez tego fokus klawiatury spada na <body>.
-  numbersList.querySelector('.ball:not(:disabled)')?.focus({ preventScroll: true });
 });
+
+cookieDecline.addEventListener('click', () => cookieBanner.close());
 
 // Kule historii to <span>, nie przyciski: wyglądają jak na kuponie, ale nic
 // się na nie nie klika.
@@ -330,7 +353,8 @@ startButton.addEventListener('click', () => {
     resultFives.textContent = formatNumber(data.fives);
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
     // Bez zgody recordWin niczego nie zapisuje i zwraca historię bez zmian.
-    history = recordWin(storage, { numbers: ticketNumbers, drawsNumber: data.drawsNumber, date: Date.now() });
+    const win = { numbers: [...ticketNumbers], drawsNumber: data.drawsNumber, date: Date.now() };
+    history = recordWin(storage, win);
     // Nowa wygrana wjeżdża na górę listy; pozostałe wpisy stoją.
     renderHistory(0, 1);
     simulationWorker.terminate();
@@ -342,6 +366,11 @@ startButton.addEventListener('click', () => {
     render();
     // Jak po przerwaniu: znikający „Przerwij” zrzuciłby fokus na <body>.
     if (abortFocused) startButton.focus();
+    // Na końcu: wynik stoi już na ekranie, a baner zwróci fokus tam, gdzie go zastał.
+    if (!consentGiven && consentReminderDue(++completedWithoutConsent)) {
+      unsavedWin = win;
+      showBanner();
+    }
   });
 
   simulationRunning = true;
