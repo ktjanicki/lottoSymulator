@@ -42,6 +42,28 @@ const fakeWorker = () => {
   };
 };
 
+// Atrapa workera, który nigdy nie kończy: jeden postęp i cisza. Przerwanie
+// prawdziwej symulacji to wyścig — szóstka potrafi paść w ułamku sekundy
+// (czas do niej jest losowy), zanim test zdąży kliknąć „Przerwij”, i test
+// czekałby na przycisk, który zniknął.
+const endlessWorker = () => {
+  window.Worker = class {
+    constructor() {
+      this.listeners = {};
+    }
+    addEventListener(type, listener) {
+      (this.listeners[type] ??= []).push(listener);
+    }
+    postMessage() {
+      const data = { type: 'progress', drawsNumber: 1_000_000, threes: 0, fours: 0, fives: 0, durationMs: 300 };
+      setTimeout(() => this.listeners.message?.forEach((listener) => listener({ data })), 10);
+    }
+    terminate() {
+      window.workerTerminated = true;
+    }
+  };
+};
+
 test('stopka podaje numer z pliku VERSION — inaczej produkcja stoi na innym wydaniu, niż myślimy', { tag: '@prod' }, async ({ page }) => {
   await page.goto('/');
   await expect(page.locator('.appVersion')).toHaveText(VERSION);
@@ -51,12 +73,13 @@ test('pełna symulacja prawdziwym workerem kończy się wygraną i wpisem w hist
   await page.goto('/');
   await page.locator('.cookieAccept').click();
   await pickTicket(page);
+  // Bez sprawdzania paska postępu po starcie: szóstka potrafi paść, zanim
+  // test zdąży na niego spojrzeć.
   await page.locator('.startButton').click();
-  await expect(page.locator('.simulationProgress')).toBeVisible();
 
   await expect(page.locator('.winResult')).toBeVisible({ timeout: 140_000 });
   // Liczba grupowana twardą spacją: „12 345 678”.
-  await expect(page.locator('.resultCounterTotal')).toHaveText(/^\d{1,3}( \d{3})*$/);
+  await expect(page.locator('.resultCounterTotal')).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
   await expect(page.locator('.resultTicketNumbers')).toHaveText(TICKET.join(', '));
   await expect(page.locator('.simulationProgress')).toBeHidden();
   await expect(page.locator('.startButton')).toBeEnabled();
@@ -64,14 +87,17 @@ test('pełna symulacja prawdziwym workerem kończy się wygraną i wpisem w hist
   expect(JSON.parse(await stored(page, HISTORY_KEY))[0].numbers).toEqual(TICKET);
 });
 
-test('„Przerwij” zatrzymuje symulację i oddaje kupon', { tag: '@prod' }, async ({ page }) => {
+test('„Przerwij” zabija worker, podaje liczbę losowań z ostatniego postępu i oddaje kupon', { tag: '@prod' }, async ({ page }) => {
+  await page.addInitScript(endlessWorker);
   await page.goto('/');
   await page.locator('.cookieDecline').click();
   await pickTicket(page);
   await page.locator('.startButton').click();
+  await expect(page.locator('.progressCount')).toHaveText(/^1\u00a0000\u00a0000 losowań/);
   await page.locator('.abortButton').click();
 
-  await expect(page.locator('.simulationAborted')).toHaveText(/^Symulacja przerwana/);
+  await expect(page.locator('.simulationAborted')).toHaveText('Symulacja przerwana po ponad 1\u00a0000\u00a0000 losowaniach (0,3 s).');
+  expect(await page.evaluate(() => window.workerTerminated)).toBe(true);
   await expect(page.locator('.simulationProgress')).toBeHidden();
   await expect(page.locator('.winResult')).toBeHidden();
   await expect(page.locator('.startButton')).toBeFocused();
