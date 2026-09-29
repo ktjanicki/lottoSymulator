@@ -2,6 +2,17 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.6.7] — 2026-09-29
+
+### Zmienione
+
+- Licencja kodu: Apache 2.0 (wcześniej MIT).
+
+### Poprawione
+
+- Awaria symulacji (np. niewczytany plik wątku losowania) kończy ją
+  komunikatem zamiast zostawiać stronę w stanie „Symulacja w toku”.
+
 ## [1.6.6] — 2026-09-28
 
 ### Poprawione
