@@ -283,13 +283,39 @@ selectedItems.addEventListener('click', ({ target }) => {
   numbersList.querySelector(`[data-number="${ball.dataset.number}"]`).focus();
 });
 
+// Kończy symulację bez wyniku: przerwanie albo awaria workera. Komunikat
+// staje w miejscu wyniku; bez tej ścieżki awaria zostawiała stronę w stanie
+// „w toku” — spinner kręcił się bez końca, a kupon był zablokowany.
+const stopSimulation = (message) => {
+  simulationWorker.terminate();
+  simulationWorker = null;
+  simulationRunning = false;
+  abortedElement.textContent = message;
+  abortedElement.classList.remove('inactive');
+  render();
+};
+
+const failSimulation = () => {
+  const abortFocused = document.activeElement === abortButton;
+  stopSimulation('Symulacja nie powiodła się. Odśwież stronę i spróbuj ponownie.');
+  // Jak po wyniku: znikający „Przerwij” zrzuciłby fokus na <body>.
+  if (abortFocused) startButton.focus();
+};
+
 startButton.addEventListener('click', () => {
   // Parcel 2 dołącza plik workera do paczki tylko z postaci new URL(…, import.meta.url);
   // sam napis ('simulationWorker.js') przerywa `npm run build` błędem. Worker jest
   // modułem (importuje simulation.js); bez `type: 'module'` przeglądarka odrzuci import.
   simulationWorker = new Worker(new URL('simulationWorker.js', import.meta.url), { type: 'module' });
 
+  // Plik workera się nie wczytał (np. 404 po wdrożeniu, przeglądarka bez
+  // workerów modułowych) — wyjątki z samej symulacji przychodzą jako {type: 'error'}.
+  simulationWorker.addEventListener('error', failSimulation);
   simulationWorker.addEventListener('message', ({ data }) => {
+    if (data.type === 'error') {
+      failSimulation();
+      return;
+    }
     if (data.type === 'progress') {
       lastProgress = data;
       // Postęp przychodzi co milion losowań, więc liczba kończy się na „000”
@@ -334,14 +360,11 @@ startButton.addEventListener('click', () => {
 // przerwanie to zabicie wątku. Liczba losowań pochodzi z ostatniego postępu,
 // stąd „ponad”: worker zdążył wylosować więcej, zanim zginął.
 abortButton.addEventListener('click', () => {
-  simulationWorker.terminate();
-  simulationWorker = null;
-  simulationRunning = false;
-  abortedElement.textContent = lastProgress
-    ? `Symulacja przerwana po ponad ${formatNumber(lastProgress.drawsNumber)} losowaniach (${formatSeconds(lastProgress.durationMs)} s).`
-    : 'Symulacja przerwana.';
-  abortedElement.classList.remove('inactive');
-  render();
+  stopSimulation(
+    lastProgress
+      ? `Symulacja przerwana po ponad ${formatNumber(lastProgress.drawsNumber)} losowaniach (${formatSeconds(lastProgress.durationMs)} s).`
+      : 'Symulacja przerwana.'
+  );
   // Przycisk „Przerwij” znika; bez tego fokus klawiatury spada na <body>.
   startButton.focus();
 });

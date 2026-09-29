@@ -108,23 +108,46 @@ test('postęp co progressEvery losowań, bez zgłoszenia w losowaniu z wygraną 
   assert.deepEqual(every3, [3], 'Losowanie 6 to wygrana — zgłasza ją wynik, nie postęp.');
 });
 
-test('worker wysyła postęp i wynik oznaczone polem type — inaczej strona pomyli postęp z wynikiem', () => {
+// Worker ustawia globalne onmessage raz, przy wczytaniu modułu — kolejny
+// require zwraca moduł z pamięci podręcznej i niczego nie ustawia, więc
+// uchwyt zapamiętujemy przy pierwszym wywołaniu.
+let workerHandler;
+const runWorker = (data) => {
   const messages = [];
-  const originalRandom = Math.random;
-  globalThis.onmessage = null;
   globalThis.postMessage = (message) => messages.push(message);
-  Math.random = losingThenWin(PROGRESS_EVERY + 1);
   try {
-    require('../simulationWorker.js');
-    globalThis.onmessage({ data: TICKET });
+    if (!workerHandler) {
+      globalThis.onmessage = null;
+      require('../simulationWorker.js');
+      workerHandler = globalThis.onmessage;
+    }
+    workerHandler({ data });
   } finally {
-    Math.random = originalRandom;
     delete globalThis.postMessage;
     delete globalThis.onmessage;
+  }
+  return messages;
+};
+
+test('worker wysyła postęp i wynik oznaczone polem type — inaczej strona pomyli postęp z wynikiem', () => {
+  const originalRandom = Math.random;
+  Math.random = losingThenWin(PROGRESS_EVERY + 1);
+  let messages;
+  try {
+    messages = runWorker(TICKET);
+  } finally {
+    Math.random = originalRandom;
   }
   assert.deepEqual(messages.map((m) => [m.type, m.drawsNumber]), [
     ['progress', PROGRESS_EVERY],
     ['result', PROGRESS_EVERY + 2],
   ]);
   assert.ok(Number.isFinite(messages[0].durationMs), 'Postęp bez czasu trwania.');
+});
+
+test('wyjątek w workerze wraca do strony jako {type: error} — inaczej strona czeka na wynik z kręcącym się spinnerem', () => {
+  const messages = runWorker(['1', '2', '3', '4', '5']);
+  assert.equal(messages.length, 1, `Worker wysłał ${messages.length} wiadomości zamiast jednej: ${JSON.stringify(messages)}.`);
+  assert.equal(messages[0].type, 'error');
+  assert.match(messages[0].message, /6 różnych liczb/);
 });
