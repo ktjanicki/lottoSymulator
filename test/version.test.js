@@ -63,7 +63,9 @@ const checkNpmVersions = (version, pkg, lock) => {
   }
   const lockVersions = [lock.version, lock.packages && lock.packages[''] && lock.packages[''].version];
   if (lockVersions.some((v) => v !== undefined && v !== version)) {
-    errors.push(`package-lock.json ma wersję ${lockVersions.join(' / ')}, VERSION — ${version}. Uruchom „npm install”.`);
+    errors.push(
+      `package-lock.json ma wersję ${lockVersions.join(' / ')}, VERSION — ${version}. Uruchom „npm install”.`
+    );
   }
   return errors;
 };
@@ -78,7 +80,8 @@ const checkChangelog = (version, text) => {
       errors.push(`Nagłówek „${release.invalid}” w CHANGELOG.md ma mieć postać „## [X.Y.Z] — RRRR-MM-DD”.`);
       continue;
     }
-    if (!parseSemver(release.version)) errors.push(`Wydanie „${release.version}” w CHANGELOG.md nie jest numerem X.Y.Z.`);
+    if (!parseSemver(release.version))
+      errors.push(`Wydanie „${release.version}” w CHANGELOG.md nie jest numerem X.Y.Z.`);
     if (!release.sections.length) errors.push(`Wydanie ${release.version} w CHANGELOG.md nie ma żadnej sekcji.`);
     for (const section of release.sections) {
       if (!CHANGELOG_SECTIONS.includes(section)) {
@@ -89,11 +92,15 @@ const checkChangelog = (version, text) => {
   if (errors.length) return errors;
 
   if (releases[0].version !== version) {
-    errors.push(`Najnowsze wydanie w CHANGELOG.md to ${releases[0].version}, VERSION — ${version}. Dopisz sekcję wydania na górze.`);
+    errors.push(
+      `Najnowsze wydanie w CHANGELOG.md to ${releases[0].version}, VERSION — ${version}. Dopisz sekcję wydania na górze.`
+    );
   }
   for (let i = 1; i < releases.length; i++) {
     if (compareSemver(releases[i - 1].version, releases[i].version) <= 0) {
-      errors.push(`CHANGELOG.md: ${releases[i - 1].version} stoi nad ${releases[i].version} — wydania mają iść od najnowszego, bez powtórzeń.`);
+      errors.push(
+        `CHANGELOG.md: ${releases[i - 1].version} stoi nad ${releases[i].version} — wydania mają iść od najnowszego, bez powtórzeń.`
+      );
     }
   }
   return errors;
@@ -119,7 +126,8 @@ const checkTags = (version, changelogText, tags, versionAtTag) => {
   return errors;
 };
 
-const git = (...args) => execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const git = (...args) =>
+  execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
 const hasGit = fs.existsSync(path.join(ROOT, '.git'));
 
 const repoVersion = () => read('VERSION').trim();
@@ -129,7 +137,11 @@ test('VERSION to czysty numer X.Y.Z — inaczej reszta kontroli porównuje z nic
 });
 
 test('package.json i package-lock.json niosą numer z VERSION — inaczej npm pokazuje inną wersję niż wydanie', () => {
-  const errors = checkNpmVersions(repoVersion(), JSON.parse(read('package.json')), JSON.parse(read('package-lock.json')));
+  const errors = checkNpmVersions(
+    repoVersion(),
+    JSON.parse(read('package.json')),
+    JSON.parse(read('package-lock.json'))
+  );
   assert.deepEqual(errors, []);
 });
 
@@ -137,17 +149,21 @@ test('CHANGELOG.md zaczyna się od wydania z VERSION — inaczej wydanie wychodz
   assert.deepEqual(checkChangelog(repoVersion(), read('CHANGELOG.md')), []);
 });
 
-test('każdy tag v* ma wydanie w CHANGELOG.md i stoi na commicie z tym numerem — inaczej tag kłamie o stanie kodu', { skip: !hasGit && 'brak .git' }, () => {
-  const tags = git('tag', '--list', 'v*').split('\n').filter(Boolean);
-  const versionAtTag = (tag) => {
-    try {
-      return git('show', `${tag}:VERSION`).trim();
-    } catch {
-      return null;
-    }
-  };
-  assert.deepEqual(checkTags(repoVersion(), read('CHANGELOG.md'), tags, versionAtTag), []);
-});
+test(
+  'każdy tag v* ma wydanie w CHANGELOG.md i stoi na commicie z tym numerem — inaczej tag kłamie o stanie kodu',
+  { skip: !hasGit && 'brak .git' },
+  () => {
+    const tags = git('tag', '--list', 'v*').split('\n').filter(Boolean);
+    const versionAtTag = (tag) => {
+      try {
+        return git('show', `${tag}:VERSION`).trim();
+      } catch {
+        return null;
+      }
+    };
+    assert.deepEqual(checkTags(repoVersion(), read('CHANGELOG.md'), tags, versionAtTag), []);
+  }
+);
 
 // Gałęzie odrzucające: repozytorium dziś ich nie uruchamia, więc bez tych
 // przypadków zepsuta kontrola przechodziłaby zawsze na zielono.
@@ -162,7 +178,10 @@ test('kontrola VERSION odrzuca wydanie przedpremierowe, prefiks „v” i brak n
 test('kontrola npm wyłapuje rozjazd w package.json i w package-lock.json', () => {
   const lock = { version: '1.0.0', packages: { '': { version: '1.0.0' } } };
   assert.notDeepEqual(checkNpmVersions('1.0.0', { version: '1.0.1' }, lock), []);
-  assert.notDeepEqual(checkNpmVersions('1.0.0', { version: '1.0.0' }, { ...lock, packages: { '': { version: '0.9.0' } } }), []);
+  assert.notDeepEqual(
+    checkNpmVersions('1.0.0', { version: '1.0.0' }, { ...lock, packages: { '': { version: '0.9.0' } } }),
+    []
+  );
 });
 
 test('kontrola changeloga wyłapuje brak wydania, obcą sekcję, zły nagłówek i złą kolejność', () => {
@@ -170,7 +189,11 @@ test('kontrola changeloga wyłapuje brak wydania, obcą sekcję, zły nagłówek
   assert.deepEqual(checkChangelog('1.1.0', ok), []);
   assert.notDeepEqual(checkChangelog('1.2.0', ok), [], 'VERSION bez wpisu w changelogu');
   assert.notDeepEqual(checkChangelog('1.1.0', ok.replace('### Dodane', '### Added')), [], 'sekcja spoza listy');
-  assert.notDeepEqual(checkChangelog('1.1.0', ok.replace('## [1.1.0] — 2026-10-01', '## 1.1.0')), [], 'nagłówek bez daty');
+  assert.notDeepEqual(
+    checkChangelog('1.1.0', ok.replace('## [1.1.0] — 2026-10-01', '## 1.1.0')),
+    [],
+    'nagłówek bez daty'
+  );
   assert.notDeepEqual(checkChangelog('1.1.0', '## [1.1.0] — 2026-10-01\n\n- x\n'), [], 'wydanie bez sekcji');
   const reversed = '## [1.0.0] — 2026-09-26\n\n### Dodane\n\n## [1.1.0] — 2026-10-01\n\n### Dodane\n';
   assert.notDeepEqual(checkChangelog('1.0.0', reversed), [], 'odwrócona kolejność');
@@ -181,7 +204,11 @@ test('kontrola tagów wyłapuje tag bez wydania, tag z przyszłości i tag na z�
   const at = (map) => (tag) => map[tag] ?? null;
   assert.deepEqual(checkTags('1.0.0', changelog, ['v1.0.0'], at({ 'v1.0.0': '1.0.0' })), []);
   assert.notDeepEqual(checkTags('1.0.0', changelog, ['v0.9.0'], at({ 'v0.9.0': '0.9.0' })), [], 'brak wydania');
-  assert.notDeepEqual(checkTags('1.0.0', changelog, ['v2.0.0'], at({ 'v2.0.0': '2.0.0' })), [], 'tag nowszy niż VERSION');
+  assert.notDeepEqual(
+    checkTags('1.0.0', changelog, ['v2.0.0'], at({ 'v2.0.0': '2.0.0' })),
+    [],
+    'tag nowszy niż VERSION'
+  );
   assert.notDeepEqual(checkTags('1.0.0', changelog, ['v1.0.0'], at({})), [], 'tag przed commitem z VERSION');
   assert.notDeepEqual(checkTags('1.0.0', changelog, ['v1.0'], at({})), [], 'zła postać tagu');
 });

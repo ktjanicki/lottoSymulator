@@ -20,9 +20,20 @@ test('każdy plik czcionki ma zgodną sumę w fonts/SHA256SUMS', () => {
       .map(([sum, file]) => [file, sum])
   );
   const files = fs.readdirSync(FONTS).filter((file) => file.endsWith('.woff2'));
-  assert.deepEqual([...sums.keys()].sort(), files.sort(), 'Lista w SHA256SUMS nie zgadza się z plikami w fonts/ — zobacz fonts/README.md.');
+  assert.deepEqual(
+    [...sums.keys()].sort(),
+    files.sort(),
+    'Lista w SHA256SUMS nie zgadza się z plikami w fonts/ — zobacz fonts/README.md.'
+  );
   for (const file of files) {
-    const actual = crypto.createHash('sha256').update(fs.readFileSync(path.join(FONTS, file))).digest('hex');
-    assert.equal(actual, sums.get(file), `${file}: suma inna niż w SHA256SUMS — plik zmieniony poza procedurą z fonts/README.md.`);
+    const actual = crypto
+      .createHash('sha256')
+      .update(fs.readFileSync(path.join(FONTS, file)))
+      .digest('hex');
+    assert.equal(
+      actual,
+      sums.get(file),
+      `${file}: suma inna niż w SHA256SUMS — plik zmieniony poza procedurą z fonts/README.md.`
+    );
   }
 });

@@ -39,7 +39,11 @@ const throwingStorage = () => ({
   },
 });
 
-const win = (drawsNumber, date = 1_790_000_000_000) => ({ numbers: ['42', '7', '13', '21', '28', '35'], drawsNumber, date });
+const win = (drawsNumber, date = 1_790_000_000_000) => ({
+  numbers: ['42', '7', '13', '21', '28', '35'],
+  drawsNumber,
+  date,
+});
 
 test('bez zgody wygrana nie trafia do magazynu', () => {
   const storage = memoryStorage();
@@ -75,7 +79,13 @@ test('uszkodzony JSON i obce wpisy nie wysypują odczytu, a kolejny zapis napraw
   assert.deepEqual(readHistory(memoryStorage({ [HISTORY_KEY]: '{"a":1}' })), []);
 
   const good = { numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, date: 5 };
-  const foreign = [good, { numbers: [1, 2, 3], drawsNumber: 10, date: 5 }, { numbers: [1, 2, 3, 4, 5, 50], drawsNumber: 1, date: 1 }, null, 'x'];
+  const foreign = [
+    good,
+    { numbers: [1, 2, 3], drawsNumber: 10, date: 5 },
+    { numbers: [1, 2, 3, 4, 5, 50], drawsNumber: 1, date: 1 },
+    null,
+    'x',
+  ];
   assert.deepEqual(readHistory(memoryStorage({ [HISTORY_KEY]: JSON.stringify(foreign) })), [good]);
 
   const storage = memoryStorage({ [HISTORY_KEY]: '{nie json', [CONSENT_KEY]: 'accepted' });
@@ -112,5 +122,8 @@ test('wygrana z kuponem niepasującym do gry to błąd programu, nie cichy wpis'
 
 test(`bez zgody baner wraca dokładnie po co ${CONSENT_REMINDER_EVERY}. ukończonej symulacji — inaczej zasłania każdy wynik albo odmowa jest ostateczna`, () => {
   const due = Array.from({ length: 3 * CONSENT_REMINDER_EVERY + 1 }, (_, runs) => runs).filter(consentReminderDue);
-  assert.deepEqual(due, [1, 2, 3].map((n) => n * CONSENT_REMINDER_EVERY));
+  assert.deepEqual(
+    due,
+    [1, 2, 3].map((n) => n * CONSENT_REMINDER_EVERY)
+  );
 });

@@ -45,7 +45,10 @@ test('losowanie daje 6 różnych liczb 1–49, każdą równie często — inacz
   assert.equal(counts[0], 0, 'Wylosowano 0.');
   const expected = (DRAWS * 6) / MAX_NUMBER;
   for (let n = 1; n <= MAX_NUMBER; n++) {
-    assert.ok(Math.abs(counts[n] / expected - 1) < 0.05, `Liczba ${n}: ${counts[n]} razy, oczekiwano ok. ${Math.round(expected)}.`);
+    assert.ok(
+      Math.abs(counts[n] / expected - 1) < 0.05,
+      `Liczba ${n}: ${counts[n]} razy, oczekiwano ok. ${Math.round(expected)}.`
+    );
   }
 });
 
@@ -74,13 +77,22 @@ test('symulacja kończy się na szóstce i liczy piątki po drodze', () => {
 });
 
 test('zły kupon zgłasza błąd zamiast kręcić się bez końca', () => {
-  for (const ticket of [['1', '2', '3', '4', '5'], ['1', '1', '2', '3', '4', '5'], ['0', '1', '2', '3', '4', '5'], ['1', '2', '3', '4', '5', '50'], ['1', '2', '3', '4', '5', 'x']]) {
+  for (const ticket of [
+    ['1', '2', '3', '4', '5'],
+    ['1', '1', '2', '3', '4', '5'],
+    ['0', '1', '2', '3', '4', '5'],
+    ['1', '2', '3', '4', '5', '50'],
+    ['1', '2', '3', '4', '5', 'x'],
+  ]) {
     assert.throws(() => simulateUntilWin(ticket, () => 0), RangeError, `Kupon ${ticket} przeszedł.`);
   }
 });
 
 test('wynik dla strony: kupon posortowany liczbowo, czas, bez licznika operacji', () => {
-  const result = simulation(['49', '5', '4', '3', '2', '1'], scripted([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43 / 44 + 1e-9]));
+  const result = simulation(
+    ['49', '5', '4', '3', '2', '1'],
+    scripted([0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 43 / 44 + 1e-9])
+  );
   assert.equal(result.ticketNumbers, '1, 2, 3, 4, 5, 49');
   assert.ok(Number.isFinite(result.durationMs) && result.durationMs >= 0, `durationMs: ${result.durationMs}`);
   assert.equal('operations' in result, false);
@@ -138,16 +150,23 @@ test('worker wysyła postęp i wynik oznaczone polem type — inaczej strona pom
   } finally {
     Math.random = originalRandom;
   }
-  assert.deepEqual(messages.map((m) => [m.type, m.drawsNumber]), [
-    ['progress', PROGRESS_EVERY],
-    ['result', PROGRESS_EVERY + 2],
-  ]);
+  assert.deepEqual(
+    messages.map((m) => [m.type, m.drawsNumber]),
+    [
+      ['progress', PROGRESS_EVERY],
+      ['result', PROGRESS_EVERY + 2],
+    ]
+  );
   assert.ok(Number.isFinite(messages[0].durationMs), 'Postęp bez czasu trwania.');
 });
 
 test('wyjątek w workerze wraca do strony jako {type: error} — inaczej strona czeka na wynik z kręcącym się spinnerem', () => {
   const messages = runWorker(['1', '2', '3', '4', '5']);
-  assert.equal(messages.length, 1, `Worker wysłał ${messages.length} wiadomości zamiast jednej: ${JSON.stringify(messages)}.`);
+  assert.equal(
+    messages.length,
+    1,
+    `Worker wysłał ${messages.length} wiadomości zamiast jednej: ${JSON.stringify(messages)}.`
+  );
   assert.equal(messages[0].type, 'error');
   assert.match(messages[0].message, /6 różnych liczb/);
 });

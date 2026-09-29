@@ -38,7 +38,9 @@ const toTicket = (ticketNumbers) => {
   // Zły kupon (np. 5 liczb albo powtórka) nigdy nie trafi szóstki — symulacja
   // kręciłaby się bez końca zamiast zgłosić błąd.
   if (!valid) {
-    throw new RangeError(`Kupon ma mieć ${TICKET_SIZE} różnych liczb 1–${MAX_NUMBER}, jest: ${ticketNumbers.join(', ')}.`);
+    throw new RangeError(
+      `Kupon ma mieć ${TICKET_SIZE} różnych liczb 1–${MAX_NUMBER}, jest: ${ticketNumbers.join(', ')}.`
+    );
   }
   return numbers;
 };
@@ -46,7 +48,11 @@ const toTicket = (ticketNumbers) => {
 // Losuje do trafienia szóstki; zwraca numer losowania z wygraną i liczbę
 // trafionych trójek, czwórek i piątek po drodze. onProgress dostaje te same
 // liczniki co progressEvery losowań (nie w losowaniu z wygraną).
-export const simulateUntilWin = (ticketNumbers, random = Math.random, { onProgress, progressEvery = PROGRESS_EVERY } = {}) => {
+export const simulateUntilWin = (
+  ticketNumbers,
+  random = Math.random,
+  { onProgress, progressEvery = PROGRESS_EVERY } = {}
+) => {
   const onTicket = new Uint8Array(MAX_NUMBER + 1);
   for (const n of toTicket(ticketNumbers)) onTicket[n] = 1;
 

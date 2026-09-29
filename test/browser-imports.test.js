@@ -39,7 +39,9 @@ const checkModule = (file, read, exists, seen = new Set()) => {
     for (const [, spec] of source.matchAll(pattern)) {
       // Adres w new URL(…, import.meta.url) jest względny także bez „./”.
       if (!/^\.{0,2}\//.test(spec) && pattern !== SPECIFIERS[2]) {
-        errors.push(`${file}: import „${spec}” rozwiązuje tylko bundler — przeglądarka odrzuci cały moduł. Użyj ścieżki względnej („./…”).`);
+        errors.push(
+          `${file}: import „${spec}” rozwiązuje tylko bundler — przeglądarka odrzuci cały moduł. Użyj ścieżki względnej („./…”).`
+        );
         continue;
       }
       const target = path.join(path.dirname(file), spec);
@@ -57,7 +59,9 @@ const checkStylesheet = (file, read, exists) => {
   const errors = [];
   // Bez komentarzy: słowo „@import” w objaśnieniu to nie odwołanie do pliku.
   const css = read(file).replace(/\/\*[\s\S]*?\*\//g, '');
-  const refs = [...css.matchAll(/@import\s+(?:url\()?\s*['"]?([^'")\s;]+)|url\(\s*['"]?([^'")]+)['"]?\s*\)/g)].map((m) => m[1] || m[2]);
+  const refs = [...css.matchAll(/@import\s+(?:url\()?\s*['"]?([^'")\s;]+)|url\(\s*['"]?([^'")]+)['"]?\s*\)/g)].map(
+    (m) => m[1] || m[2]
+  );
   for (const ref of new Set(refs)) {
     if (/^[a-z]+:|^\/\//i.test(ref)) {
       errors.push(`${file}: zasób zewnętrzny „${ref}” — skopiuj go do repozytorium.`);
@@ -95,7 +99,10 @@ test('kontrola odrzuca import pakietu (także w workerze), brakujący plik i bra
     'worker.js': "import './core.js';",
     'core.js': "import { shuffle } from 'lodash';",
   };
-  const errors = checkPage((file) => files[file], (file) => file in files);
+  const errors = checkPage(
+    (file) => files[file],
+    (file) => file in files
+  );
   assert.equal(errors.length, 4, errors.join('\n'));
   assert.match(errors.join('\n'), /style\.css/);
   assert.match(errors.join('\n'), /„fs”/);
@@ -106,10 +113,14 @@ test('kontrola odrzuca import pakietu (także w workerze), brakujący plik i bra
 test('kontrola arkusza odrzuca zewnętrzny @import i brakującą czcionkę', () => {
   const files = {
     'index.html': '<link rel="stylesheet" href="style.css">',
-    'style.css': "/* @import w komentarzu się nie liczy */\n@import url('https://fonts.googleapis.com/css2?family=Roboto');\n@font-face { src: url('fonts/a.woff2') format('woff2'); }\n@font-face { src: url(fonts/missing.woff2); }",
+    'style.css':
+      "/* @import w komentarzu się nie liczy */\n@import url('https://fonts.googleapis.com/css2?family=Roboto');\n@font-face { src: url('fonts/a.woff2') format('woff2'); }\n@font-face { src: url(fonts/missing.woff2); }",
     'fonts/a.woff2': '',
   };
-  const errors = checkPage((file) => files[file], (file) => file in files);
+  const errors = checkPage(
+    (file) => files[file],
+    (file) => file in files
+  );
   assert.equal(errors.length, 2, errors.join('\n'));
   assert.match(errors.join('\n'), /zasób zewnętrzny „https:\/\/fonts\.googleapis\.com/);
   assert.match(errors.join('\n'), /missing\.woff2/);

@@ -33,7 +33,11 @@ test('zbudowana strona pobiera numer z VERSION — inaczej stopka kłamie po kol
 
     const dist = path.join(dir, 'dist');
     const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');
-    assert.match(html, /<footer[^>]*>[\s\S]*class=["']?appVersion/, 'Brak stopki z elementem .appVersion w index.html.');
+    assert.match(
+      html,
+      /<footer[^>]*>[\s\S]*class=["']?appVersion/,
+      'Brak stopki z elementem .appVersion w index.html.'
+    );
 
     const files = fs.readdirSync(dist);
     const versionFile = files.find((file) => fs.readFileSync(path.join(dist, file), 'utf8') === `${FAKE_VERSION}\n`);
@@ -47,7 +51,10 @@ test('zbudowana strona pobiera numer z VERSION — inaczej stopka kłamie po kol
     // przez import.meta.resolve — dlatego szukamy w obu miejscach.
     assert.ok((html + bundle).includes(versionFile), `Strona nie odwołuje się do ${versionFile}.`);
     const repoVersion = fs.readFileSync(path.join(ROOT, 'VERSION'), 'utf8').trim();
-    assert.ok(!bundle.includes(repoVersion), `Paczka zawiera numer ${repoVersion} z repozytorium — jest wpisany na sztywno.`);
+    assert.ok(
+      !bundle.includes(repoVersion),
+      `Paczka zawiera numer ${repoVersion} z repozytorium — jest wpisany na sztywno.`
+    );
   } finally {
     fs.rmSync(dir, { recursive: true, force: true });
   }

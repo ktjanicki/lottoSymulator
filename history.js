@@ -43,8 +43,7 @@ export const readHistory = (storage) =>
 // odwiedzający zapomina, że historię da się włączyć; częściej — baner zasłania
 // wynik prawie za każdym razem i odmowa przestaje być wyborem.
 export const CONSENT_REMINDER_EVERY = 5;
-export const consentReminderDue = (completedRuns) =>
-  completedRuns > 0 && completedRuns % CONSENT_REMINDER_EVERY === 0;
+export const consentReminderDue = (completedRuns) => completedRuns > 0 && completedRuns % CONSENT_REMINDER_EVERY === 0;
 
 export const hasConsent = (storage) => safely(() => storage.getItem(CONSENT_KEY) === 'accepted', false);
 

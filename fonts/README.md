@@ -4,9 +4,9 @@ Pliki `woff2` skopiowane z pakietu npm Fontsource, podzbiory `latin`
 i `latin-ext`, oś `wght` (jeden plik zmienny na podzbiór zamiast pliku na
 każdą grubość):
 
-| Pakiet | Wersja | Suma archiwum (npm `dist.integrity`, sprawdzona po pobraniu) |
-|---|---|---|
-| `@fontsource-variable/inter` | 5.3.0 | `sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==` |
+| Pakiet                       | Wersja | Suma archiwum (npm `dist.integrity`, sprawdzona po pobraniu)                                      |
+| ---------------------------- | ------ | ------------------------------------------------------------------------------------------------- |
+| `@fontsource-variable/inter` | 5.3.0  | `sha512-OupL48va4JNofb97w6NYeF9S7W/kHNKM0Er8Dem5nqi4jeOLrVJDoE8tZEpnMJmtkvNbB1EIPPwHcdkF6b1oUA==` |
 
 Kursywy nie ma — strona jej nie używa; `font-style: italic` przeglądarka
 podrobi pochyleniem.

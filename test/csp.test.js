@@ -26,7 +26,10 @@ test('polityka stoi przed importmapą i zawiera skrót jej treści, a skryptu z 
   const html = injectCsp(BUILT);
   const policy = cspOf(html);
   assert.ok(policy, 'Brak <meta> z polityką CSP.');
-  assert.ok(html.indexOf('Content-Security-Policy') < html.indexOf('<script'), 'Meta z polityką stoi za pierwszym skryptem.');
+  assert.ok(
+    html.indexOf('Content-Security-Policy') < html.indexOf('<script'),
+    'Meta z polityką stoi za pierwszym skryptem.'
+  );
 
   const expected = `'sha256-${createHash('sha256').update(IMPORTMAP).digest('base64')}'`;
   const scriptSrc = policy.split('; ').find((directive) => directive.startsWith('script-src'));
@@ -36,6 +39,9 @@ test('polityka stoi przed importmapą i zawiera skrót jej treści, a skryptu z 
 
 test('HTML bez <html> albo z polityką już w środku to błąd buildu, a nie strona bez ochrony', () => {
   assert.throws(() => injectCsp('<script>x</script>'), /nie ma znacznika <html>/);
-  const withPolicy = BUILT.replace('<meta charset', `<meta http-equiv="Content-Security-Policy" content="default-src *"><meta charset`);
+  const withPolicy = BUILT.replace(
+    '<meta charset',
+    `<meta http-equiv="Content-Security-Policy" content="default-src *"><meta charset`
+  );
   assert.throws(() => injectCsp(withPolicy), /ma już politykę CSP/);
 });

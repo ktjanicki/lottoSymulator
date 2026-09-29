@@ -55,10 +55,14 @@ export const injectCsp = (html) => {
 };
 
 export const build = (distDir = join(ROOT, 'dist')) => {
-  execFileSync(join(ROOT, 'node_modules', '.bin', 'parcel'), ['build', 'index.html', '--dist-dir', distDir, '--no-cache'], {
-    cwd: ROOT,
-    stdio: 'inherit',
-  });
+  execFileSync(
+    join(ROOT, 'node_modules', '.bin', 'parcel'),
+    ['build', 'index.html', '--dist-dir', distDir, '--no-cache'],
+    {
+      cwd: ROOT,
+      stdio: 'inherit',
+    }
+  );
   const indexFile = join(distDir, 'index.html');
   writeFileSync(indexFile, injectCsp(readFileSync(indexFile, 'utf8')));
 };
