@@ -42,12 +42,22 @@ zgadzać — pilnuje tego `npm test`.
 ## Testy
 
 ```sh
-npm test
+npm test            # dane, rdzeń symulacji, dyscyplina repozytorium, build
+npm run test:e2e    # zbudowana strona w Chromium i Firefoksie (Playwright)
+npm run check:prod  # scenariusze @prod na lottosymulator.grossnet.pl
 ```
 
-CI (GitHub Actions) uruchamia testy i build produkcyjny przy każdym pushu
-i pull requeście, na dwóch wersjach Node: z `.node-version` i na tej, którą
-serwer buduje produkcję.
+Przed pierwszym `test:e2e` pobierz przeglądarki: `npx playwright install
+chromium firefox`.
+
+CI (GitHub Actions) uruchamia `npm test` i build produkcyjny na dwóch wersjach
+Node — z `.node-version` i tej, którą serwer buduje produkcję — oraz
+`test:e2e`, przy każdym pushu i pull requeście. `production` przesuwa się
+dopiero, gdy wszystkie są zielone.
+
+Po każdym wdrożeniu uruchom `npm run check:prod`: sprawdza, że produkcja podaje
+numer z `VERSION` i że symulacja przechodzi do wyniku. Tylko czyta stronę —
+zapisuje wyłącznie w przeglądarce testu.
 
 ## Licencja
 
