@@ -2,6 +2,15 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.7.2] — 2026-09-29
+
+### Dodane
+
+- Testy strony w przeglądarce (Chromium, Firefox) na wyniku buildu:
+  pełna symulacja, przerwanie, niewczytany worker, baner zgody, dwie karty.
+  CI przesuwa `production` dopiero po ich przejściu.
+- `npm run check:prod`: sprawdzenie produkcji po wdrożeniu.
+
 ## [1.7.1] — 2026-09-29
 
 ### Zmienione
