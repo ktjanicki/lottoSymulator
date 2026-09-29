@@ -2,6 +2,17 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.8.1] — 2026-09-29
+
+### Dodane
+
+- ESLint i Prettier (`npm run lint`, `npm run format`); CI przesuwa
+  `production` dopiero po ich przejściu.
+
+### Zmienione
+
+- Kod przeformatowany Prettierem.
+
 ## [1.8.0] — 2026-09-29
 
 ### Dodane
