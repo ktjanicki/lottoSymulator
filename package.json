@@ -8,9 +8,12 @@
   "scripts": {
     "start": "parcel index.html",
     "build": "parcel build index.html",
-    "test": "node --test"
+    "test": "node --test",
+    "test:e2e": "playwright test",
+    "check:prod": "BASE_URL=https://lottosymulator.grossnet.pl playwright test --grep @prod"
   },
   "devDependencies": {
+    "@playwright/test": "1.63.0",
     "parcel": "2.16.4"
   }
 }

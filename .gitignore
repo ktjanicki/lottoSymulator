@@ -6,3 +6,5 @@ node_modules
 .DS_Store
 plan
 CLAUDE.md
+test-results
+playwright-report
