@@ -2,6 +2,19 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.7.0] — 2026-09-29
+
+### Dodane
+
+- Przycisk „Nie zgadzam się” na banerze zgody; Esc też oznacza odmowę.
+- Bez zgody baner wraca przy każdym wejściu i po co piątej ukończonej
+  symulacji; zgoda wyrażona wtedy zapisuje właśnie pokazaną wygraną.
+
+### Zmienione
+
+- Produkcja publikuje gałąź `production`, którą CI przesuwa dopiero po
+  zielonych testach i buildzie na `master`.
+
 ## [1.6.7] — 2026-09-29
 
 ### Zmienione
