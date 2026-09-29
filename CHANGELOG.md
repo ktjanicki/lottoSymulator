@@ -2,6 +2,16 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.8.2] — 2026-09-29
+
+### Dodane
+
+- Podgląd linku (Open Graph): tytuł, opis i obrazek 1200×630.
+
+### Zmienione
+
+- Wynik symulacji bez form męskich: „Szóstka!” i „Po drodze padły też:”.
+
 ## [1.8.1] — 2026-09-29
 
 ### Dodane
