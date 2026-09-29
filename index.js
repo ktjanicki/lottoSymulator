@@ -1,5 +1,14 @@
 import { drawsNoun, formatDateTime, formatNumber, formatSeconds } from './format.js';
-import { HISTORY_PAGE, consentReminderDue, giveConsent, hasConsent, readHistory, recordWin } from './history.js';
+import {
+  CONSENT_KEY,
+  HISTORY_KEY,
+  HISTORY_PAGE,
+  consentReminderDue,
+  giveConsent,
+  hasConsent,
+  readHistory,
+  recordWin,
+} from './history.js';
 import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
 
 const numbersList = document.querySelector('.numbersList');
@@ -41,9 +50,12 @@ let historyShown = HISTORY_PAGE;
 // bez buildu — ścieżka względna działa w obu trybach. Import rozwiązywany
 // przez bundler, np. `fs`, bez buildu unieważnia w przeglądarce cały moduł:
 // tak padła produkcja w 1.1.0, gdy jeszcze podawała surowe pliki.
+// Bez sieci (strona z pamięci przeglądarki) stopka zostaje bez numeru —
+// bez catch każde takie wejście zostawia w konsoli nieobsłużony błąd.
 fetch(new URL('VERSION', import.meta.url))
   .then((response) => (response.ok ? response.text() : ''))
-  .then((version) => (document.querySelector('.appVersion').textContent = version.trim()));
+  .then((version) => (document.querySelector('.appVersion').textContent = version.trim()))
+  .catch(() => {});
 
 // Bieżący rok z zegara odwiedzającego; w HTML stoi rok wydania na wypadek
 // strony bez skryptów. Wpisany na sztywno zestarzałby się z Sylwestrem.
@@ -92,16 +104,21 @@ cookieBanner.addEventListener('close', () => {
   target?.focus({ preventScroll: true });
 });
 
-cookieAccept.addEventListener('click', () => {
-  // Gdy magazyn odmówi, zgoda trwa do końca wizyty (baner znika), ale
-  // historia i tak się nie zapisze, a baner wróci przy następnym wejściu.
-  giveConsent(storage);
+// Zgoda z tej karty („Akceptuję”) albo z innej (zdarzenie `storage` niżej).
+const applyConsent = () => {
   consentGiven = true;
   if (unsavedWin) {
     history = recordWin(storage, unsavedWin);
     renderHistory(0, 1);
   }
-  cookieBanner.close();
+  if (cookieBanner.open) cookieBanner.close();
+};
+
+cookieAccept.addEventListener('click', () => {
+  // Gdy magazyn odmówi, zgoda trwa do końca wizyty (baner znika), ale
+  // historia i tak się nie zapisze, a baner wróci przy następnym wejściu.
+  giveConsent(storage);
+  applyConsent();
 });
 
 cookieDecline.addEventListener('click', () => cookieBanner.close());
@@ -201,6 +218,17 @@ const renderHistory = (animateFrom = 0, animateTo = 0) => {
 
 history = readHistory(storage);
 renderHistory();
+
+// Druga karta ze stroną pisze do tego samego magazynu, a ta o tym nie wie:
+// bez nasłuchu pokazuje historię sprzed tamtej wygranej, a baner pyta o zgodę
+// danej już obok. `storage` przychodzi tylko z innych kart; key null to clear().
+window.addEventListener('storage', ({ key }) => {
+  if (key === HISTORY_KEY || key === null) {
+    history = readHistory(storage);
+    renderHistory();
+  }
+  if ((key === CONSENT_KEY || key === null) && !consentGiven && hasConsent(storage)) applyConsent();
+});
 
 // Zwinięta przy każdym wejściu (tak stoi w HTML) — stanu nie zapamiętujemy.
 historyToggle.addEventListener('click', () => {

@@ -1,19 +1,9 @@
 // Grupuje cyfry po trzy twardą spacją (U+00A0): 1819580 → „1 819 580”.
 // Zwykła spacja pozwala przeglądarce złamać liczbę w środku wiersza —
 // „po ponad 3 000 / 000 losowaniach” czyta się jak dwie liczby.
-export const formatNumber = (number) => {
-  const reverseNumber = number.toString().split('').reverse();
-  const result = [];
-  let count = 1;
-
-  reverseNumber.forEach((item, index) => {
-    result.push(item);
-    if (count === 3 && index !== reverseNumber.length - 1) result.push('\u00a0');
-    count === 3 ? (count = 1) : count++;
-  });
-
-  return result.reverse().join('');
-};
+// Spacja wchodzi przed ka\u017cd\u0105 cyfr\u0119, za kt\u00f3r\u0105 stoi wielokrotno\u015b\u0107 trzech cyfr
+// do ko\u0144ca liczby \u2014 i nigdy na pocz\u0105tku (\B).
+export const formatNumber = (number) => String(number).replace(/\B(?=(\d{3})+$)/g, '\u00a0');
 
 // Sekundy z jedną cyfrą po przecinku: 2345 ms → „2,3”. Przecinek wstawiamy
 // sami — toLocaleString zależy od języka przeglądarki i pokazałby „2.3”
