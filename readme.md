@@ -51,6 +51,8 @@ zgadzać — pilnuje tego `npm test`.
 npm test            # dane, rdzeń symulacji, dyscyplina repozytorium, build
 npm run test:e2e    # zbudowana strona w Chromium i Firefoksie (Playwright)
 npm run check:prod  # scenariusze @prod na lottosymulator.grossnet.pl
+npm run lint        # ESLint i sprawdzenie formatowania (Prettier)
+npm run format      # formatowanie Prettierem
 ```
 
 Przed pierwszym `test:e2e` pobierz przeglądarki: `npx playwright install
@@ -58,8 +60,12 @@ chromium firefox`.
 
 CI (GitHub Actions) uruchamia `npm test` i build produkcyjny na dwóch wersjach
 Node — z `.node-version` i tej, którą serwer buduje produkcję — oraz
-`test:e2e`, przy każdym pushu i pull requeście. `production` przesuwa się
-dopiero, gdy wszystkie są zielone.
+`test:e2e` i `lint`, przy każdym pushu i pull requeście. `production` przesuwa
+się dopiero, gdy wszystkie są zielone.
+
+Jednorazowe przeformatowanie Prettierem jest w `.git-blame-ignore-revs`; żeby
+`git blame` je pomijał lokalnie:
+`git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 Po każdym wdrożeniu uruchom `npm run check:prod`: sprawdza, że produkcja podaje
 numer z `VERSION` i że symulacja przechodzi do wyniku. Tylko czyta stronę —
