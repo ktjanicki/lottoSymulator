@@ -19,6 +19,12 @@ Build produkcyjny trafia do `dist/`:
 npm run build
 ```
 
+Build to Parcel i wstawienie polityki Content-Security-Policy do
+`dist/index.html` (`scripts/build.mjs`): wszystko z własnego źródła, skrypty
+inline tylko ze skrótem policzonym z buildu (Parcel wstawia importmapę). Nie
+wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
+`npm start` (serwer deweloperski) działa bez CSP.
+
 Produkcja podaje wynik buildu Parcela. Strona ma jednak działać także podana
 wprost, bez buildu (np. zwykły serwer statyczny przy pracy nad kodem): moduły
 przeglądarki importują wyłącznie ścieżki względne, czego pilnuje `npm test`.

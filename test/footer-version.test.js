@@ -27,10 +27,9 @@ test('zbudowana strona pobiera numer z VERSION — inaczej stopka kłamie po kol
     fs.writeFileSync(path.join(dir, 'VERSION'), `${FAKE_VERSION}\n`);
     fs.symlinkSync(path.join(ROOT, 'node_modules'), path.join(dir, 'node_modules'), 'dir');
 
-    execFileSync(path.join(ROOT, 'node_modules', '.bin', 'parcel'), ['build', 'index.html', '--no-cache'], {
-      cwd: dir,
-      stdio: 'pipe',
-    });
+    // Build produkcyjny (Parcel + CSP), nie sam Parcel: polityka w meta
+    // mogłaby zablokować pobranie numeru.
+    execFileSync(process.execPath, ['scripts/build.mjs'], { cwd: dir, stdio: 'pipe' });
 
     const dist = path.join(dir, 'dist');
     const html = fs.readFileSync(path.join(dist, 'index.html'), 'utf8');

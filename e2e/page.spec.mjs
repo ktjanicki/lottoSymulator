@@ -69,8 +69,35 @@ test('stopka podaje numer z pliku VERSION — inaczej produkcja stoi na innym wy
   await expect(page.locator('.appVersion')).toHaveText(VERSION);
 });
 
-test('pełna symulacja prawdziwym workerem kończy się wygraną i wpisem w historii', { tag: '@prod' }, async ({ page }) => {
+// Naruszenia CSP zgłoszone przez przeglądarkę od pierwszego bajtu strony
+// (skrypt startowy działa przed importmapą i skryptami strony).
+const recordViolations = () => {
+  window.cspViolations = [];
+  document.addEventListener('securitypolicyviolation', (event) =>
+    window.cspViolations.push(`${event.violatedDirective} ${event.blockedURI}`)
+  );
+};
+
+test('polityka CSP blokuje wstrzyknięty skrypt inline — inaczej jedna dziura w HTML-u wykonuje obcy kod', { tag: '@prod' }, async ({ page }) => {
+  await page.addInitScript(recordViolations);
   await page.goto('/');
+  await page.evaluate(() => {
+    const script = document.createElement('script');
+    script.textContent = 'window.injected = true';
+    document.body.append(script);
+  });
+  await expect.poll(() => page.evaluate(() => window.cspViolations.length)).toBeGreaterThan(0);
+  expect(await page.evaluate(() => window.injected)).toBeUndefined();
+});
+
+test('pełna symulacja prawdziwym workerem kończy się wygraną i wpisem w historii, bez naruszeń CSP', { tag: '@prod' }, async ({ page }) => {
+  // Polityka za ciasna dla własnej strony (np. skrót importmapy, który nie
+  // pasuje) blokuje worker albo numer wersji — naruszenie wychodzi tutaj.
+  await page.addInitScript(recordViolations);
+  await page.goto('/');
+  // Już tutaj: zablokowana importmapa psuje worker, a bez tego sprawdzenia
+  // test czekałby na wynik do końca limitu.
+  expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
   await page.locator('.cookieAccept').click();
   await pickTicket(page);
   // Bez sprawdzania paska postępu po starcie: szóstka potrafi paść, zanim
@@ -85,6 +112,8 @@ test('pełna symulacja prawdziwym workerem kończy się wygraną i wpisem w hist
   await expect(page.locator('.startButton')).toBeEnabled();
   await expect(page.locator('.historyCount')).toHaveText('1');
   expect(JSON.parse(await stored(page, HISTORY_KEY))[0].numbers).toEqual(TICKET);
+  await expect(page.locator('.appVersion')).toHaveText(VERSION);
+  expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
 });
 
 test('„Przerwij” zabija worker, podaje liczbę losowań z ostatniego postępu i oddaje kupon', { tag: '@prod' }, async ({ page }) => {

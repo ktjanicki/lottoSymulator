@@ -1,23 +1,20 @@
-// Buduje stronę Parcelem do katalogu tymczasowego i podaje ją jak produkcja:
-// z korzenia domeny (Parcel pisze ścieżki od „/”), z typami MIME, bez których
-// przeglądarka odrzuci moduł i worker. Build poza repozytorium: katalog
-// w drzewie trafiłby do kopii, którą buduje test stopki, i do `git status`.
+// Buduje stronę produkcyjnym buildem (scripts/build.mjs: Parcel + CSP) do
+// katalogu tymczasowego i podaje ją jak produkcja: z korzenia domeny (Parcel
+// pisze ścieżki od „/”), z typami MIME, bez których przeglądarka odrzuci moduł
+// i worker. Build poza repozytorium: katalog w drzewie trafiłby do kopii,
+// którą buduje test stopki, i do `git status`.
 // Uruchamia go Playwright (webServer w playwright.config.mjs).
 
-import { execFileSync } from 'node:child_process';
 import { mkdtempSync, readFileSync, rmSync, statSync } from 'node:fs';
 import { createServer } from 'node:http';
 import { tmpdir } from 'node:os';
 import { extname, join, normalize } from 'node:path';
+import { build } from '../scripts/build.mjs';
 
-const ROOT = new URL('..', import.meta.url).pathname;
 const PORT = Number(process.env.PORT ?? 8471);
 
 const dist = mkdtempSync(join(tmpdir(), 'lotto-e2e-'));
-execFileSync(join(ROOT, 'node_modules', '.bin', 'parcel'), ['build', 'index.html', '--dist-dir', dist, '--no-cache'], {
-  cwd: ROOT,
-  stdio: 'inherit',
-});
+build(dist);
 
 // Plik VERSION.<suma>. nie ma rozszerzenia — dostaje text/plain jak na serwerze.
 const TYPES = {

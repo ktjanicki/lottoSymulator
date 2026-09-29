@@ -7,7 +7,7 @@
   "license": "Apache-2.0",
   "scripts": {
     "start": "parcel index.html",
-    "build": "parcel build index.html",
+    "build": "node scripts/build.mjs",
     "test": "node --test",
     "test:e2e": "playwright test",
     "check:prod": "BASE_URL=https://lottosymulator.grossnet.pl playwright test --grep @prod"
