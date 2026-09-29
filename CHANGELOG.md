@@ -2,6 +2,23 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.7.1] — 2026-09-29
+
+### Zmienione
+
+- CI testuje także na Node 24.21.0, którym serwer buduje produkcję,
+  i instaluje zależności bez skryptów, jak serwer.
+- README po polsku.
+
+### Poprawione
+
+- Wygrana i zgoda z innej karty od razu widoczne w pozostałych kartach.
+- Brak sieci przy pobieraniu numeru wersji nie zostawia błędu w konsoli.
+
+### Usunięte
+
+- Znacznik `meta robots` o wartości domyślnej.
+
 ## [1.7.0] — 2026-09-29
 
 ### Dodane
