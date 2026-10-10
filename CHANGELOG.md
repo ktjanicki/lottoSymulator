@@ -2,6 +2,25 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.9.0] — 2026-10-10
+
+### Dodane
+
+- Akapit o szansach na trójkę, czwórkę, piątkę i szóstkę pod symulatorem.
+- Adres kanoniczny, dane strukturalne `WebSite`, `robots.txt` i `sitemap.xml`
+  liczone w buildzie z `og:url` i `og:title`.
+
+### Zmienione
+
+- Tytuł strony: „Lotto Symulator — ile losowań do szóstki?”; nowy opis
+  (`meta description`).
+
+### Znane ograniczenia
+
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+
 ## [1.8.3] — 2026-10-10
 
 ### Zmienione
