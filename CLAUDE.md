@@ -50,7 +50,8 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   - numer wydania — `VERSION` (`package.json`, `package-lock.json`,
     `CHANGELOG.md` i tagi `v*` muszą się zgadzać; pilnuje `test/version.test.js`);
   - adres strony — `og:url` w `index.html` (build liczy z niego `og:image`,
-    canonical, `robots.txt` i `sitemap.xml`);
+    canonical, dane strukturalne, `robots.txt` i `sitemap.xml`); nazwa
+    witryny w danych strukturalnych — `og:title`;
   - gra — `MAX_NUMBER` i `TICKET_SIZE` w `simulation.js`;
   - Node budujący produkcję — obraz w `grossnet-vps-iac`
     (`10_versions.yml` → `images.node`); `.github/workflows/ci.yml` przepisuje
@@ -69,8 +70,8 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   pilnuje `test/browser-imports.test.js`). Import rozwiązywany tylko przez
   bundler unieważnia w przeglądarce cały moduł — tak padło wydanie 1.1.0.
 - **Produkcja to wynik `npm run build`** (`scripts/build.mjs`: Parcel, potem
-  pełny adres `og:image`, canonical, CSP w `<meta>`, `robots.txt`
-  i `sitemap.xml`). Sam `parcel build` daje stronę bez polityki. Serwer
+  pełny adres `og:image`, canonical, dane strukturalne, CSP w `<meta>`,
+  `robots.txt` i `sitemap.xml`). Sam `parcel build` daje stronę bez polityki. Serwer
   instaluje zależności `npm ci --ignore-scripts` — zależność, która bez
   skryptu instalacyjnego nie działa, nie przejdzie na produkcji.
 - **CSP** siedzi w `<meta>`, nie w nagłówku, bo skrót importmapy Parcela

@@ -100,7 +100,7 @@ test(
 );
 
 test(
-  'wyszukiwarki: canonical wskazuje og:url, a robots.txt prowadzi do mapy strony z tym samym adresem',
+  'wyszukiwarki: canonical i dane strukturalne wskazują og:url, a robots.txt prowadzi do mapy strony z tym samym adresem',
   { tag: '@prod' },
   async ({ page, request }) => {
     await page.goto('/');
@@ -114,6 +114,9 @@ test(
     const sitemap = await request.get(sitemapUrl.pathname);
     expect(sitemap.status()).toBe(200);
     expect(await sitemap.text()).toContain(`<loc>${ogUrl}</loc>`);
+    // Nazwa witryny w wynikach Google: blok musi być poprawnym JSON-em.
+    const data = JSON.parse(await page.locator('script[type="application/ld+json"]').textContent());
+    expect(data).toMatchObject({ '@type': 'WebSite', name: 'Lotto Symulator', url: ogUrl });
   }
 );
 

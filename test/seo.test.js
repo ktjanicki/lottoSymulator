@@ -3,12 +3,14 @@
 // - adres inny niż og:url (np. stara domena po przeprowadzce) — wyszukiwarka
 //   dostaje sprzeczne sygnały i potrafi wybrać do wyników zły adres;
 // - drugi canonical dopisany w źródle — przy dwóch różnych Google ignoruje oba;
-// - robots.txt wskazujący mapę pod złym adresem albo blokujący stronę.
+// - robots.txt wskazujący mapę pod złym adresem albo blokujący stronę;
+// - dane strukturalne, które nie są poprawnym JSON-em albo „</script>”
+//   w nazwie zamyka blok i wylewa resztę na stronę.
 // Czy serwer rzeczywiście podaje oba pliki, sprawdza e2e/page.spec.mjs.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { addCanonical, robotsTxt, sitemapXml } = require('../scripts/build.mjs');
+const { addCanonical, addStructuredData, robotsTxt, sitemapXml } = require('../scripts/build.mjs');
 
 // Zapis po minifikacji Parcela: wartości bez cudzysłowów.
 const BUILT =
@@ -35,4 +37,24 @@ test('mapa strony i robots.txt wskazują adres z og:url, a robots.txt niczego ni
   assert.match(robots, /^Sitemap: https:\/\/lottosymulator\.pl\/sitemap\.xml$/m);
   assert.match(robots, /^Disallow:$/m, 'Disallow z wartością blokuje indeksowanie.');
   assert.doesNotMatch(robots, /^Disallow: *\S/m);
+});
+
+const structuredData = (html) => JSON.parse(/<script type=application\/ld\+json>(.*?)<\/script>/.exec(html)[1]);
+
+test('dane strukturalne WebSite biorą nazwę z og:title i adres z og:url', () => {
+  assert.deepEqual(structuredData(addStructuredData(BUILT)), {
+    '@context': 'https://schema.org',
+    '@type': 'WebSite',
+    name: 'Lotto Symulator',
+    url: 'https://lottosymulator.pl/',
+  });
+});
+
+test('„</script>” w nazwie nie zamyka bloku danych, a brak og:title to błąd buildu', () => {
+  const html = addStructuredData(BUILT.replace('"Lotto Symulator"', '"a</script><b>"'));
+  assert.equal(structuredData(html).name, 'a</script><b>');
+  assert.throws(
+    () => addStructuredData('<meta property=og:url content=https://lottosymulator.pl/>'),
+    /nie ma og:title/
+  );
 });

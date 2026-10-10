@@ -1,5 +1,6 @@
 // Build produkcyjny: Parcel, a potem w dist/index.html pełny adres og:image,
-// <link rel=canonical> i Content-Security-Policy, obok robots.txt i sitemap.xml.
+// <link rel=canonical>, dane strukturalne i Content-Security-Policy, obok
+// robots.txt i sitemap.xml.
 // Tą funkcją budują serwer (`npm run build` w kontenerze bez sieci), testy
 // w przeglądarce (e2e/serve.mjs) i test stopki — inaczej testy sprawdzałyby
 // stronę bez polityki, a na produkcję szłaby inna.
@@ -84,14 +85,33 @@ const siteUrl = (html) => {
 // Ta sama strona odpowiada pod /, /index.html i www.; bez adresu kanonicznego
 // wyszukiwarka sama wybiera wersję do wyników i dzieli między nie sygnały.
 // Wstawiamy go zaraz za og:url, z którego pochodzi.
+// Wstawia znacznik zaraz za og:url, z którego pochodzi jego treść.
+const afterOgUrl = (html, tag) => {
+  const url = ogMeta('og:url').exec(html);
+  const at = html.indexOf('>', url.index + url[0].length) + 1;
+  return `${html.slice(0, at)}${tag}${html.slice(at)}`;
+};
+
 export const addCanonical = (html) => {
   if (/<link\b[^>]*\brel=["']?canonical/i.test(html)) {
     throw new Error('index.html ma już <link rel=canonical> — adres liczy build z og:url; usuń go ze źródła.');
   }
-  const href = siteUrl(html);
-  const url = ogMeta('og:url').exec(html);
-  const at = html.indexOf('>', url.index + url[0].length) + 1;
-  return `${html.slice(0, at)}<link rel=canonical href="${href}">${html.slice(at)}`;
+  return afterOgUrl(html, `<link rel=canonical href="${siteUrl(html)}">`);
+};
+
+// Dane strukturalne WebSite: Google bierze z nich nazwę witryny pokazywaną
+// nad wynikiem; bez nich zgaduje ją z tytułu albo domeny. Nazwa z og:title,
+// adres z og:url — w źródle nie ma ich drugiej kopii. Przeglądarka nie
+// wykonuje bloku danych, ale build i tak policzy jego skrót do CSP (jak
+// każdego <script> bez src) — nieszkodliwe. „<” jako \u003c: napis
+// „</script>” w nazwie zamknąłby blok i resztę wstawił jako HTML.
+export const addStructuredData = (html) => {
+  const title = ogMeta('og:title').exec(html);
+  if (!title)
+    throw new Error('index.html nie ma og:title — nie ma z czego wziąć nazwy witryny do danych strukturalnych.');
+  const data = { '@context': 'https://schema.org', '@type': 'WebSite', name: unquote(title[2]), url: siteUrl(html) };
+  const json = JSON.stringify(data).replaceAll('<', '\\u003c');
+  return afterOgUrl(html, `<script type=application/ld+json>${json}</script>`);
 };
 
 // Bez lastmod: data buildu zmieniałaby się przy każdym przebudowaniu tego
@@ -122,7 +142,7 @@ export const build = (distDir = join(ROOT, 'dist')) => {
   );
   const indexFile = join(distDir, 'index.html');
   const html = readFileSync(indexFile, 'utf8');
-  writeFileSync(indexFile, injectCsp(addCanonical(absolutizeOgImage(html))));
+  writeFileSync(indexFile, injectCsp(addStructuredData(addCanonical(absolutizeOgImage(html)))));
   writeFileSync(join(distDir, 'robots.txt'), robotsTxt(html));
   writeFileSync(join(distDir, 'sitemap.xml'), sitemapXml(html));
 };

@@ -27,7 +27,8 @@ wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
 
 Build zamienia też ścieżkę `og:image` na pełny adres z domeny `og:url`
 (podgląd linku w komunikatorach), a z tego samego adresu liczy
-`<link rel="canonical">`, `robots.txt` i `sitemap.xml` (wyszukiwarki).
+`<link rel="canonical">`, dane strukturalne (JSON-LD `WebSite` z nazwą
+z `og:title`), `robots.txt` i `sitemap.xml` (wyszukiwarki).
 Obrazek `og-image.png` to zrzut strony — po zmianie wyglądu odśwież go:
 `node scripts/og-image.mjs`.
 
