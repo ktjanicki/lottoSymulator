@@ -35,7 +35,7 @@ przeglądarki importują wyłącznie ścieżki względne, czego pilnuje `npm tes
 
 ## Wdrożenie
 
-Produkcję pod [lottosymulator.grossnet.pl](https://lottosymulator.grossnet.pl)
+Produkcję pod [lottosymulator.pl](https://lottosymulator.pl)
 serwer buduje i podaje z gałęzi `production`, którą odpytuje co 5 minut
 (konfiguracja w repozytorium `grossnet-vps-iac`). Gałąź `production` przesuwa
 wyłącznie CI: po zielonych `npm test` i `npm run build` na pushu do `master`
@@ -54,7 +54,7 @@ zgadzać — pilnuje tego `npm test`.
 ```sh
 npm test            # dane, rdzeń symulacji, dyscyplina repozytorium, build
 npm run test:e2e    # zbudowana strona w Chromium i Firefoksie (Playwright)
-npm run check:prod  # scenariusze @prod na lottosymulator.grossnet.pl
+npm run check:prod  # scenariusze @prod na lottosymulator.pl
 npm run lint        # ESLint i sprawdzenie formatowania (Prettier)
 npm run format      # formatowanie Prettierem
 ```

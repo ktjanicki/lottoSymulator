@@ -2,7 +2,7 @@
 
 Statyczna strona (HTML, CSS, JavaScript, moduły ES, Web Worker) budowana
 Parcelem 2. Node i npm tylko do buildu, testów i narzędzi. Produkcja:
-lottosymulator.grossnet.pl, budowana i podawana przez serwer z repozytorium
+lottosymulator.pl, budowana i podawana przez serwer z repozytorium
 `grossnet-vps-iac` (`~/dev/grossnet-vps-iac`).
 
 ## Język i nazewnictwo

@@ -10,11 +10,11 @@ const { absolutizeOgImage } = require('../scripts/build.mjs');
 
 // Zapis po minifikacji Parcela: wartości bez cudzysłowów.
 const BUILT =
-  '<html lang=pl><meta property=og:url content=https://lottosymulator.grossnet.pl/><meta property=og:image content=/og-image.png><meta property=og:image:width content=1200>';
+  '<html lang=pl><meta property=og:url content=https://lottosymulator.pl/><meta property=og:image content=/og-image.png><meta property=og:image:width content=1200>';
 
 test('og:image dostaje pełny adres z domeny og:url, a sąsiednie znaczniki zostają', () => {
   const html = absolutizeOgImage(BUILT);
-  assert.match(html, /<meta property=og:image content="https:\/\/lottosymulator\.grossnet\.pl\/og-image\.png">/);
+  assert.match(html, /<meta property=og:image content="https:\/\/lottosymulator\.pl\/og-image\.png">/);
   assert.match(html, /<meta property=og:image:width content=1200>/);
 });
 
