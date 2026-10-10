@@ -2,6 +2,19 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.9.1] — 2026-10-10
+
+### Zmienione
+
+- Akapit o szansach pod symulatorem zastąpiony opisem gry („Na czym polega
+  Lotto?”).
+
+### Znane ograniczenia
+
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+
 ## [1.9.0] — 2026-10-10
 
 ### Dodane
