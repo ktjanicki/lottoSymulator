@@ -652,6 +652,19 @@ h2 {
   grid-column: 1 / -1;
 }
 
+/* Tekst o szansach: zwykły akapit pod symulatorem, bez karty — nie jest
+   kontrolką i nie ma konkurować z planszą. */
+.odds {
+  grid-column: 1 / -1;
+  max-width: 68ch;
+  color: var(--muted);
+}
+
+.odds h2 {
+  margin-bottom: 6px;
+  color: var(--text);
+}
+
 /* Przełącznik historii i „więcej” jako linia z napisem pośrodku:
    „——— Pokaż historię ———”. Linie wygaszają się ku brzegom, jak separatory
    wierszy niżej. */

@@ -110,6 +110,19 @@
           </button>
         </div>
       </section>
+
+      <!-- Tekst dla odwiedzających i wyszukiwarek: bez niego strona nie ma
+           treści, do której pasowałyby pytania o szanse. Liczby wynikają
+           z MAX_NUMBER i TICKET_SIZE (simulation.js) — po zmianie gry
+           e2e/page.spec.mjs pokaże, które przestały się zgadzać. -->
+      <section class="odds" aria-labelledby="oddsTitle">
+        <h2 id="oddsTitle">Jakie są szanse na szóstkę?</h2>
+        <p>
+          Jeden zakład trafia „szóstkę” średnio raz na <span data-hits="6">13&nbsp;983&nbsp;816</span> losowań. Piątka
+          pada raz na <span data-hits="5">54&nbsp;201</span> losowań, czwórka raz na
+          <span data-hits="4">1&nbsp;032</span>, trójka raz na <span data-hits="3">57</span>.
+        </p>
+      </section>
     </main>
 
     <footer class="appFooter">

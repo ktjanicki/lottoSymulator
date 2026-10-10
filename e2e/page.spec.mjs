@@ -10,6 +10,8 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { formatNumber } from '../format.js';
+import { MAX_NUMBER, TICKET_SIZE } from '../simulation.js';
 
 const VERSION = readFileSync(new URL('../VERSION', import.meta.url), 'utf8').trim();
 const TICKET = [3, 11, 19, 27, 35, 43];
@@ -112,6 +114,29 @@ test(
     const sitemap = await request.get(sitemapUrl.pathname);
     expect(sitemap.status()).toBe(200);
     expect(await sitemap.text()).toContain(`<loc>${ogUrl}</loc>`);
+  }
+);
+
+// Liczba zestawów k-elementowych z n liczb.
+const combinations = (n, k) => {
+  let result = 1;
+  for (let i = 1; i <= k; i++) result = (result * (n - k + i)) / i;
+  return Math.round(result);
+};
+
+test(
+  'szanse podane w tekście wynikają z MAX_NUMBER i TICKET_SIZE — inaczej po zmianie gry strona podaje fałszywe liczby',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.goto('/');
+    const all = combinations(MAX_NUMBER, TICKET_SIZE);
+    const hits = page.locator('.odds [data-hits]');
+    await expect(hits).toHaveCount(4);
+    for (const element of await hits.all()) {
+      const k = Number(await element.getAttribute('data-hits'));
+      const ways = combinations(TICKET_SIZE, k) * combinations(MAX_NUMBER - TICKET_SIZE, TICKET_SIZE - k);
+      await expect(element).toHaveText(formatNumber(Math.round(all / ways)));
+    }
   }
 );
 
