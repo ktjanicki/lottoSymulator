@@ -1,4 +1,4 @@
-# Symulator LOTTO
+# Lotto Symulator
 
 Aplikacja napisana hobbystycznie w podróży. Losuje sześć liczb z 49 tak długo,
 aż padnie „szóstka” z kuponu wybranego przez użytkownika, i pokazuje, ile

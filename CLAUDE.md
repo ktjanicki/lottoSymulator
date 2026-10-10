@@ -1,4 +1,4 @@
-# Symulator LOTTO — zasady pracy
+# Lotto Symulator — zasady pracy
 
 Statyczna strona (HTML, CSS, JavaScript, moduły ES, Web Worker) budowana
 Parcelem 2. Node i npm tylko do buildu, testów i narzędzi. Produkcja:
