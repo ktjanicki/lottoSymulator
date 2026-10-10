@@ -49,7 +49,8 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
 - **Jedno miejsce na każdą wartość.** Kopia prędzej czy później skłamie:
   - numer wydania — `VERSION` (`package.json`, `package-lock.json`,
     `CHANGELOG.md` i tagi `v*` muszą się zgadzać; pilnuje `test/version.test.js`);
-  - adres strony — `og:url` w `index.html` (build liczy z niego `og:image`);
+  - adres strony — `og:url` w `index.html` (build liczy z niego `og:image`,
+    canonical, `robots.txt` i `sitemap.xml`);
   - gra — `MAX_NUMBER` i `TICKET_SIZE` w `simulation.js`;
   - Node budujący produkcję — obraz w `grossnet-vps-iac`
     (`10_versions.yml` → `images.node`); `.github/workflows/ci.yml` przepisuje
@@ -68,9 +69,10 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   pilnuje `test/browser-imports.test.js`). Import rozwiązywany tylko przez
   bundler unieważnia w przeglądarce cały moduł — tak padło wydanie 1.1.0.
 - **Produkcja to wynik `npm run build`** (`scripts/build.mjs`: Parcel, potem
-  pełny adres `og:image` i CSP w `<meta>`). Sam `parcel build` daje stronę bez
-  polityki. Serwer instaluje zależności `npm ci --ignore-scripts` — zależność,
-  która bez skryptu instalacyjnego nie działa, nie przejdzie na produkcji.
+  pełny adres `og:image`, canonical, CSP w `<meta>`, `robots.txt`
+  i `sitemap.xml`). Sam `parcel build` daje stronę bez polityki. Serwer
+  instaluje zależności `npm ci --ignore-scripts` — zależność, która bez
+  skryptu instalacyjnego nie działa, nie przejdzie na produkcji.
 - **CSP** siedzi w `<meta>`, nie w nagłówku, bo skrót importmapy Parcela
   zmienia się z każdym buildem. Nowy skrypt inline albo zasób z obcej domeny
   wymaga zmiany polityki w `scripts/build.mjs`, inaczej przeglądarka go zablokuje.
@@ -85,12 +87,12 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
 
 ## Testy — cztery warstwy
 
-| Warstwa | Co                                                                                                | Polecenie                                                   | Kiedy                                                     |
-| ------- | ------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 1       | rdzeń, formatowanie, historia, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image) | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
-| 2       | zbudowana strona (build jak na produkcji)                                                         | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
-| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                         | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
-| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, og:image                           | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
+| Warstwa | Co                                                                                                     | Polecenie                                                   | Kiedy                                                     |
+| ------- | ------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------------- |
+| 1       | rdzeń, formatowanie, historia, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO) | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
+| 2       | zbudowana strona (build jak na produkcji)                                                              | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
+| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                              | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
+| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, og:image, canonical, robots/sitemap     | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
 
 Do tego `npm run lint` (ESLint + Prettier) — każdy commit, CI.
 

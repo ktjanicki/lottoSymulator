@@ -1,5 +1,5 @@
-// Build produkcyjny: Parcel, a potem w dist/index.html pełny adres og:image
-// i Content-Security-Policy.
+// Build produkcyjny: Parcel, a potem w dist/index.html pełny adres og:image,
+// <link rel=canonical> i Content-Security-Policy, obok robots.txt i sitemap.xml.
 // Tą funkcją budują serwer (`npm run build` w kontenerze bez sieci), testy
 // w przeglądarce (e2e/serve.mjs) i test stopki — inaczej testy sprawdzałyby
 // stronę bez polityki, a na produkcję szłaby inna.
@@ -74,6 +74,43 @@ export const absolutizeOgImage = (html) => {
   return html.replace(ogMeta('og:image'), (_, prefix) => `${prefix}"${absolute}"`);
 };
 
+// Adres strony z og:url — jedyne miejsce z domeną (index.html).
+const siteUrl = (html) => {
+  const url = ogMeta('og:url').exec(html);
+  if (!url) throw new Error('index.html nie ma og:url — nie ma z czego policzyć adresu kanonicznego i mapy strony.');
+  return new URL(unquote(url[2])).href;
+};
+
+// Ta sama strona odpowiada pod /, /index.html i www.; bez adresu kanonicznego
+// wyszukiwarka sama wybiera wersję do wyników i dzieli między nie sygnały.
+// Wstawiamy go zaraz za og:url, z którego pochodzi.
+export const addCanonical = (html) => {
+  if (/<link\b[^>]*\brel=["']?canonical/i.test(html)) {
+    throw new Error('index.html ma już <link rel=canonical> — adres liczy build z og:url; usuń go ze źródła.');
+  }
+  const href = siteUrl(html);
+  const url = ogMeta('og:url').exec(html);
+  const at = html.indexOf('>', url.index + url[0].length) + 1;
+  return `${html.slice(0, at)}<link rel=canonical href="${href}">${html.slice(at)}`;
+};
+
+// Bez lastmod: data buildu zmieniałaby się przy każdym przebudowaniu tego
+// samego wydania, a Google ignoruje lastmod, który nie odpowiada zmianom treści.
+export const sitemapXml = (html) =>
+  `<?xml version="1.0" encoding="UTF-8"?>
+<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
+  <url><loc>${siteUrl(html)}</loc></url>
+</urlset>
+`;
+
+// Pusty Disallow: wolno wszystko. Wskazuje mapę strony wyszukiwarkom, które
+// nie dostały jej przez Search Console.
+export const robotsTxt = (html) => `User-agent: *
+Disallow:
+
+Sitemap: ${new URL('sitemap.xml', siteUrl(html)).href}
+`;
+
 export const build = (distDir = join(ROOT, 'dist')) => {
   execFileSync(
     join(ROOT, 'node_modules', '.bin', 'parcel'),
@@ -84,7 +121,10 @@ export const build = (distDir = join(ROOT, 'dist')) => {
     }
   );
   const indexFile = join(distDir, 'index.html');
-  writeFileSync(indexFile, injectCsp(absolutizeOgImage(readFileSync(indexFile, 'utf8'))));
+  const html = readFileSync(indexFile, 'utf8');
+  writeFileSync(indexFile, injectCsp(addCanonical(absolutizeOgImage(html))));
+  writeFileSync(join(distDir, 'robots.txt'), robotsTxt(html));
+  writeFileSync(join(distDir, 'sitemap.xml'), sitemapXml(html));
 };
 
 if (process.argv[1] === fileURLToPath(import.meta.url)) build(process.argv[2]);

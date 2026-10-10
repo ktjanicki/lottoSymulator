@@ -25,6 +25,7 @@ const TYPES = {
   '.png': 'image/png',
   '.woff2': 'font/woff2',
   '.map': 'application/json',
+  '.xml': 'application/xml',
 };
 
 const server = createServer((request, response) => {

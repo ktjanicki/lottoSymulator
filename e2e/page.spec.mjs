@@ -97,6 +97,24 @@ test(
   }
 );
 
+test(
+  'wyszukiwarki: canonical wskazuje og:url, a robots.txt prowadzi do mapy strony z tym samym adresem',
+  { tag: '@prod' },
+  async ({ page, request }) => {
+    await page.goto('/');
+    const ogUrl = await page.locator('meta[property="og:url"]').getAttribute('content');
+    await expect(page.locator('link[rel="canonical"]')).toHaveAttribute('href', ogUrl);
+    // Pliki z testowanego serwera, jak og:image: lokalnie sprawdzamy ten build.
+    const robots = await request.get('/robots.txt');
+    expect(robots.status()).toBe(200);
+    const sitemapUrl = new URL(/^Sitemap: (\S+)$/m.exec(await robots.text())?.[1]);
+    expect(sitemapUrl.origin).toBe(new URL(ogUrl).origin);
+    const sitemap = await request.get(sitemapUrl.pathname);
+    expect(sitemap.status()).toBe(200);
+    expect(await sitemap.text()).toContain(`<loc>${ogUrl}</loc>`);
+  }
+);
+
 // Naruszenia CSP zgłoszone przez przeglądarkę od pierwszego bajtu strony
 // (skrypt startowy działa przed importmapą i skryptami strony).
 const recordViolations = () => {
