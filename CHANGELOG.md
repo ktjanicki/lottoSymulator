@@ -2,6 +2,14 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.8.3] — 2026-10-10
+
+### Zmienione
+
+- Adres strony: `lottosymulator.pl` (`og:url`, `og:image`, `check:prod`).
+- Nagłówek i tytuł strony (`<title>`, `og:title`): „Lotto Symulator”; obrazek
+  podglądu linku odświeżony.
+
 ## [1.8.2] — 2026-09-29
 
 ### Dodane
