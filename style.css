@@ -652,17 +652,21 @@ h2 {
   grid-column: 1 / -1;
 }
 
-/* Tekst o szansach: zwykły akapit pod symulatorem, bez karty — nie jest
-   kontrolką i nie ma konkurować z planszą. */
-.odds {
+/* Opis gry: zwykły tekst pod symulatorem, bez karty — nie jest kontrolką
+   i nie ma konkurować z planszą. */
+.about {
   grid-column: 1 / -1;
   max-width: 68ch;
   color: var(--muted);
 }
 
-.odds h2 {
+.about h2 {
   margin-bottom: 6px;
   color: var(--text);
+}
+
+.about p + p {
+  margin-top: 8px;
 }
 
 /* Przełącznik historii i „więcej” jako linia z napisem pośrodku:
