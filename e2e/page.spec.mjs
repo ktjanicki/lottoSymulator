@@ -82,6 +82,19 @@ test(
 );
 
 test(
+  'kliknięcie nagłówka nie wraca na czystą stronę główną — zostaje adres z parametrami albo wybrane liczby',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.goto('/?utm_source=test#historia');
+    await page.locator('.cookieDecline').click();
+    await page.locator('.numbersList [data-number="7"]').click();
+    await page.getByRole('link', { name: 'Lotto Symulator' }).click();
+    await expect(page).toHaveURL(new URL('/', page.url()).href);
+    await expect(page.locator('.numbersList [aria-pressed="true"]')).toHaveCount(0);
+  }
+);
+
+test(
   'podgląd linku: og:image to pełny adres z domeny og:url i odpowiada obrazkiem PNG',
   { tag: '@prod' },
   async ({ page, request }) => {

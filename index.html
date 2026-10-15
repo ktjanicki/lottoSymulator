@@ -34,11 +34,13 @@
 
   <body>
     <header class="appHeader">
-      <span class="logo" aria-hidden="true">6</span>
-      <div>
+      <!-- „./”, nie adres z og:url: lokalnie i w e2e link ma zostać na
+           testowanym serwerze, a nie prowadzić na produkcję. -->
+      <a class="homeLink" href="./">
+        <span class="logo" aria-hidden="true">6</span>
         <h1>Lotto Symulator</h1>
-        <p class="tagline">Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</p>
-      </div>
+      </a>
+      <p class="tagline">Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</p>
     </header>
 
     <main class="layout">

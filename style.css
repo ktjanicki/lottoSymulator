@@ -131,18 +131,70 @@ button {
 
 /* ---------- nagłówek ---------- */
 
+/* Siatka logo | tytuł nad podtytułem. Link (logo + tytuł) dzieli siatkę
+   nagłówka (subgrid), żeby logo stało na środku obu wierszy, a podtytuł nie
+   był częścią linku. Bez subgridu logo równa się tylko z tytułem, a podtytuł
+   ląduje pod nim. */
 .appHeader {
-  display: flex;
+  display: grid;
+  /* auto, nie 1fr: link nie sięga do prawego brzegu strony, więc puste
+     miejsce obok tytułu nie przenosi na stronę główną. */
+  grid-template-columns: auto auto;
+  justify-content: start;
   align-items: center;
-  gap: 16px;
+  column-gap: 16px;
   max-width: 1080px;
   margin: 0 auto;
   padding: 40px 0 28px;
 }
 
+.homeLink {
+  display: grid;
+  grid-template: subgrid / subgrid;
+  grid-column: 1 / -1;
+  grid-row: 1 / span 2;
+  align-items: center;
+  color: inherit;
+  text-decoration: none;
+}
+
+.homeLink > .logo {
+  grid-row: 1 / -1;
+  transition: transform 0.2s ease;
+}
+
+/* Kula obraca się pod kursorem — znak, że nagłówek jest klikalny, bez
+   podkreślania tytułu. */
+.homeLink:hover > .logo,
+.homeLink:focus-visible > .logo {
+  transform: rotate(-15deg);
+}
+
+/* Pudełko linku sięga przez oba wiersze siatki, więc obrys na nim otaczałby
+   też podtytuł, który linkiem nie jest. Obrys idzie na tytuł. */
+.homeLink:focus-visible {
+  outline: none;
+}
+
+.homeLink:focus-visible > h1 {
+  outline: 3px solid var(--focus);
+  outline-offset: 2px;
+  border-radius: 6px;
+}
+
+/* Tytuł szerokości tekstu, nie kolumny (tę wyznacza dłuższy podtytuł) — inaczej
+   obrys fokusu ciągnie się w pustkę. */
+.homeLink > h1 {
+  justify-self: start;
+}
+
+.tagline {
+  grid-column: 2;
+  grid-row: 2;
+}
+
 .logo {
   display: grid;
-  flex: none;
   place-items: center;
   width: 64px;
   height: 64px;
