@@ -2,6 +2,27 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.11.0] — 2026-10-15
+
+### Dodane
+
+- Ikona PNG 192×192 i `apple-touch-icon` (ekran początkowy iOS), liczone
+  z `favicon.svg` (`scripts/icons.mjs`).
+
+### Zmienione
+
+- Obrazek podglądu linku (`og-image.png`) w ciemnym motywie.
+
+### Poprawione
+
+- `favicon.svg` jest poprawnym XML-em — bez buildu przeglądarka go odrzucała.
+
+### Znane ograniczenia
+
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+
 ## [1.10.0] — 2026-10-15
 
 ### Dodane
