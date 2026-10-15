@@ -2,6 +2,21 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.12.0] — 2026-10-15
+
+### Dodane
+
+- Manifest aplikacji (`manifest.json`): stronę można zainstalować na
+  telefonie i komputerze; ikony 512 px, w tym wersja dla Androida
+  (`maskable`).
+
+### Znane ograniczenia
+
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+
 ## [1.11.0] — 2026-10-15
 
 ### Dodane
