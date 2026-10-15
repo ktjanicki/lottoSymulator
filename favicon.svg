@@ -1,5 +1,5 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Złota kula jak .logo w nagłówku (kolory --gold-* ze style.css). Cyfra
+  <!-- Złota kula jak .logo w nagłówku (kolory gold ze style.css). Cyfra
        rysowana ścieżką, nie <text>: ikona karty nie wczytuje czcionek strony,
        więc tekst dostałby krój systemu i wyglądał inaczej w każdym. -->
   <defs>

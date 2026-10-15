@@ -94,13 +94,45 @@ test(
   }
 );
 
-test('ikona karty nie odpowiada obrazkiem SVG — karta bez ikony', { tag: '@prod' }, async ({ page, request }) => {
-  await page.goto('/');
-  const href = await page.locator('link[rel="icon"]').getAttribute('href');
-  const response = await request.get(new URL(href, page.url()).pathname);
-  expect(response.status()).toBe(200);
-  expect(response.headers()['content-type']).toMatch(/^image\/svg\+xml/);
-});
+// Typ MIME to za mało: plik z poprawnym typem i zepsutą treścią przeglądarka
+// odrzuca bez słowa i karta jest bez ikony. Dlatego ikonę dekoduje przeglądarka.
+test(
+  'ikona, której przeglądarka nie wyświetli albo z innym rozmiarem niż w sizes — karta i ekran początkowy bez ikony',
+  { tag: '@prod' },
+  async ({ page, request }) => {
+    await page.goto('/');
+    const icons = await page.locator('link[rel="icon"], link[rel="apple-touch-icon"]').evaluateAll((links) =>
+      Promise.all(
+        links.map(
+          (link) =>
+            new Promise((resolve) => {
+              const image = new Image();
+              const result = (decoded) => () =>
+                resolve({
+                  href: link.href,
+                  type: link.type,
+                  sizes: link.getAttribute('sizes'),
+                  decoded,
+                  size: `${image.naturalWidth}x${image.naturalHeight}`,
+                });
+              image.onload = result(true);
+              image.onerror = result(false);
+              image.src = link.href;
+            })
+        )
+      )
+    );
+    expect(icons.length).toBeGreaterThan(0);
+    for (const icon of icons) {
+      expect(icon, icon.href).toMatchObject({ decoded: true });
+      if (icon.sizes) expect(icon.size, icon.href).toBe(icon.sizes);
+      // Plik z testowanego serwera, jak og:image.
+      const response = await request.get(new URL(icon.href).pathname);
+      expect(response.status(), icon.href).toBe(200);
+      if (icon.type) expect(response.headers()['content-type'], icon.href).toContain(icon.type);
+    }
+  }
+);
 
 test(
   'podgląd linku: og:image to pełny adres z domeny og:url i odpowiada obrazkiem PNG',
