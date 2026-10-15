@@ -88,12 +88,12 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
 
 ## Testy — cztery warstwy
 
-| Warstwa | Co                                                                                                                | Polecenie                                                   | Kiedy                                                     |
-| ------- | ----------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 1       | rdzeń, formatowanie, historia, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)            | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
-| 2       | zbudowana strona (build jak na produkcji)                                                                         | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
-| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                         | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
-| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, og:image, canonical, robots/sitemap, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
+| Warstwa | Co                                                                                                                       | Polecenie                                                   | Kiedy                                                     |
+| ------- | ------------------------------------------------------------------------------------------------------------------------ | ----------------------------------------------------------- | --------------------------------------------------------- |
+| 1       | rdzeń, formatowanie, historia, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                   | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
+| 2       | zbudowana strona (build jak na produkcji)                                                                                | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
+| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
+| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, og:image, canonical, robots/sitemap, ikona, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
 
 Do tego `npm run lint` (ESLint + Prettier) — każdy commit, CI.
 

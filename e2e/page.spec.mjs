@@ -94,6 +94,14 @@ test(
   }
 );
 
+test('ikona karty nie odpowiada obrazkiem SVG — karta bez ikony', { tag: '@prod' }, async ({ page, request }) => {
+  await page.goto('/');
+  const href = await page.locator('link[rel="icon"]').getAttribute('href');
+  const response = await request.get(new URL(href, page.url()).pathname);
+  expect(response.status()).toBe(200);
+  expect(response.headers()['content-type']).toMatch(/^image\/svg\+xml/);
+});
+
 test(
   'podgląd linku: og:image to pełny adres z domeny og:url i odpowiada obrazkiem PNG',
   { tag: '@prod' },
