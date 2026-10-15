@@ -135,6 +135,43 @@ test(
 );
 
 test(
+  'manifest bez nazwy z og:title, z ikoną, której przeglądarka nie wyświetli, albo bez ikon 192 i 512 — strony nie da się zainstalować',
+  { tag: '@prod' },
+  async ({ page, request }) => {
+    await page.goto('/');
+    const href = await page.locator('link[rel="manifest"]').evaluate((link) => link.href);
+    // Plik z testowanego serwera, jak og:image.
+    const response = await request.get(new URL(href).pathname);
+    expect(response.status()).toBe(200);
+    expect(response.headers()['content-type']).toMatch(/^application\/(manifest\+)?json/);
+    const manifest = await response.json();
+    const title = await page.locator('meta[property="og:title"]').getAttribute('content');
+    expect(manifest.name).toBe(title);
+    expect(new URL(manifest.start_url, href).href).toBe(new URL('/', page.url()).href);
+    const icons = await page.evaluate(
+      ({ icons, base }) =>
+        Promise.all(
+          icons.map(
+            (icon) =>
+              new Promise((resolve) => {
+                const image = new Image();
+                const result = (decoded) => () =>
+                  resolve({ ...icon, decoded, size: `${image.naturalWidth}x${image.naturalHeight}` });
+                image.onload = result(true);
+                image.onerror = result(false);
+                image.src = new URL(icon.src, base).href;
+              })
+          )
+        ),
+      { icons: manifest.icons, base: href }
+    );
+    for (const icon of icons) expect(icon, icon.src).toMatchObject({ decoded: true, size: icon.sizes });
+    const plain = icons.filter((icon) => (icon.purpose ?? 'any').split(' ').includes('any')).map((icon) => icon.sizes);
+    expect(plain).toEqual(expect.arrayContaining(['192x192', '512x512']));
+  }
+);
+
+test(
   'podgląd linku: og:image to pełny adres z domeny og:url i odpowiada obrazkiem PNG',
   { tag: '@prod' },
   async ({ page, request }) => {

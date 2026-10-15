@@ -9,6 +9,10 @@
 //   kładzie tam zrzut strony. Tło nieprzezroczyste: iOS zamienia
 //   przezroczystość na czerń, a rogi zaokrągla sam — kula na samym brzegu
 //   zostałaby ucięta, więc ma margines.
+// - icon-512.png, icon-maskable-512.png: dla manifest.json (instalacja jako
+//   aplikacja; Chrome wymaga ikon 192 i 512). Wersja „maskable” to ikona
+//   Androida, którą system przycina do koła, kwadratu albo kropli: kula musi
+//   zmieścić się w bezpiecznym kole o średnicy 80% boku, a tło wypełnia resztę.
 
 import { readFileSync, statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -23,6 +27,8 @@ const src = `data:image/svg+xml;base64,${Buffer.from(svg).toString('base64')}`;
 const ICONS = [
   { file: 'icon-192.png', size: 192, ball: 192, background: 'transparent' },
   { file: 'apple-touch-icon.png', size: 180, ball: 140, background: '#0b0d1a' },
+  { file: 'icon-512.png', size: 512, ball: 512, background: 'transparent' },
+  { file: 'icon-maskable-512.png', size: 512, ball: 400, background: '#0b0d1a' },
 ];
 
 const browser = await chromium.launch();

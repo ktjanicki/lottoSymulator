@@ -28,10 +28,12 @@ wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
 Build zamienia też ścieżkę `og:image` na pełny adres z domeny `og:url`
 (podgląd linku w komunikatorach), a z tego samego adresu liczy
 `<link rel="canonical">`, dane strukturalne (JSON-LD `WebSite` z nazwą
-z `og:title`), `robots.txt` i `sitemap.xml` (wyszukiwarki).
+z `og:title`), `robots.txt` i `sitemap.xml` (wyszukiwarki). Do manifestu
+aplikacji (`manifest.json`) dopisuje nazwę z `og:title` i podaje go pod tą
+nazwą — Parcel zapisuje `.webmanifest`, którego typu nginx na serwerze nie zna.
 Obrazek `og-image.png` to zrzut strony — po zmianie wyglądu odśwież go:
-`node scripts/og-image.mjs`. Ikony PNG (`icon-192.png`, `apple-touch-icon.png`)
-liczy z `favicon.svg` `node scripts/icons.mjs` — po zmianie ikony uruchom go.
+`node scripts/og-image.mjs`. Ikony PNG (`icon-*.png`, `apple-touch-icon.png`) liczy
+z `favicon.svg` `node scripts/icons.mjs` — po zmianie ikony uruchom go.
 
 Produkcja podaje wynik buildu Parcela. Strona ma jednak działać także podana
 wprost, bez buildu (np. zwykły serwer statyczny przy pracy nad kodem): moduły

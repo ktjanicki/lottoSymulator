@@ -1,6 +1,6 @@
 // Build produkcyjny: Parcel, a potem w dist/index.html pełny adres og:image,
 // <link rel=canonical>, dane strukturalne i Content-Security-Policy, obok
-// robots.txt i sitemap.xml.
+// robots.txt, sitemap.xml i manifest.json z nazwą z og:title.
 // Tą funkcją budują serwer (`npm run build` w kontenerze bez sieci), testy
 // w przeglądarce (e2e/serve.mjs) i test stopki — inaczej testy sprawdzałyby
 // stronę bez polityki, a na produkcję szłaby inna.
@@ -15,7 +15,7 @@
 
 import { execFileSync } from 'node:child_process';
 import { createHash } from 'node:crypto';
-import { readFileSync, writeFileSync } from 'node:fs';
+import { readFileSync, rmSync, writeFileSync } from 'node:fs';
 import { join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -114,6 +114,32 @@ export const addStructuredData = (html) => {
   return afterOgUrl(html, `<script type=application/ld+json>${json}</script>`);
 };
 
+// Manifest aplikacji (instalacja na telefonie i komputerze). Ścieżki ikon
+// przepisuje Parcel (@parcel/transformer-webmanifest); nazwę dopisujemy tu
+// z og:title, jak w danych strukturalnych — w manifest.json nie ma jej kopii.
+// Bez short_name: przeglądarka bierze wtedy name. Kolory tła i paska to --bg
+// ciemnego motywu (style.css) — manifest nie ma wariantów jasny/ciemny.
+export const completeManifest = (html, manifest) => {
+  const title = ogMeta('og:title').exec(html);
+  if (!title) throw new Error('index.html nie ma og:title — nie ma z czego wziąć nazwy aplikacji do manifestu.');
+  const data = JSON.parse(manifest);
+  if ('name' in data || 'short_name' in data) {
+    throw new Error('manifest.json ma już name albo short_name — nazwę liczy build z og:title; usuń ją ze źródła.');
+  }
+  return `${JSON.stringify({ name: unquote(title[2]), ...data })}\n`;
+};
+
+// <link rel=manifest href=…> w zbudowanym HTML-u. Grupa 1: ścieżka.
+const manifestLink = /(<link\b[^>]*\brel=["']?manifest["']?[^>]*\bhref=)["']?([^"'\s>]+)["']?/i;
+
+// Parcel zapisuje manifest jako manifest.webmanifest, a nginx na serwerze
+// (obraz nginx z grossnet-vps-iac) nie zna tego rozszerzenia i podaje plik
+// jako application/octet-stream. Pod nazwą manifest.json idzie jako
+// application/json, który specyfikacja dopuszcza — bez zmiany na serwerze.
+const MANIFEST_FILE = 'manifest.json';
+
+export const renameManifest = (html) => html.replace(manifestLink, (_, prefix) => `${prefix}/${MANIFEST_FILE}`);
+
 // Bez lastmod: data buildu zmieniałaby się przy każdym przebudowaniu tego
 // samego wydania, a Google ignoruje lastmod, który nie odpowiada zmianom treści.
 export const sitemapXml = (html) =>
@@ -141,7 +167,14 @@ export const build = (distDir = join(ROOT, 'dist')) => {
     }
   );
   const indexFile = join(distDir, 'index.html');
-  const html = readFileSync(indexFile, 'utf8');
+  let html = readFileSync(indexFile, 'utf8');
+  const manifest = manifestLink.exec(html);
+  if (manifest) {
+    const built = join(distDir, manifest[2]);
+    writeFileSync(join(distDir, MANIFEST_FILE), completeManifest(html, readFileSync(built, 'utf8')));
+    if (manifest[2] !== `/${MANIFEST_FILE}`) rmSync(built);
+    html = renameManifest(html);
+  }
   writeFileSync(indexFile, injectCsp(addStructuredData(addCanonical(absolutizeOgImage(html)))));
   writeFileSync(join(distDir, 'robots.txt'), robotsTxt(html));
   writeFileSync(join(distDir, 'sitemap.xml'), sitemapXml(html));

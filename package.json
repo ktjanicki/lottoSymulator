@@ -16,6 +16,8 @@
   },
   "devDependencies": {
     "@eslint/js": "10.0.1",
+    "@parcel/packager-raw-url": "2.16.4",
+    "@parcel/transformer-webmanifest": "2.16.4",
     "@playwright/test": "1.63.0",
     "eslint": "10.11.0",
     "globals": "17.12.0",
