@@ -4,9 +4,9 @@
 //   node scripts/og-image.mjs
 //
 // Strona jest podawana wprost z plików repozytorium (działa bez buildu), przez
-// przechwycenie żądań w Playwrighcie — bez serwera i bez sieci. Motyw jasny:
-// og:image nie ma wariantu ciemnego, a podgląd w komunikatorze pokazuje się
-// na tle, którego nie znamy.
+// przechwycenie żądań w Playwrighcie — bez serwera i bez sieci. Motyw ciemny
+// (decyzja z wydania 1.11.0): og:image nie ma wariantu jasnego i ciemnego,
+// więc podgląd wygląda tak samo na każdym tle komunikatora.
 
 import { statSync } from 'node:fs';
 import { join } from 'node:path';
@@ -19,7 +19,7 @@ const TICKET = [7, 13, 21, 28, 35, 42];
 
 const browser = await chromium.launch();
 try {
-  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, colorScheme: 'light' });
+  const page = await browser.newPage({ viewport: { width: 1200, height: 630 }, colorScheme: 'dark' });
   await page.route(`${ORIGIN}/**`, (route) => {
     const path = new URL(route.request().url()).pathname;
     const file = join(ROOT, path === '/' ? 'index.html' : path);
