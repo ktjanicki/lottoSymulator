@@ -2,6 +2,20 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.12.1] — 2026-10-18
+
+### Poprawione
+
+- Szóstka w ikonie strony: krój jak w nagłówku zamiast wąskiej, wyciągniętej
+  cyfry.
+
+### Znane ograniczenia
+
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+
 ## [1.12.0] — 2026-10-15
 
 ### Dodane
