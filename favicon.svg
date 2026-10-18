@@ -1,7 +1,10 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
   <!-- Złota kula jak .logo w nagłówku (kolory gold ze style.css). Cyfra
-       rysowana ścieżką, nie <text>: ikona karty nie wczytuje czcionek strony,
-       więc tekst dostałby krój systemu i wyglądał inaczej w każdym. -->
+       to kontur „6” z Inter 800 (fonts/, ta sama co w nagłówku) zapisany
+       ścieżką, nie <text>: ikona karty nie wczytuje czcionek strony, więc
+       tekst dostałby krój systemu i wyglądał inaczej w każdym. Cyfra jest
+       większa niż w nagłówku (34 z 64, nie 21,5) — przy 16 px mniejsza
+       zlewa się w plamę. -->
   <defs>
     <radialGradient id="ball" cx="0.34" cy="0.28" r="0.78">
       <stop offset="0" stop-color="#fef3c7"/>
@@ -12,8 +15,5 @@
   <circle cx="32" cy="32" r="31" fill="url(#ball)"/>
   <!-- Ciemniejszy brzeg: bez niego jasna kula zlewa się z jasnym paskiem kart. -->
   <circle cx="32" cy="32" r="30.25" fill="none" stroke="#b45309" stroke-opacity="0.55" stroke-width="1.5"/>
-  <g fill="none" stroke="#1f1500" stroke-width="6.5" stroke-linecap="round">
-    <circle cx="32" cy="40" r="10"/>
-    <path d="M22 40C22 26 28 17 39 15"/>
-  </g>
+  <path fill="#1f1500" d="M32.48 49Q29.79 49 27.32 48.13Q24.85 47.25 22.93 45.32Q21.01 43.39 19.89 40.26Q18.78 37.12 18.78 32.59Q18.78 28.48 19.75 25.23Q20.73 21.98 22.56 19.69Q24.38 17.41 26.94 16.2Q29.49 15 32.64 15Q36.09 15 38.73 16.34Q41.37 17.68 42.96 19.93Q44.56 22.19 44.86 24.98H37.14Q36.79 23.38 35.56 22.54Q34.34 21.71 32.64 21.71Q30.59 21.71 29.23 22.91Q27.87 24.11 27.2 26.3Q26.53 28.5 26.53 31.48H26.72Q27.43 30 28.69 28.94Q29.95 27.87 31.61 27.31Q33.27 26.74 35.1 26.74Q38.08 26.74 40.36 28.11Q42.64 29.47 43.93 31.87Q45.22 34.26 45.22 37.34Q45.22 40.79 43.61 43.42Q42 46.05 39.13 47.53Q36.26 49 32.48 49ZM32.41 42.94Q33.92 42.94 35.09 42.24Q36.26 41.53 36.94 40.32Q37.62 39.11 37.62 37.58Q37.62 36.06 36.95 34.86Q36.28 33.65 35.11 32.95Q33.95 32.25 32.44 32.25Q31.33 32.25 30.39 32.66Q29.44 33.07 28.74 33.8Q28.03 34.53 27.64 35.5Q27.24 36.47 27.24 37.59Q27.24 39.09 27.92 40.3Q28.59 41.52 29.77 42.23Q30.95 42.94 32.41 42.94Z"/>
 </svg>
