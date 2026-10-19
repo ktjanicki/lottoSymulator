@@ -211,6 +211,23 @@ test(
 );
 
 test(
+  'Search Console: znacznik weryfikacji z index.html przechodzi przez build do <head> — bez niego Google odbiera dostęp do danych witryny',
+  { tag: '@prod' },
+  async ({ page }) => {
+    const source = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
+    const expected = /<meta\s+name="google-site-verification"\s+content="([^"]+)"/.exec(source)?.[1];
+    expect(expected, 'index.html nie ma znacznika google-site-verification.').toBeTruthy();
+    await page.goto('/');
+    // Zbudowany HTML nie ma znacznika <head> (minifikacja); liczy się to,
+    // gdzie umieści go parser — Google czyta nagłówek tak samo.
+    const content = await page.evaluate(
+      () => document.head.querySelector('meta[name="google-site-verification"]')?.content ?? null
+    );
+    expect(content).toBe(expected);
+  }
+);
+
+test(
   'wyszukiwarki: canonical i dane strukturalne wskazują og:url, a robots.txt prowadzi do mapy strony z tym samym adresem',
   { tag: '@prod' },
   async ({ page, request }) => {

@@ -48,6 +48,9 @@ Baner pyta o zgodę raz, na dwie rzeczy: zapis historii losowań w przeglądarce
 zgody wysyła tylko pingi bez ciasteczek. Testy przechwytują domeny Google, więc
 ani e2e, ani `check:prod` nie liczą się w statystykach.
 
+Własność witryny w Google Search Console potwierdza znacznik
+`google-site-verification` w `index.html` — nie usuwaj go.
+
 ## Wdrożenie
 
 Produkcję pod [lottosymulator.pl](https://lottosymulator.pl)
