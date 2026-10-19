@@ -5,12 +5,14 @@
 // - drugi canonical dopisany w źródle — przy dwóch różnych Google ignoruje oba;
 // - robots.txt wskazujący mapę pod złym adresem albo blokujący stronę;
 // - dane strukturalne, które nie są poprawnym JSON-em albo „</script>”
-//   w nazwie zamyka blok i wylewa resztę na stronę.
+//   w nazwie zamyka blok i wylewa resztę na stronę;
+// - zbudowana strona bez znaczników <head> i </head> (minifikacja) — Search
+//   Console nie znajduje znacznika weryfikacji i odmawia potwierdzenia własności.
 // Czy serwer rzeczywiście podaje oba pliki, sprawdza e2e/page.spec.mjs.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { addCanonical, addStructuredData, robotsTxt, sitemapXml } = require('../scripts/build.mjs');
+const { addCanonical, addStructuredData, restoreHead, robotsTxt, sitemapXml } = require('../scripts/build.mjs');
 
 // Zapis po minifikacji Parcela: wartości bez cudzysłowów.
 const BUILT =
@@ -57,4 +59,19 @@ test('„</script>” w nazwie nie zamyka bloku danych, a brak og:title to błą
     () => addStructuredData('<meta property=og:url content=https://lottosymulator.pl/>'),
     /nie ma og:title/
   );
+});
+
+test('sekcja <head> wraca między <html> a <body>, z całą treścią nagłówka w środku', () => {
+  const built = '<!DOCTYPE html><html lang=pl><meta charset=UTF-8><meta name=x content=y><body><p>a</body>';
+  assert.equal(
+    restoreHead(built),
+    '<!DOCTYPE html><html lang=pl><head><meta charset=UTF-8><meta name=x content=y></head><body><p>a</body>'
+  );
+  // Minifikator, który kiedyś zostawi <head>, nie dostanie drugiego.
+  const withHead = '<html><head><meta charset=UTF-8></head><body>';
+  assert.equal(restoreHead(withHead), withHead);
+});
+
+test('HTML bez <body> to błąd buildu, a nie nagłówek obejmujący całą stronę', () => {
+  assert.throws(() => restoreHead('<html lang=pl><meta charset=UTF-8><p>a'), /nie ma <html> albo <body>/);
 });

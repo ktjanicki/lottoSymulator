@@ -71,7 +71,9 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   bundler unieważnia w przeglądarce cały moduł — tak padło wydanie 1.1.0.
 - **Produkcja to wynik `npm run build`** (`scripts/build.mjs`: Parcel, potem
   pełny adres `og:image`, canonical, dane strukturalne, CSP w `<meta>`,
-  `robots.txt`, `sitemap.xml` i nazwa w `manifest.json`). Sam `parcel build` daje stronę bez polityki. Serwer
+  znaczniki `<head>` usunięte przez minifikację (Search Console),
+  `robots.txt`, `sitemap.xml` i nazwa w `manifest.json`). Sam `parcel build`
+  daje stronę bez polityki. Serwer
   instaluje zależności `npm ci --ignore-scripts` — zależność, która bez
   skryptu instalacyjnego nie działa, nie przejdzie na produkcji.
 - **CSP** siedzi w `<meta>`, nie w nagłówku, bo skrót importmapy Parcela

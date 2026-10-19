@@ -55,8 +55,8 @@ export const inlineScriptHashes = (html) =>
 
 // Meta zaraz po <html>: polityka obejmuje tylko to, co przeglądarka przeczyta
 // PO niej, a Parcel stawia importmapę przed <meta charset>. Zbudowany HTML
-// nie ma <head> (minifikacja usuwa znaczniki opcjonalne), więc punktem
-// zaczepienia jest <html>.
+// nie ma jeszcze <head> (minifikacja usuwa znaczniki opcjonalne; odtwarza je
+// dopiero restoreHead), więc punktem zaczepienia jest <html>.
 export const injectCsp = (html) => {
   const opening = /<html\b[^>]*>/i.exec(html);
   if (!opening) throw new Error('Zbudowany index.html nie ma znacznika <html> — nie ma gdzie wstawić polityki CSP.');
@@ -66,6 +66,23 @@ export const injectCsp = (html) => {
   const meta = `<meta http-equiv="Content-Security-Policy" content="${policy(inlineScriptHashes(html))}">`;
   const at = opening.index + opening[0].length;
   return html.slice(0, at) + meta + html.slice(at);
+};
+
+// Minifikator Parcela usuwa znaczniki <head> i </head> (HTML ich nie wymaga)
+// i nie ma opcji, żeby je zostawić. Przeglądarce to obojętne, ale weryfikator
+// Google Search Console szuka google-site-verification tekstowo między nimi:
+// bez nich odmawia („metatag nie znajduje się w sekcji <head>”), a przy
+// kolejnym sprawdzeniu odbiera dostęp do danych witryny. Wołana po injectCsp:
+// polityka zostaje pierwszym elementem nagłówka.
+export const restoreHead = (html) => {
+  if (/<head[\s>]/i.test(html)) return html;
+  const opening = /<html\b[^>]*>/i.exec(html);
+  const body = /<body[\s>]/i.exec(html);
+  if (!opening || !body) {
+    throw new Error('Zbudowany index.html nie ma <html> albo <body> — nie ma gdzie odtworzyć sekcji <head>.');
+  }
+  const at = opening.index + opening[0].length;
+  return `${html.slice(0, at)}<head>${html.slice(at, body.index)}</head>${html.slice(body.index)}`;
 };
 
 // <meta property=X content=…> — wartość w cudzysłowach albo bez nich
@@ -187,7 +204,7 @@ export const build = (distDir = join(ROOT, 'dist')) => {
     if (manifest[2] !== `/${MANIFEST_FILE}`) rmSync(built);
     html = renameManifest(html);
   }
-  writeFileSync(indexFile, injectCsp(addStructuredData(addCanonical(absolutizeOgImage(html)))));
+  writeFileSync(indexFile, restoreHead(injectCsp(addStructuredData(addCanonical(absolutizeOgImage(html))))));
   writeFileSync(join(distDir, 'robots.txt'), robotsTxt(html));
   writeFileSync(join(distDir, 'sitemap.xml'), sitemapXml(html));
 };

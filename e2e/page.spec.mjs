@@ -211,19 +211,19 @@ test(
 );
 
 test(
-  'Search Console: znacznik weryfikacji z index.html przechodzi przez build do <head> — bez niego Google odbiera dostęp do danych witryny',
+  'Search Console: znacznik weryfikacji z index.html stoi w tekście między <head> a </head> — inaczej Google odmawia potwierdzenia własności',
   { tag: '@prod' },
-  async ({ page }) => {
+  async ({ request }) => {
     const source = readFileSync(new URL('../index.html', import.meta.url), 'utf8');
     const expected = /<meta\s+name="google-site-verification"\s+content="([^"]+)"/.exec(source)?.[1];
     expect(expected, 'index.html nie ma znacznika google-site-verification.').toBeTruthy();
-    await page.goto('/');
-    // Zbudowany HTML nie ma znacznika <head> (minifikacja); liczy się to,
-    // gdzie umieści go parser — Google czyta nagłówek tak samo.
-    const content = await page.evaluate(
-      () => document.head.querySelector('meta[name="google-site-verification"]')?.content ?? null
-    );
-    expect(content).toBe(expected);
+    // Surowy HTML, nie DOM: weryfikator szuka znacznika tekstowo. Parser
+    // przeglądarki umieszcza meta w nagłówku także bez <head> — tak przeszedł
+    // test, a Search Console odmówił (1.14.1).
+    const html = await (await request.get('/')).text();
+    const head = /<head>([\s\S]*?)<\/head>/i.exec(html)?.[1];
+    expect(head, 'Zbudowana strona nie ma sekcji <head>…</head>.').toBeDefined();
+    expect(head).toMatch(new RegExp(`<meta name=["']?google-site-verification["']? content=["']?${expected}["']?>`));
   }
 );
 

@@ -22,8 +22,9 @@ npm run build
 Build to Parcel i wstawienie polityki Content-Security-Policy do
 `dist/index.html` (`scripts/build.mjs`): wszystko z własnego źródła poza
 Google Analytics, skrypty inline tylko ze skrótem policzonym z buildu (Parcel
-wstawia importmapę). Nie
-wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
+wstawia importmapę). Przywraca też znaczniki `<head>` i `</head>`, które
+usuwa minifikacja — bez nich Search Console nie znajduje znacznika weryfikacji.
+Nie wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
 `npm start` (serwer deweloperski) działa bez CSP.
 
 Build zamienia też ścieżkę `og:image` na pełny adres z domeny `og:url`
