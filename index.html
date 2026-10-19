@@ -37,6 +37,9 @@
     <!-- Nazwę aplikacji dopisuje build z og:title (scripts/build.mjs). -->
     <link rel="manifest" href="manifest.json" />
     <link rel="stylesheet" href="style.css" />
+    <!-- Google Analytics: jedyne miejsce z identyfikatorem usługi. Zgody
+         i konfigurację ustawia analytics.js (Consent Mode, domyślnie odmowa). -->
+    <script async src="https://www.googletagmanager.com/gtag/js?id=G-DCYZYG9SB7"></script>
   </head>
 
   <body>
@@ -144,7 +147,8 @@
     <dialog class="cookieBanner" aria-label="Zgoda na zapis danych i statystyki">
       <p>
         Po wyrażeniu zgody strona zapisuje w przeglądarce historię losowań i zbiera statystyki odwiedzin w Google
-        Analytics. Bez zgody niczego nie zapisuje ani nie wysyła.
+        Analytics z użyciem plików cookie. Bez zgody niczego nie zapisuje, a do Google trafiają tylko podstawowe
+        informacje o odwiedzinach, bez plików cookie.
       </p>
       <div class="cookieActions">
         <button type="button" class="cookieDecline">Nie zgadzam się</button>

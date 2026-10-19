@@ -10,16 +10,15 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
-import { GA_MEASUREMENT_ID } from '../analytics.js';
+import { GTAG_SCRIPT } from '../analytics.js';
 
 const VERSION = readFileSync(new URL('../VERSION', import.meta.url), 'utf8').trim();
 const TICKET = [3, 11, 19, 27, 35, 43];
 const CONSENT_KEY = 'lottoSymulator.consent';
 const HISTORY_KEY = 'lottoSymulator.history';
 
-// Google Analytics nigdy nie dostaje żądania z testu: inaczej każde
-// „Akceptuję” w e2e i w check:prod liczyłoby się w statystykach strony jako
-// wizyta. Zamiast gtag.js atrapa, która zapisuje, skąd ją wczytano; CSP
+// Google Analytics nigdy nie dostaje żądania z testu: inaczej każde wejście
+// w e2e i w check:prod liczyłoby się w statystykach strony jako wizyta. Zamiast gtag.js atrapa, która zapisuje, skąd ją wczytano; CSP
 // i tak ocenia adres, więc zablokowany skrypt nie ustawi znacznika.
 const GOOGLE = /^https:\/\/[^/]*(googletagmanager\.com|google-analytics\.com|analytics\.google\.com)\//;
 
@@ -32,6 +31,13 @@ test.beforeEach(async ({ context }) => {
 });
 
 const gtagLoaded = (page) => page.evaluate(() => window.gtagLoaded ?? null);
+// Identyfikator z tagu w index.html — jedynego miejsca, gdzie stoi.
+const tagId = (page) =>
+  page.evaluate((selector) => new URL(document.querySelector(selector).src).searchParams.get('id'), GTAG_SCRIPT);
+// Kolejka gtag jako tablice (polecenia to obiekty arguments).
+const gtagCommands = (page) => page.evaluate(() => (window.dataLayer ?? []).map((command) => [...command]));
+const consentCommands = async (page) =>
+  (await gtagCommands(page)).filter(([name]) => name === 'consent').map(([, kind, state]) => [kind, state]);
 
 const pickTicket = async (page) => {
   for (const number of TICKET) await page.locator(`.numbersList [data-number="${number}"]`).click();
@@ -327,42 +333,48 @@ test('odmowa niczego nie zapisuje, a baner wraca przy następnym wejściu', { ta
 });
 
 test(
-  'bez zgody do Google nie idzie żadne żądanie — ani przy otwartym banerze, ani po odmowie',
-  { tag: '@prod' },
-  async ({ page }) => {
-    const requests = [];
-    page.on('request', (request) => GOOGLE.test(request.url()) && requests.push(request.url()));
-    await page.goto('/');
-    await expect(page.locator('.cookieBanner')).toBeVisible();
-    await page.locator('.cookieDecline').click();
-    await page.waitForLoadState('networkidle');
-    expect(requests).toEqual([]);
-    expect(await page.evaluate(() => window.dataLayer)).toBeUndefined();
-  }
-);
-
-test(
-  '„Akceptuję” wczytuje gtag.js z identyfikatorem strony, a CSP go nie blokuje',
+  'bez zgody gtag.js liczy wizytę z odmową ciasteczek — przy otwartym banerze i po odmowie',
   { tag: '@prod' },
   async ({ page }) => {
     await page.addInitScript(recordViolations);
     await page.goto('/');
-    await page.locator('.cookieAccept').click();
-    await expect.poll(() => gtagLoaded(page)).toContain(`id=${GA_MEASUREMENT_ID}`);
+    await expect(page.locator('.cookieBanner')).toBeVisible();
+    const id = await tagId(page);
+    expect(id).toMatch(/^G-[A-Z0-9]+$/);
+    await expect.poll(() => gtagLoaded(page)).toContain(`id=${id}`);
+    // Odmowa musi stać przed config — inaczej pierwszy pomiar ustawia _ga bez zgody.
+    const commands = await gtagCommands(page);
+    const consentAt = commands.findIndex(([name, kind]) => name === 'consent' && kind === 'default');
+    const configAt = commands.findIndex(([name]) => name === 'config');
+    expect(commands[configAt]).toEqual(['config', id]);
+    expect(consentAt).toBeGreaterThanOrEqual(0);
+    expect(consentAt).toBeLessThan(configAt);
+    expect(commands[consentAt][2]).toMatchObject({ analytics_storage: 'denied', ad_storage: 'denied' });
+
+    await page.locator('.cookieDecline').click();
+    expect(await consentCommands(page)).toEqual([['default', commands[consentAt][2]]]);
     expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
-    // Pomiar trafia do Google dopiero z kolejki: bez `config` gtag.js wczyta się i nic nie wyśle.
-    expect(
-      await page.evaluate(() => window.dataLayer.map((command) => [...command]).filter(([name]) => name === 'config'))
-    ).toEqual([['config', GA_MEASUREMENT_ID]]);
   }
 );
 
-test('zapisana zgoda wczytuje gtag.js już przy wejściu, bez banera', { tag: '@prod' }, async ({ page }) => {
-  await page.addInitScript((key) => localStorage.setItem(key, 'accepted'), CONSENT_KEY);
+test('„Akceptuję” włącza ciasteczka statystyk, reklamowych nie', { tag: '@prod' }, async ({ page }) => {
   await page.goto('/');
-  await expect(page.locator('.cookieBanner')).toBeHidden();
-  await expect.poll(() => gtagLoaded(page)).toContain(`id=${GA_MEASUREMENT_ID}`);
+  await page.locator('.cookieAccept').click();
+  expect((await consentCommands(page)).at(-1)).toEqual(['update', { analytics_storage: 'granted' }]);
 });
+
+test(
+  'zapisana zgoda włącza ciasteczka statystyk od pierwszego pomiaru, bez banera',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.addInitScript((key) => localStorage.setItem(key, 'accepted'), CONSENT_KEY);
+    await page.goto('/');
+    await expect(page.locator('.cookieBanner')).toBeHidden();
+    expect(await consentCommands(page)).toEqual([
+      ['default', expect.objectContaining({ analytics_storage: 'granted', ad_storage: 'denied' })],
+    ]);
+  }
+);
 
 test('bez zgody baner wraca po 5. ukończonej symulacji, a zgoda wtedy zapisuje tę wygraną', async ({ page }) => {
   await page.addInitScript(fakeWorker);
@@ -392,7 +404,7 @@ test('zgoda i wygrana z jednej karty od razu widoczne w drugiej, razem ze statys
 
   await first.locator('.cookieAccept').click();
   await expect(second.locator('.cookieBanner')).toBeHidden();
-  await expect.poll(() => gtagLoaded(second)).toContain(`id=${GA_MEASUREMENT_ID}`);
+  expect((await consentCommands(second)).at(-1)).toEqual(['update', { analytics_storage: 'granted' }]);
 
   await first.bringToFront();
   await pickTicket(first);

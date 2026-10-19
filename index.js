@@ -1,4 +1,4 @@
-import { startAnalytics } from './analytics.js';
+import { grantAnalytics, startAnalytics } from './analytics.js';
 import { drawsNoun, formatDateTime, formatNumber, formatSeconds } from './format.js';
 import {
   CONSENT_KEY,
@@ -92,8 +92,8 @@ const showBanner = () => {
 };
 
 if (!consentGiven) showBanner();
-// Statystyki tylko za zgodą, jak historia — bez niej nic nie idzie do Google.
-if (consentGiven) startAnalytics(window);
+// Bez zgody GA liczy wizytę bez ciasteczek (analytics.js).
+startAnalytics(window, consentGiven);
 
 // Zamyka go „Akceptuję”, „Nie zgadzam się” albo Esc (to też odmowa).
 cookieBanner.addEventListener('close', () => {
@@ -110,7 +110,7 @@ cookieBanner.addEventListener('close', () => {
 // Zgoda z tej karty („Akceptuję”) albo z innej (zdarzenie `storage` niżej).
 const applyConsent = () => {
   consentGiven = true;
-  startAnalytics(window);
+  grantAnalytics(window);
   if (unsavedWin) {
     history = recordWin(storage, unsavedWin);
     renderHistory(0, 1);

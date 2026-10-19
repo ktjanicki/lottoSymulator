@@ -43,9 +43,10 @@ przeglądarki importują wyłącznie ścieżki względne, czego pilnuje `npm tes
 ## Statystyki i zgoda
 
 Baner pyta o zgodę raz, na dwie rzeczy: zapis historii losowań w przeglądarce
-(localStorage) i Google Analytics (`analytics.js`). Bez zgody gtag.js się nie
-wczytuje i do Google nie idzie żadne żądanie. Testy przechwytują domeny Google,
-więc ani e2e, ani `check:prod` nie liczą się w statystykach.
+(localStorage) i ciasteczka Google Analytics. GA działa w trybie zgody
+(Consent Mode v2, `analytics.js`): tag z `index.html` wczytuje się zawsze, bez
+zgody wysyła tylko pingi bez ciasteczek. Testy przechwytują domeny Google, więc
+ani e2e, ani `check:prod` nie liczą się w statystykach.
 
 ## Wdrożenie
 

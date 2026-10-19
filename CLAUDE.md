@@ -85,19 +85,21 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   ustawiają stan kontrolek.
 - **Worker** liczy synchronicznie — przerwanie to `terminate()`, nie wiadomość.
   Protokół: `{type: 'progress' | 'result' | 'error'}`.
-- **localStorage i Google Analytics** tylko za zgodą z jednego banera (klucze
-  w `history.js`; zmiana klucza gubi dane odwiedzających). Bez zgody gtag.js
-  się nie wczytuje i do Google nie idzie żadne żądanie (`analytics.js`,
-  identyfikator `GA_MEASUREMENT_ID`). Odmowy nie zapisujemy.
+- **localStorage** tylko za zgodą (klucze w `history.js`; zmiana klucza gubi
+  dane odwiedzających). Odmowy nie zapisujemy.
+- **Google Analytics** w trybie zgody (Consent Mode v2, `analytics.js`):
+  gtag.js wczytuje się zawsze, z odmową domyślną przed `config`; ciasteczka
+  `_ga` dopiero po zgodzie z tego samego banera. Identyfikator stoi tylko
+  w adresie tagu w `index.html`.
 
 ## Testy — cztery warstwy
 
-| Warstwa | Co                                                                                                                                                    | Polecenie                                                   | Kiedy                                                     |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                                     | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
-| 2       | zbudowana strona (build jak na produkcji)                                                                                                             | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
-| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                             | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
-| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, GA tylko za zgodą, og:image, canonical, robots/sitemap, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
+| Warstwa | Co                                                                                                                                           | Polecenie                                                   | Kiedy                                                     |
+| ------- | -------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                            | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
+| 2       | zbudowana strona (build jak na produkcji)                                                                                                    | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
+| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                    | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
+| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, zgody GA, og:image, canonical, robots/sitemap, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
 
 Do tego `npm run lint` (ESLint + Prettier) — każdy commit, CI.
 
@@ -119,7 +121,7 @@ Zasady:
   `check:prod` tylko czyta stronę; zapisuje wyłącznie w przeglądarce testu.
 - Testy nie wysyłają niczego do Google Analytics: `e2e/page.spec.mjs`
   przechwytuje domeny Google i podaje atrapę gtag.js — inaczej każde
-  „Akceptuję” w e2e i `check:prod` byłoby wizytą w statystykach.
+  wejście w e2e i `check:prod` byłoby wizytą w statystykach.
 - Czerwony test sprzed zmiany: najpierw ustal, czy jest twój. Nie łataj
   asercji, żeby przeszła.
 

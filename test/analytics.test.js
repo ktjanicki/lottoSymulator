@@ -1,43 +1,66 @@
-// Google Analytics po zgodzie (analytics.js). Awarie, przed którymi chroni:
+// Google Analytics w trybie zgody (analytics.js). Awarie, przed którymi chroni:
 // - kolejka poleceń jako tablice zamiast obiektów `arguments` — gtag.js je
 //   pomija i GA niczego nie wysyła, choć skrypt się wczytuje;
-// - drugi skrypt i drugi `config` przy kolejnej zgodzie (np. z innej karty) —
-//   ta sama wizyta liczona dwa razy.
-// Czy strona woła moduł tylko za zgodą i czy CSP wpuszcza skrypt, sprawdza
-// e2e/page.spec.mjs.
+// - `config` przed odmową domyślną — pierwszy pomiar ustawia ciasteczka
+//   _ga bez zgody;
+// - zapisana zgoda, która nie włącza ciasteczek, albo zgoda reklamowa
+//   włączona razem ze statystykami;
+// - brak tagu w HTML-u wywracający index.js, a z nim symulację.
+// Czy strona woła moduł przy wejściu i po zgodzie, i czy CSP wpuszcza skrypt,
+// sprawdza e2e/page.spec.mjs.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { GA_MEASUREMENT_ID, GTAG_URL, startAnalytics } = require('../analytics.js');
+const { GTAG_SCRIPT, grantAnalytics, startAnalytics } = require('../analytics.js');
 
-// Minimalne okno: document.createElement i <head>, do którego trafiają skrypty.
-const fakeWindow = () => {
-  const head = [];
-  return {
-    head,
-    document: { createElement: (tag) => ({ tag }), head: { append: (element) => head.push(element) } },
-  };
-};
+const SRC = 'https://www.googletagmanager.com/gtag/js?id=G-TEST123';
 
-const isArguments = (value) => Object.prototype.toString.call(value) === '[object Arguments]';
-
-test('start dokłada asynchroniczny gtag.js z identyfikatorem i kolejkę js + config jako obiekty arguments', () => {
-  const win = fakeWindow();
-  startAnalytics(win);
-
-  assert.deepEqual(win.head, [{ tag: 'script', async: true, src: GTAG_URL }]);
-  assert.match(GTAG_URL, new RegExp(`[?&]id=${GA_MEASUREMENT_ID}$`));
-  assert.equal(win.dataLayer.length, 2);
-  assert.ok(win.dataLayer.every(isArguments), 'Polecenia w dataLayer muszą być obiektami arguments, nie tablicami.');
-  assert.equal(win.dataLayer[0][0], 'js');
-  assert.ok(win.dataLayer[0][1] instanceof Date);
-  assert.deepEqual([...win.dataLayer[1]], ['config', GA_MEASUREMENT_ID]);
+// Minimalne okno: tylko querySelector, który znajduje (albo nie) tag gtag.js.
+const fakeWindow = (src = SRC) => ({
+  document: { querySelector: (selector) => (selector === GTAG_SCRIPT && src ? { src } : null) },
 });
 
-test('kolejna zgoda w tej samej wizycie nie dokłada drugiego skryptu ani drugiego config', () => {
+const isArguments = (value) => Object.prototype.toString.call(value) === '[object Arguments]';
+const commands = (win) => win.dataLayer.map((command) => [...command]);
+
+test('bez zgody: odmowa domyślna przed config, identyfikator z adresu tagu, polecenia jako arguments', () => {
   const win = fakeWindow();
-  startAnalytics(win);
-  startAnalytics(win);
-  assert.equal(win.head.length, 1);
-  assert.equal(win.dataLayer.length, 2);
+  startAnalytics(win, false);
+
+  assert.ok(win.dataLayer.every(isArguments), 'Polecenia w dataLayer muszą być obiektami arguments, nie tablicami.');
+  const [consent, js, config] = commands(win);
+  assert.deepEqual(consent, [
+    'consent',
+    'default',
+    { ad_storage: 'denied', ad_user_data: 'denied', ad_personalization: 'denied', analytics_storage: 'denied' },
+  ]);
+  assert.equal(js[0], 'js');
+  assert.ok(js[1] instanceof Date);
+  assert.deepEqual(config, ['config', 'G-TEST123']);
+  assert.equal(win.dataLayer.length, 3);
+});
+
+test('zapisana zgoda włącza ciasteczka statystyk już w domyślnej, reklamowe zostają odrzucone', () => {
+  const win = fakeWindow();
+  startAnalytics(win, true);
+  assert.deepEqual(commands(win)[0][2], {
+    ad_storage: 'denied',
+    ad_user_data: 'denied',
+    ad_personalization: 'denied',
+    analytics_storage: 'granted',
+  });
+});
+
+test('zgoda w trakcie wizyty dopisuje aktualizację tylko dla statystyk', () => {
+  const win = fakeWindow();
+  startAnalytics(win, false);
+  grantAnalytics(win);
+  assert.deepEqual(commands(win).at(-1), ['consent', 'update', { analytics_storage: 'granted' }]);
+});
+
+test('bez tagu w HTML-u analityka się nie uruchamia, a wywołania nie rzucają', () => {
+  const win = fakeWindow(null);
+  startAnalytics(win, true);
+  grantAnalytics(win);
+  assert.equal(win.dataLayer, undefined);
 });
