@@ -2,6 +2,24 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.14.0] — 2026-10-19
+
+### Zmienione
+
+- Google Analytics w trybie zgody (Consent Mode v2): tag wczytuje się przy
+  każdym wejściu; bez zgody statystyki bez plików cookie, po zgodzie
+  z plikami cookie.
+- Baner zgody mówi, co trafia do Google bez zgody.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+
 ## [1.13.0] — 2026-10-19
 
 ### Dodane
