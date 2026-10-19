@@ -10,11 +10,28 @@
 
 import { readFileSync } from 'node:fs';
 import { expect, test } from '@playwright/test';
+import { GA_MEASUREMENT_ID } from '../analytics.js';
 
 const VERSION = readFileSync(new URL('../VERSION', import.meta.url), 'utf8').trim();
 const TICKET = [3, 11, 19, 27, 35, 43];
 const CONSENT_KEY = 'lottoSymulator.consent';
 const HISTORY_KEY = 'lottoSymulator.history';
+
+// Google Analytics nigdy nie dostaje żądania z testu: inaczej każde
+// „Akceptuję” w e2e i w check:prod liczyłoby się w statystykach strony jako
+// wizyta. Zamiast gtag.js atrapa, która zapisuje, skąd ją wczytano; CSP
+// i tak ocenia adres, więc zablokowany skrypt nie ustawi znacznika.
+const GOOGLE = /^https:\/\/[^/]*(googletagmanager\.com|google-analytics\.com|analytics\.google\.com)\//;
+
+test.beforeEach(async ({ context }) => {
+  await context.route(GOOGLE, (route) =>
+    /\/gtag\/js\b/.test(route.request().url())
+      ? route.fulfill({ contentType: 'text/javascript', body: 'window.gtagLoaded = document.currentScript.src;' })
+      : route.fulfill({ status: 204 })
+  );
+});
+
+const gtagLoaded = (page) => page.evaluate(() => window.gtagLoaded ?? null);
 
 const pickTicket = async (page) => {
   for (const number of TICKET) await page.locator(`.numbersList [data-number="${number}"]`).click();
@@ -309,6 +326,44 @@ test('odmowa niczego nie zapisuje, a baner wraca przy następnym wejściu', { ta
   await expect(page.locator('.cookieBanner')).toBeVisible();
 });
 
+test(
+  'bez zgody do Google nie idzie żadne żądanie — ani przy otwartym banerze, ani po odmowie',
+  { tag: '@prod' },
+  async ({ page }) => {
+    const requests = [];
+    page.on('request', (request) => GOOGLE.test(request.url()) && requests.push(request.url()));
+    await page.goto('/');
+    await expect(page.locator('.cookieBanner')).toBeVisible();
+    await page.locator('.cookieDecline').click();
+    await page.waitForLoadState('networkidle');
+    expect(requests).toEqual([]);
+    expect(await page.evaluate(() => window.dataLayer)).toBeUndefined();
+  }
+);
+
+test(
+  '„Akceptuję” wczytuje gtag.js z identyfikatorem strony, a CSP go nie blokuje',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.addInitScript(recordViolations);
+    await page.goto('/');
+    await page.locator('.cookieAccept').click();
+    await expect.poll(() => gtagLoaded(page)).toContain(`id=${GA_MEASUREMENT_ID}`);
+    expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
+    // Pomiar trafia do Google dopiero z kolejki: bez `config` gtag.js wczyta się i nic nie wyśle.
+    expect(
+      await page.evaluate(() => window.dataLayer.map((command) => [...command]).filter(([name]) => name === 'config'))
+    ).toEqual([['config', GA_MEASUREMENT_ID]]);
+  }
+);
+
+test('zapisana zgoda wczytuje gtag.js już przy wejściu, bez banera', { tag: '@prod' }, async ({ page }) => {
+  await page.addInitScript((key) => localStorage.setItem(key, 'accepted'), CONSENT_KEY);
+  await page.goto('/');
+  await expect(page.locator('.cookieBanner')).toBeHidden();
+  await expect.poll(() => gtagLoaded(page)).toContain(`id=${GA_MEASUREMENT_ID}`);
+});
+
 test('bez zgody baner wraca po 5. ukończonej symulacji, a zgoda wtedy zapisuje tę wygraną', async ({ page }) => {
   await page.addInitScript(fakeWorker);
   await page.goto('/');
@@ -328,7 +383,7 @@ test('bez zgody baner wraca po 5. ukończonej symulacji, a zgoda wtedy zapisuje 
   await expect(page.locator('.startButton')).toBeFocused();
 });
 
-test('zgoda i wygrana z jednej karty od razu widoczne w drugiej', async ({ context }) => {
+test('zgoda i wygrana z jednej karty od razu widoczne w drugiej, razem ze statystykami', async ({ context }) => {
   const first = await context.newPage();
   const second = await context.newPage();
   await first.addInitScript(fakeWorker);
@@ -337,6 +392,7 @@ test('zgoda i wygrana z jednej karty od razu widoczne w drugiej', async ({ conte
 
   await first.locator('.cookieAccept').click();
   await expect(second.locator('.cookieBanner')).toBeHidden();
+  await expect.poll(() => gtagLoaded(second)).toContain(`id=${GA_MEASUREMENT_ID}`);
 
   await first.bringToFront();
   await pickTicket(first);

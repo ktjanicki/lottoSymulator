@@ -25,10 +25,22 @@ const ROOT = fileURLToPath(new URL('..', import.meta.url));
 // nie używa, więc zamykamy je wprost (default-src ich nie obejmuje).
 // Ramkowanie blokuje X-Frame-Options z Traefika: frame-ancestors w <meta>
 // przeglądarka ignoruje.
+// Wyjątek: Google Analytics po zgodzie (analytics.js) — skrypt z
+// googletagmanager.com, pomiary jako fetch/beacon albo piksel. Domeny z
+// dokumentacji Google dla GA4; bez którejś z nich przeglądarka po cichu
+// blokuje skrypt albo pomiary, a strona działa jak dotąd.
+const GOOGLE_ANALYTICS = [
+  'https://*.google-analytics.com',
+  'https://*.analytics.google.com',
+  'https://*.googletagmanager.com',
+].join(' ');
+
 export const policy = (scriptHashes) =>
   [
     "default-src 'self'",
-    ["script-src 'self'", ...scriptHashes.map((hash) => `'${hash}'`)].join(' '),
+    ["script-src 'self' https://*.googletagmanager.com", ...scriptHashes.map((hash) => `'${hash}'`)].join(' '),
+    `img-src 'self' ${GOOGLE_ANALYTICS}`,
+    `connect-src 'self' ${GOOGLE_ANALYTICS}`,
     "object-src 'none'",
     "base-uri 'none'",
     "form-action 'none'",

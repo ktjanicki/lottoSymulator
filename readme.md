@@ -20,8 +20,9 @@ npm run build
 ```
 
 Build to Parcel i wstawienie polityki Content-Security-Policy do
-`dist/index.html` (`scripts/build.mjs`): wszystko z własnego źródła, skrypty
-inline tylko ze skrótem policzonym z buildu (Parcel wstawia importmapę). Nie
+`dist/index.html` (`scripts/build.mjs`): wszystko z własnego źródła poza
+Google Analytics, skrypty inline tylko ze skrótem policzonym z buildu (Parcel
+wstawia importmapę). Nie
 wołaj samego `parcel build` do produkcji — strona wyjdzie bez polityki.
 `npm start` (serwer deweloperski) działa bez CSP.
 
@@ -38,6 +39,13 @@ z `favicon.svg` `node scripts/icons.mjs` — po zmianie ikony uruchom go.
 Produkcja podaje wynik buildu Parcela. Strona ma jednak działać także podana
 wprost, bez buildu (np. zwykły serwer statyczny przy pracy nad kodem): moduły
 przeglądarki importują wyłącznie ścieżki względne, czego pilnuje `npm test`.
+
+## Statystyki i zgoda
+
+Baner pyta o zgodę raz, na dwie rzeczy: zapis historii losowań w przeglądarce
+(localStorage) i Google Analytics (`analytics.js`). Bez zgody gtag.js się nie
+wczytuje i do Google nie idzie żadne żądanie. Testy przechwytują domeny Google,
+więc ani e2e, ani `check:prod` nie liczą się w statystykach.
 
 ## Wdrożenie
 

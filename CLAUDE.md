@@ -77,23 +77,27 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
 - **CSP** siedzi w `<meta>`, nie w nagłówku, bo skrót importmapy Parcela
   zmienia się z każdym buildem. Nowy skrypt inline albo zasób z obcej domeny
   wymaga zmiany polityki w `scripts/build.mjs`, inaczej przeglądarka go zablokuje.
+  Jedyne obce domeny to Google Analytics (skrypt, pomiary).
 - **Rdzeń bez DOM**: `simulation.js`, `format.js`, `history.js` nie dotykają
   strony — zależności (`random`, `storage`) są wstrzykiwane, żeby testy
-  wołały je wprost. DOM tylko w `index.js`; `render()` i `renderHistory()` to
-  jedyne miejsca, które ustawiają stan kontrolek.
+  wołały je wprost. `analytics.js` dostaje okno jako argument. DOM tylko
+  w `index.js`; `render()` i `renderHistory()` to jedyne miejsca, które
+  ustawiają stan kontrolek.
 - **Worker** liczy synchronicznie — przerwanie to `terminate()`, nie wiadomość.
   Protokół: `{type: 'progress' | 'result' | 'error'}`.
-- **localStorage** tylko za zgodą (klucze w `history.js`; zmiana klucza gubi
-  dane odwiedzających). Odmowy nie zapisujemy.
+- **localStorage i Google Analytics** tylko za zgodą z jednego banera (klucze
+  w `history.js`; zmiana klucza gubi dane odwiedzających). Bez zgody gtag.js
+  się nie wczytuje i do Google nie idzie żadne żądanie (`analytics.js`,
+  identyfikator `GA_MEASUREMENT_ID`). Odmowy nie zapisujemy.
 
 ## Testy — cztery warstwy
 
-| Warstwa | Co                                                                                                                                 | Polecenie                                                   | Kiedy                                                     |
-| ------- | ---------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 1       | rdzeń, formatowanie, historia, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                             | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
-| 2       | zbudowana strona (build jak na produkcji)                                                                                          | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
-| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                          | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
-| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, og:image, canonical, robots/sitemap, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
+| Warstwa | Co                                                                                                                                                    | Polecenie                                                   | Kiedy                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                                     | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
+| 2       | zbudowana strona (build jak na produkcji)                                                                                                             | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
+| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                             | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
+| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja, CSP, GA tylko za zgodą, og:image, canonical, robots/sitemap, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
 
 Do tego `npm run lint` (ESLint + Prettier) — każdy commit, CI.
 
@@ -113,6 +117,9 @@ Zasady:
 - Scenariusz lokalny nie ma prawa zależeć od produkcji ani jej dotykać
   (np. og:image pobieramy z testowanego serwera, nie z domeny z `og:url`).
   `check:prod` tylko czyta stronę; zapisuje wyłącznie w przeglądarce testu.
+- Testy nie wysyłają niczego do Google Analytics: `e2e/page.spec.mjs`
+  przechwytuje domeny Google i podaje atrapę gtag.js — inaczej każde
+  „Akceptuję” w e2e i `check:prod` byłoby wizytą w statystykach.
 - Czerwony test sprzed zmiany: najpierw ustal, czy jest twój. Nie łataj
   asercji, żeby przeszła.
 

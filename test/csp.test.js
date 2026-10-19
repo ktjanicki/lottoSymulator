@@ -33,7 +33,7 @@ test('polityka stoi przed importmapą i zawiera skrót jej treści, a skryptu z 
 
   const expected = `'sha256-${createHash('sha256').update(IMPORTMAP).digest('base64')}'`;
   const scriptSrc = policy.split('; ').find((directive) => directive.startsWith('script-src'));
-  assert.equal(scriptSrc, `script-src 'self' ${expected}`);
+  assert.equal(scriptSrc, `script-src 'self' https://*.googletagmanager.com ${expected}`);
   assert.doesNotMatch(policy, /unsafe-inline|unsafe-eval/);
 });
 

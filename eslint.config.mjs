@@ -13,7 +13,7 @@ export default [
   { ignores: ['dist/', '.parcel-cache/', 'test-results/', 'playwright-report/', 'plan/'] },
   js.configs.recommended,
   {
-    files: ['index.js', 'format.js', 'history.js', 'simulation.js'],
+    files: ['index.js', 'analytics.js', 'format.js', 'history.js', 'simulation.js'],
     languageOptions: { globals: globals.browser },
   },
   {
