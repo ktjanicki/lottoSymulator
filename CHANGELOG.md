@@ -2,6 +2,25 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.13.0] — 2026-10-19
+
+### Dodane
+
+- Statystyki odwiedzin w Google Analytics — wyłącznie po zgodzie z banera.
+
+### Zmienione
+
+- Baner zgody obejmuje historię losowań i statystyki.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+
 ## [1.12.1] — 2026-10-18
 
 ### Poprawione
