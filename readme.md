@@ -1,8 +1,15 @@
 # Lotto Symulator
 
-Aplikacja napisana hobbystycznie w podróży. Losuje sześć liczb z 49 tak długo,
-aż padnie „szóstka” z kuponu wybranego przez użytkownika, i pokazuje, ile
-losowań to zajęło.
+Aplikacja napisana hobbystycznie w podróży. Losuje tak długo, aż padnie
+główna wygrana z kuponu wybranego przez użytkownika, i pokazuje, ile losowań
+to zajęło. Dwie gry, przełączane w nagłówku:
+
+- Lotto — sześć liczb z 49, do „szóstki”;
+- Eurojackpot — pięć liczb z 50 i dwie z 12, do „5 + 2”
+  (adres `lottosymulator.pl/#eurojackpot`).
+
+Zasady gier (pule liczb, stopnie wygranych) stoją w jednym miejscu: `GAMES`
+w `simulation.js`.
 
 ## Uruchomienie
 
@@ -91,7 +98,8 @@ Jednorazowe przeformatowanie Prettierem jest w `.git-blame-ignore-revs`; żeby
 `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 Po każdym wdrożeniu uruchom `npm run check:prod`: sprawdza, że produkcja podaje
-numer z `VERSION` i że symulacja przechodzi do wyniku. Tylko czyta stronę —
+numer z `VERSION` i że symulacja obu gier przechodzi do wyniku (Eurojackpot
+trwa zwykle kilkadziesiąt sekund, czasem kilka minut). Tylko czyta stronę —
 zapisuje wyłącznie w przeglądarce testu.
 
 ## Licencja

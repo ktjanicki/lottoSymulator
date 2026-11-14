@@ -12,19 +12,21 @@ import {
 } from './history.js';
 import { GAMES } from './simulation.js';
 
-// Strona zna na razie tylko Lotto.
-const GAME = 'lotto';
-const [{ max: MAX_NUMBER, size: TICKET_SIZE }] = GAMES[GAME].pools;
+// Gra pod adresem bez fragmentu (lottosymulator.pl/): tam prowadzą link
+// nagłówka („./”), canonical i wszystkie linki sprzed Eurojackpota.
+const DEFAULT_GAME = 'lotto';
 
-const numbersList = document.querySelector('.numbersList');
+const gameButtons = [...document.querySelectorAll('.gameSwitch > button')];
+const gameTexts = document.querySelectorAll('[data-for-game]');
+// Plansza puli o indeksie data-pool (kolejność w GAMES[gra].pools).
+const boards = [];
+for (const board of document.querySelectorAll('.numbersList[data-pool]')) boards[Number(board.dataset.pool)] = board;
 const selectedItems = document.querySelector('.selectedItems');
 const selectedCount = document.querySelector('.selectedCount');
 const startButton = document.querySelector('.startButton');
 const startHint = document.querySelector('.startHint');
 const resultCounterTotal = document.querySelector('.resultCounterTotal');
-const resultThrees = document.querySelector('.resultThrees');
-const resultFours = document.querySelector('.resultFours');
-const resultFives = document.querySelector('.resultFives');
+const statsList = document.querySelector('.stats');
 const resultSimulationTime = document.querySelector('.resultSimulationTime');
 const resultTicketNumbers = document.querySelector('.resultTicketNumbers');
 const simulationProgressElement = document.querySelector('.simulationProgress');
@@ -43,10 +45,26 @@ const historyMore = document.querySelector('.historyMore');
 const cookieBanner = document.querySelector('.cookieBanner');
 const cookieAccept = document.querySelector('.cookieAccept');
 const cookieDecline = document.querySelector('.cookieDecline');
-const ticketNumbers = [];
+// Gra z fragmentu adresu (#eurojackpot). Nieznany fragment (np. #historia
+// ze starych linków) to gra domyślna. Object.hasOwn, nie `in`: #toString
+// przeszedłby jako gra bez pul i strona padłaby przy starcie.
+const gameFromUrl = () => {
+  const id = location.hash.slice(1);
+  return Object.hasOwn(GAMES, id) ? id : DEFAULT_GAME;
+};
+// Gra domyślna bez fragmentu — jeden adres strony głównej, jak w canonical;
+// parametry (?utm_…) zostają.
+const urlFor = (id) => (id === DEFAULT_GAME ? location.pathname + location.search : `#${id}`);
+
+let game = gameFromUrl();
+// Kupon każdej gry osobno, pula po puli (napisy z data-number), do końca
+// wizyty: przełączenie gry nie gubi liczb wybranych w drugiej.
+const tickets = Object.fromEntries(Object.entries(GAMES).map(([id, { pools }]) => [id, pools.map(() => [])]));
 let simulationRunning = false;
 let simulationWorker = null;
 let lastProgress = null;
+// Wygrane wszystkich gier (readHistory). Przesłania globalne `history` —
+// historia przeglądarki to tu zawsze window.history.
 let history = [];
 let historyShown = HISTORY_PAGE;
 
@@ -107,7 +125,7 @@ cookieBanner.addEventListener('close', () => {
   const target =
     focusBeforeBanner?.isConnected && focusBeforeBanner !== document.body
       ? focusBeforeBanner
-      : numbersList.querySelector('.ball:not(:disabled)');
+      : boards[0].querySelector('.ball:not(:disabled)');
   target?.focus({ preventScroll: true });
 });
 
@@ -132,18 +150,22 @@ cookieAccept.addEventListener('click', () => {
 cookieDecline.addEventListener('click', () => cookieBanner.close());
 
 // Kule historii to <span>, nie przyciski: wyglądają jak na kuponie, ale nic
-// się na nie nie klika.
-const createHistoryItem = ({ numbers, drawsNumber, date }) => {
+// się na nie nie klika. Liczby wpisu idą pula po puli (history.js); kule
+// dalszych pul — w kolorze euroliczb, jak na kuponie.
+const createHistoryItem = ({ game: entryGame, numbers, drawsNumber, date }) => {
   const item = document.createElement('li');
   item.className = 'historyItem';
   const balls = document.createElement('div');
   balls.className = 'historyBalls';
-  for (const number of numbers) {
-    const ball = document.createElement('span');
-    ball.className = 'ball';
-    ball.textContent = number;
-    balls.append(ball);
-  }
+  let offset = 0;
+  GAMES[entryGame].pools.forEach(({ size }, pool) => {
+    for (const number of numbers.slice(offset, (offset += size))) {
+      const ball = document.createElement('span');
+      ball.className = pool > 0 ? 'ball euro' : 'ball';
+      ball.textContent = number;
+      balls.append(ball);
+    }
+  });
   const time = document.createElement('time');
   time.className = 'historyDate';
   time.dateTime = new Date(date).toISOString();
@@ -203,15 +225,19 @@ const scrollToNewEntries = (first, last) => {
   requestAnimationFrame(step);
 };
 
-// Jedyne miejsce, które ustawia listę historii na podstawie `history`
-// i liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
+// Wygrane wybranej gry, od najnowszej — lista i licznik pokazują tylko je.
+const gameHistory = () => history.filter((entry) => entry.game === game);
+
+// Jedyne miejsce, które ustawia listę historii na podstawie `history`,
+// wybranej gry i liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
 // Wpisy o indeksach [animateFrom, animateTo) wjeżdżają po kolei — tylko
 // nowo pokazane; reszta stoi, inaczej każde „więcej” migałoby całą listą.
 const renderHistory = (animateFrom = 0, animateTo = 0) => {
-  historySection.classList.toggle('inactive', history.length === 0);
-  historyCount.textContent = history.length;
+  const entries = gameHistory();
+  historySection.classList.toggle('inactive', entries.length === 0);
+  historyCount.textContent = entries.length;
   historyList.replaceChildren(
-    ...history.slice(0, historyShown).map((entry, index) => {
+    ...entries.slice(0, historyShown).map((entry, index) => {
       const item = createHistoryItem(entry);
       if (index >= animateFrom && index < animateTo) {
         item.classList.add('entering');
@@ -221,7 +247,7 @@ const renderHistory = (animateFrom = 0, animateTo = 0) => {
       return item;
     })
   );
-  historyMore.classList.toggle('inactive', historyShown >= history.length);
+  historyMore.classList.toggle('inactive', historyShown >= entries.length);
 };
 
 history = readHistory(storage);
@@ -258,88 +284,185 @@ historyMore.addEventListener('click', () => {
   // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
   // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
   // preventScroll: fokus przewinąłby stronę skokiem, w poprzek przewijania wyżej.
-  if (historyShown >= history.length) {
+  if (historyShown >= gameHistory().length) {
     firstItem.tabIndex = -1;
     firstItem.focus({ preventScroll: true });
   }
 });
 
 // Liczby to przyciski (<button>), a nie <div>: dają się wybrać klawiaturą
-// i czytnik ekranu ogłasza je razem ze stanem aria-pressed.
-const createBall = (number, label) => {
+// i czytnik ekranu ogłasza je razem ze stanem aria-pressed. data-pool
+// rozróżnia tę samą liczbę w dwóch pulach (3 z 50 i 3 z 12 w Eurojackpot).
+const createBall = (number, pool, label) => {
   const ball = document.createElement('button');
   ball.type = 'button';
-  ball.className = 'ball';
+  ball.className = pool > 0 ? 'ball euro' : 'ball';
   ball.dataset.number = number;
+  ball.dataset.pool = pool;
   ball.textContent = number;
   if (label) ball.setAttribute('aria-label', label);
   return ball;
 };
 
-for (let number = 1; number <= MAX_NUMBER; number++) numbersList.append(createBall(number));
-
 // Puste miejsce na kuponie: sam wygląd, czytnik ekranu go pomija (liczbę
 // wybranych podaje licznik obok nagłówka).
-const createSlot = () => {
+const createSlot = (pool) => {
   const slot = document.createElement('span');
-  slot.className = 'slot';
+  slot.className = pool > 0 ? 'slot euro' : 'slot';
   slot.setAttribute('aria-hidden', 'true');
   return slot;
 };
 
+// W grze z kilkoma pulami ta sama liczba stoi na kuponie dwa razy —
+// czytnik ekranu podaje też pulę.
+const removeLabel = (number, max) =>
+  GAMES[game].pools.length > 1 ? `Usuń liczbę ${number} z ${max}` : `Usuń liczbę ${number}`;
+
 // „Wybierz jeszcze 1 liczbę / 2 liczby / 5 liczb” — odmiana dla 1–6, więcej
-// brakujących liczb nie bywa.
-const missingNumbersHint = (missing) =>
-  `Wybierz jeszcze ${missing} ${missing === 1 ? 'liczbę' : missing <= 4 ? 'liczby' : 'liczb'}.`;
+// brakujących liczb nie bywa. W grze z kilkoma pulami z pulą i tylko dla pul
+// z brakami: „2 liczby z 50 i 1 z 12”, „1 liczbę z 12”.
+const numbersNoun = (missing) => (missing === 1 ? 'liczbę' : missing <= 4 ? 'liczby' : 'liczb');
+const missingNumbersHint = (pools, ticket) => {
+  const parts = pools
+    .map(({ max, size }, pool) => ({ max, missing: size - ticket[pool].length }))
+    .filter(({ missing }) => missing > 0)
+    .map(({ max, missing }, index) =>
+      [missing, index === 0 && numbersNoun(missing), pools.length > 1 && `z ${max}`].filter(Boolean).join(' ')
+    );
+  return `Wybierz jeszcze ${parts.join(' i ')}.`;
+};
+
+// Podpisy kafelków w kolejności GAMES[gra].tiers. Lotto słowami, jak od
+// pierwszego wydania; gra z kilkoma pulami — trafienia w pulach („× 5 + 1”).
+const LOTTO_TIER_LABELS = { 3: 'trójek', 4: 'czwórek', 5: 'piątek' };
+const tierLabel = (tier) => (tier.length === 1 ? LOTTO_TIER_LABELS[tier[0]] : `× ${tier.join(' + ')}`);
+
+const createStat = (tier) => {
+  const item = document.createElement('li');
+  const value = document.createElement('span');
+  value.className = 'statValue';
+  value.textContent = '0';
+  const label = document.createElement('span');
+  label.className = 'statLabel';
+  label.textContent = tierLabel(tier);
+  item.append(value, ' ', label);
+  return item;
+};
 
 // Jedyne miejsce, które ustawia wygląd i dostępność kontrolek na podstawie
-// kuponu i trwającej symulacji. Przełączanie klas w kilku procedurach naraz
-// rozjeżdżało się przy kolejności kliknięć, której nikt nie przewidział.
+// gry, kuponu i trwającej symulacji. Przełączanie klas w kilku procedurach
+// naraz rozjeżdżało się przy kolejności kliknięć, której nikt nie przewidział.
 const render = () => {
-  const full = ticketNumbers.length === TICKET_SIZE;
-  for (const ball of numbersList.children) {
-    const selected = ticketNumbers.includes(ball.dataset.number);
-    ball.setAttribute('aria-pressed', String(selected));
-    ball.disabled = simulationRunning || (full && !selected);
+  const { pools } = GAMES[game];
+  const ticket = tickets[game];
+  const full = pools.every(({ size }, pool) => ticket[pool].length === size);
+  // Kolumny planszy i kuponu w style.css zależą od gry.
+  document.body.dataset.game = game;
+  for (const button of gameButtons) {
+    button.setAttribute('aria-pressed', String(button.dataset.game === game));
+    // Gra nie zmienia się w trakcie symulacji: wynik trafiłby do złej gry.
+    button.disabled = simulationRunning;
   }
+  for (const element of gameTexts) element.classList.toggle('inactive', element.dataset.forGame !== game);
+  pools.forEach(({ size }, pool) => {
+    const poolFull = ticket[pool].length === size;
+    for (const ball of boards[pool].children) {
+      const selected = ticket[pool].includes(ball.dataset.number);
+      ball.setAttribute('aria-pressed', String(selected));
+      ball.disabled = simulationRunning || (poolFull && !selected);
+    }
+  });
   selectedItems.replaceChildren(
-    ...ticketNumbers.map((number) => {
-      const ball = createBall(number, `Usuń liczbę ${number}`);
-      ball.disabled = simulationRunning;
-      return ball;
-    }),
-    ...Array.from({ length: TICKET_SIZE - ticketNumbers.length }, createSlot)
+    ...pools.flatMap(({ max, size }, pool) => [
+      ...ticket[pool].map((number) => {
+        const ball = createBall(number, pool, removeLabel(number, max));
+        ball.disabled = simulationRunning;
+        return ball;
+      }),
+      ...Array.from({ length: size - ticket[pool].length }, () => createSlot(pool)),
+    ])
   );
-  selectedCount.textContent = `${ticketNumbers.length}/${TICKET_SIZE}`;
+  selectedCount.textContent = pools.map(({ size }, pool) => `${ticket[pool].length}/${size}`).join(' + ');
   // Przycisk stoi na miejscu od początku (zablokowany), żeby układ nie skakał
-  // po wybraniu szóstej liczby; podpowiedź mówi, czego jeszcze brakuje.
+  // po wybraniu ostatniej liczby; podpowiedź mówi, czego jeszcze brakuje.
   startButton.disabled = !full;
   startButton.classList.toggle('inactive', simulationRunning);
-  startHint.textContent = full ? '' : missingNumbersHint(TICKET_SIZE - ticketNumbers.length);
+  startHint.textContent = full ? '' : missingNumbersHint(pools, ticket);
   startHint.classList.toggle('inactive', full || simulationRunning);
   simulationProgressElement.classList.toggle('inactive', !simulationRunning);
   simulationProgressMessage.classList.toggle('inactive', !simulationRunning);
 };
 
-// Kliknięcie wybranej liczby zdejmuje ją z kuponu; siódma nie wchodzi.
-const toggleNumber = (number) => {
-  const index = ticketNumbers.indexOf(number);
-  if (index >= 0) ticketNumbers.splice(index, 1);
-  else if (ticketNumbers.length < TICKET_SIZE) ticketNumbers.push(number);
+// Przełącza stronę na grę: plansze i kafelki wyniku od nowa, historia gry.
+// Wynik i komunikat poprzedniej gry znikają — „Szóstka!” nad kuponem
+// Eurojackpota myliłaby. Kafelki stoją od razu (z zerami): od 900 px
+// ukryty wynik trzyma miejsce, a bez nich plansza skoczyłaby przy wyniku.
+const showGame = (id) => {
+  const hadFocus = document.activeElement !== document.body;
+  game = id;
+  const { pools, tiers } = GAMES[game];
+  boards.forEach((board, pool) =>
+    board.replaceChildren(
+      ...Array.from({ length: pools[pool]?.max ?? 0 }, (_, index) => createBall(String(index + 1), pool))
+    )
+  );
+  statsList.replaceChildren(...tiers.map(createStat));
+  winResultElement.classList.add('inactive');
+  abortedElement.classList.add('inactive');
+  historyShown = HISTORY_PAGE;
+  render();
+  renderHistory();
+  // Fokus na kuli albo wpisie, który zniknął (np. Wstecz z klawiatury),
+  // spada na <body> — wraca na przycisk wybranej gry.
+  if (hadFocus && document.activeElement === document.body) {
+    gameButtons.find((button) => button.dataset.game === game).focus();
+  }
+};
+
+for (const button of gameButtons) {
+  button.addEventListener('click', () => {
+    if (button.dataset.game === game) return;
+    // Wpis w historii przeglądarki: Wstecz wraca do poprzedniej gry.
+    window.history.pushState(null, '', urlFor(button.dataset.game));
+    showGame(button.dataset.game);
+  });
+}
+
+// Wstecz/Dalej i fragment zmieniony ręcznie. W trakcie symulacji gra zostaje
+// (przełącznik jest wtedy zablokowany), a adres wraca do niej — inaczej adres
+// i strona pokazywałyby różne gry.
+const followUrl = () => {
+  const id = gameFromUrl();
+  if (id === game) return;
+  if (simulationRunning) window.history.replaceState(null, '', urlFor(game));
+  else showGame(id);
+};
+window.addEventListener('popstate', followUrl);
+window.addEventListener('hashchange', followUrl);
+
+// Kliknięcie wybranej liczby zdejmuje ją z kuponu; liczba ponad pulę nie wchodzi.
+const toggleNumber = (pool, number) => {
+  const chosen = tickets[game][pool];
+  const index = chosen.indexOf(number);
+  if (index >= 0) chosen.splice(index, 1);
+  else if (chosen.length < GAMES[game].pools[pool].size) chosen.push(number);
   render();
 };
 
-numbersList.addEventListener('click', ({ target }) => {
-  const ball = target.closest('.ball');
-  if (ball) toggleNumber(ball.dataset.number);
-});
+boards.forEach((board, pool) =>
+  board.addEventListener('click', ({ target }) => {
+    const ball = target.closest('.ball');
+    if (ball) toggleNumber(pool, ball.dataset.number);
+  })
+);
 
 selectedItems.addEventListener('click', ({ target }) => {
   const ball = target.closest('.ball');
   if (!ball) return;
-  toggleNumber(ball.dataset.number);
+  const pool = Number(ball.dataset.pool);
+  toggleNumber(pool, ball.dataset.number);
   // Usunięty przycisk znika z DOM; bez tego fokus klawiatury spada na <body>.
-  numbersList.querySelector(`[data-number="${ball.dataset.number}"]`).focus();
+  boards[pool].querySelector(`[data-number="${ball.dataset.number}"]`).focus();
 });
 
 // Kończy symulację bez wyniku: przerwanie albo awaria workera. Komunikat
@@ -362,6 +485,8 @@ const failSimulation = () => {
 };
 
 startButton.addEventListener('click', () => {
+  const runGame = game;
+  const runNumbers = tickets[game].flat();
   // Parcel 2 dołącza plik workera do paczki tylko z postaci new URL(…, import.meta.url);
   // sam napis ('simulationWorker.js') przerywa `npm run build` błędem. Worker jest
   // modułem (importuje simulation.js); bez `type: 'module'` przeglądarka odrzuci import.
@@ -384,14 +509,13 @@ startButton.addEventListener('click', () => {
     }
     resultTicketNumbers.textContent = data.ticketNumbers;
     resultCounterTotal.textContent = formatNumber(data.drawsNumber);
-    // Kolejność liczników jak w GAMES.lotto.tiers: trójki, czwórki, piątki.
-    const [threes, fours, fives] = data.tiers;
-    resultThrees.textContent = formatNumber(threes);
-    resultFours.textContent = formatNumber(fours);
-    resultFives.textContent = formatNumber(fives);
+    // Kafelki w kolejności GAMES[gra].tiers, jak liczniki z workera.
+    statsList.querySelectorAll('.statValue').forEach((value, index) => {
+      value.textContent = formatNumber(data.tiers[index]);
+    });
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
     // Bez zgody recordWin niczego nie zapisuje i zwraca historię bez zmian.
-    const win = { game: GAME, numbers: [...ticketNumbers], drawsNumber: data.drawsNumber, date: Date.now() };
+    const win = { game: runGame, numbers: runNumbers, drawsNumber: data.drawsNumber, date: Date.now() };
     history = recordWin(storage, win);
     // Nowa wygrana wjeżdża na górę listy; pozostałe wpisy stoją.
     renderHistory(0, 1);
@@ -420,7 +544,7 @@ startButton.addEventListener('click', () => {
   // Przycisk startu znika na czas symulacji; fokus przechodzi na jego
   // następcę w tym samym miejscu, zamiast spaść na <body>.
   abortButton.focus();
-  simulationWorker.postMessage({ game: GAME, numbers: [...ticketNumbers] });
+  simulationWorker.postMessage({ game: runGame, numbers: runNumbers });
 });
 
 // Pętla workera jest synchroniczna — nie odbierze wiadomości „stop”, więc
@@ -436,4 +560,4 @@ abortButton.addEventListener('click', () => {
   startButton.focus();
 });
 
-render();
+showGame(game);

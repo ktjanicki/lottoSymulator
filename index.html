@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lotto Symulator — ile losowań do szóstki?</title>
+    <title>Lotto Symulator — ile losowań do wygranej w Lotto i Eurojackpot?</title>
     <meta
       name="description"
-      content="Symulator Lotto online: wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”."
+      content="Symulator Lotto i Eurojackpot online: wybierz liczby i sprawdź, ile losowań trzeba, żeby trafić „szóstkę” albo „5 + 2”."
     />
     <meta name="author" content="Krzysztof Janicki" />
     <!-- Potwierdzenie własności w Google Search Console (metoda „Tag HTML”).
@@ -20,7 +20,7 @@
     <meta property="og:title" content="Lotto Symulator" />
     <meta
       property="og:description"
-      content="Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”."
+      content="Symulator Lotto i Eurojackpot online: wybierz liczby i sprawdź, ile losowań trzeba, żeby trafić „szóstkę” albo „5 + 2”."
     />
     <meta property="og:locale" content="pl_PL" />
     <meta property="og:image" content="og-image.png" />
@@ -53,16 +53,43 @@
         <span class="logo" aria-hidden="true">6</span>
         <h1>Lotto Symulator</h1>
       </a>
-      <p class="tagline">Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</p>
+      <!-- Teksty zależne od gry: wszystkie warianty w HTML-u (wyszukiwarka widzi
+           obie gry), widoczny ten z data-for-game równym wybranej grze —
+           przełącza render() w index.js. W HTML-u widoczne Lotto: tak
+           wygląda strona, zanim skrypt sprawdzi adres. -->
+      <p class="tagline">
+        <span data-for-game="lotto">Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</span>
+        <span data-for-game="eurojackpot" class="inactive"
+          >Wybierz pięć liczb z 50 i dwie z 12 i sprawdź, ile losowań trzeba, żeby trafić „5 + 2”.</span
+        >
+      </p>
+      <!-- Przyciski z aria-pressed, nie zakładki (role="tab"): wzorzec zakładek
+           wymaga panelu, a byłby nim <main> — strona straciłaby punkt
+           orientacyjny czytnika ekranu. Gra stoi w adresie (#eurojackpot). -->
+      <div class="gameSwitch" role="group" aria-label="Gra">
+        <button type="button" data-game="lotto" aria-pressed="true">Lotto</button>
+        <button type="button" data-game="eurojackpot" aria-pressed="false">Eurojackpot</button>
+      </div>
     </header>
 
     <main class="layout">
       <section class="card numbersTable" aria-labelledby="numbersTitle">
         <div class="cardHeader">
           <h2 id="numbersTitle">Maszyna losująca</h2>
-          <p class="selectNumbersTip">Wybierz sześć liczb z 49</p>
+          <p class="selectNumbersTip">
+            <span data-for-game="lotto">Wybierz sześć liczb z 49</span>
+            <span data-for-game="eurojackpot" class="inactive">Wybierz pięć liczb z 50</span>
+          </p>
         </div>
-        <div class="numbersList" role="group" aria-label="Liczby do wyboru"></div>
+        <!-- Plansza na każdą pulę gry (data-pool = indeks w GAMES[gra].pools);
+             kule wstawia index.js. -->
+        <div class="boards">
+          <div class="numbersList" role="group" aria-label="Liczby do wyboru" data-pool="0"></div>
+          <div class="euroBoard inactive" data-for-game="eurojackpot">
+            <p class="selectNumbersTip">Wybierz dwie liczby z 12</p>
+            <div class="numbersList euroList" role="group" aria-label="Liczby z 12" data-pool="1"></div>
+          </div>
+        </div>
       </section>
 
       <div class="sidePanel">
@@ -94,18 +121,20 @@
           </p>
           <p class="simulationAborted inactive"></p>
           <div class="winResult inactive">
-            <h2>Szóstka!</h2>
+            <h2>
+              <span data-for-game="lotto">Szóstka!</span>
+              <span data-for-game="eurojackpot" class="inactive">5 + 2!</span>
+            </h2>
             <p class="winDraw">
-              „Szóstka” w losowaniu nr
+              <span data-for-game="lotto">„Szóstka”</span>
+              <span data-for-game="eurojackpot" class="inactive">„5 + 2”</span>
+              w losowaniu nr
               <span class="resultCounterTotal">0</span>
             </p>
             <p class="winNumbers">Padły liczby: <span class="resultTicketNumbers">–</span>.</p>
             <p class="meanwhile">Po drodze padły też:</p>
-            <ul class="stats">
-              <li><span class="statValue resultThrees">0</span> <span class="statLabel">trójek</span></li>
-              <li><span class="statValue resultFours">0</span> <span class="statLabel">czwórek</span></li>
-              <li><span class="statValue resultFives">0</span> <span class="statLabel">piątek</span></li>
-            </ul>
+            <!-- Kafelek na każdy stopień gry wstawia index.js (GAMES[gra].tiers). -->
+            <ul class="stats"></ul>
             <p class="simulationTime">Symulacja trwała <span class="resultSimulationTime">0,0</span> s.</p>
           </div>
         </section>
@@ -128,7 +157,7 @@
 
       <!-- Tekst dla odwiedzających i wyszukiwarek: bez niego strona nie ma
            treści, do której pasowałyby pytania o Lotto i gry losowe. -->
-      <section class="about" aria-labelledby="aboutTitle">
+      <section class="about" aria-labelledby="aboutTitle" data-for-game="lotto">
         <h2 id="aboutTitle">Na czym polega Lotto?</h2>
         <p>
           Lotto to jedna z najpopularniejszych w Polsce gier losowych. Na kuponie skreśla się sześć liczb z 49, a
@@ -137,6 +166,15 @@
           szans od innych.
         </p>
         <p>Lotto Symulator powtarza losowania tak długo, aż padną wybrane liczby, i pokazuje, ile losowań to zajęło.</p>
+      </section>
+      <section class="about inactive" aria-labelledby="aboutTitleEurojackpot" data-for-game="eurojackpot">
+        <h2 id="aboutTitleEurojackpot">Na czym polega Eurojackpot?</h2>
+        <p>
+          Eurojackpot to gra losowa prowadzona wspólnie przez loterie z kilkunastu krajów Europy, w tym z Polski. Na
+          kuponie skreśla się pięć liczb z 50 i dwie liczby z 12, a w każdym losowaniu padają dwa zestawy kul. Wygrane
+          mają dwanaście stopni, od „2 + 1” do najwyższego „5 + 2” — trafienia wszystkich siedmiu liczb. Każde losowanie
+          jest niezależne od poprzednich, więc żaden zestaw liczb nie ma większych szans od innych.
+        </p>
       </section>
     </main>
 

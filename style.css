@@ -60,6 +60,14 @@
   --gold-lo: #d97706;
   --gold-text: #1f1500;
   --gold-ring: rgba(217, 119, 6, 0.35);
+  /* Euroliczby (druga pula Eurojackpota): niebieskie zamiast złotych, żeby
+     na kuponie i w historii nie zlewały się z liczbami głównymi. Tekst
+     ma 7:1 do środka kuli. */
+  --euro: #60a5fa;
+  --euro-hi: #dbeafe;
+  --euro-lo: #2563eb;
+  --euro-text: #0b1530;
+  --euro-ring: rgba(37, 99, 235, 0.35);
   --shadow: 0 1px 2px rgba(16, 24, 40, 0.05), 0 12px 32px rgba(16, 24, 40, 0.07);
   --radius: 20px;
 }
@@ -88,6 +96,7 @@
     --ball-lo: #1a1e33;
     --ball-text: #e8eaf6;
     --gold-ring: rgba(251, 191, 36, 0.4);
+    --euro-ring: rgba(96, 165, 250, 0.45);
     --shadow: 0 1px 2px rgba(0, 0, 0, 0.3), 0 12px 32px rgba(0, 0, 0, 0.35);
   }
 }
@@ -220,6 +229,54 @@ h1 {
   color: var(--muted);
 }
 
+/* Przełącznik gry pod tytułem, na całą szerokość nagłówka (oba wiersze
+   wyżej zajmuje link i podtytuł). Wybrana gra wypełniona kolorem —
+   odróżnia się kształtem, nie tylko barwą. */
+.gameSwitch {
+  display: inline-flex;
+  grid-column: 1 / -1;
+  grid-row: 3;
+  justify-self: start;
+  gap: 4px;
+  margin-top: 20px;
+  padding: 4px;
+  border-radius: 999px;
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+}
+
+.gameSwitch > button {
+  min-height: 40px;
+  padding: 0 20px;
+  border: none;
+  border-radius: 999px;
+  font-weight: 600;
+  color: var(--muted);
+  background: none;
+  cursor: pointer;
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease;
+}
+
+.gameSwitch > button:hover:not(:disabled) {
+  color: var(--text);
+}
+
+.gameSwitch > button[aria-pressed='true'] {
+  color: var(--on-primary);
+  background: var(--primary);
+}
+
+/* W trakcie symulacji gra się nie zmienia (index.js). */
+.gameSwitch > button:disabled {
+  cursor: not-allowed;
+}
+
+.gameSwitch > button:disabled:not([aria-pressed='true']) {
+  opacity: 0.5;
+}
+
 /* ---------- układ i karty ---------- */
 
 /* Jedna kolumna na telefonie; od 900 px plansza po lewej, kupon i wynik
@@ -251,10 +308,8 @@ h1 {
     flex-direction: column;
   }
 
-  /* Selektor z rodzicem: bazowa reguła .numbersList (margin: 0 auto) stoi
-     w pliku niżej i przy równej specyficzności wygrałaby z tą. */
-  .numbersTable > .numbersList {
-    margin: auto;
+  .numbersTable > .boards {
+    margin: auto 0;
     width: 100%;
   }
 }
@@ -303,13 +358,16 @@ h2 {
 
 /* ---------- kule ---------- */
 
-/* Siatka 7×7 zamiast zawijanego wiersza: kolumny równe na każdej szerokości,
+/* Siatka zamiast zawijanego wiersza: kolumny równe na każdej szerokości,
    a kule rosną z ekranem do górnej granicy szerokości planszy. */
 /* aspect-ratio rezerwuje wysokość, zanim skrypt wstawi kule: pusta plansza
    miała zero wysokości, a po wstawieniu 49 kul spychała na telefonie całą
-   resztę strony o ~350 px (CLS 0,36 w Lighthouse). Siatka 7×7 z równymi
-   odstępami w obu osiach jest kwadratem — przy innej liczbie rzędów
-   (GAMES.lotto w simulation.js) proporcja przestanie się zgadzać. */
+   resztę strony o ~350 px (CLS 0,36 w Lighthouse). Lotto: siatka 7×7
+   z równymi odstępami w obu osiach jest kwadratem. Plansze Eurojackpota
+   (10×5 i 6×2) — proporcja 2:1 i 3:1, o jeden odstęp za wysoka; nadmiar
+   rozkłada się między rzędy. Poniżej 600 px plansza główna 6×9 (niżej).
+   Inna pula w GAMES (simulation.js) — inna siatka tutaj. Wejście wprost na #eurojackpot przesuwa stronę raz: przed
+   skryptem stoi plansza Lotto. */
 .numbersList {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -319,22 +377,69 @@ h2 {
   aspect-ratio: 1;
 }
 
+body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
+  grid-template-columns: repeat(10, minmax(0, 1fr));
+  aspect-ratio: 2;
+}
+
+/* 6 z 10 kolumn planszy głównej (60% szerokości): kule tej samej wielkości. */
+.euroList {
+  grid-template-columns: repeat(6, minmax(0, 1fr));
+  width: 60%;
+  max-width: 300px;
+  aspect-ratio: 3;
+}
+
+/* Na telefonie 10 kolumn to kule ok. 24 px — na granicy celu dotyku
+   (WCAG 2.5.8) i z nieczytelnymi cyframi. 6 kolumn (50 = 8 pełnych rzędów
+   + 49, 50) daje kule jak w Lotto, a euroliczby stoją w tych samych
+   kolumnach co liczby główne. */
+@media (max-width: 599px) {
+  body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
+    grid-template-columns: repeat(6, minmax(0, 1fr));
+    aspect-ratio: 6 / 9;
+  }
+
+  .euroList {
+    width: 100%;
+    max-width: 500px;
+  }
+}
+
+.euroBoard {
+  margin-top: 20px;
+}
+
+.euroBoard > .selectNumbersTip {
+  margin-bottom: 12px;
+  text-align: center;
+}
+
 /* Szerokość karty kuponu dla min-height miejsc niżej (jednostki cqw). */
 .selectedItemsBlock {
   container-type: inline-size;
 }
 
+/* Liczba miejsc na kuponie: suma `size` pul gry w GAMES (simulation.js). */
+body {
+  --ticket-size: 6;
+}
+
+body[data-game='eurojackpot'] {
+  --ticket-size: 7;
+}
+
 .selectedItems {
   display: grid;
-  grid-template-columns: repeat(6, minmax(0, 1fr));
+  grid-template-columns: repeat(var(--ticket-size), minmax(0, 1fr));
   gap: 8px;
   /* Jedna kolumna na tablecie rozciągnęłaby kule kuponu do ~100 px. */
   max-width: 360px;
-  /* Wysokość rzędu kul (szerokość jednej z sześciu kolumn) jeszcze przed
-     wstawieniem miejsc przez skrypt — bez niej kupon rósł po starcie
-     i spychał wynik, historię i stopkę. Musi liczyć tak jak siatka wyżej:
-     szerokość (do max-width) minus 5 odstępów, przez 6. */
-  min-height: calc((min(100cqw, 360px) - 5 * 8px) / 6);
+  /* Wysokość rzędu kul (szerokość jednej kolumny) jeszcze przed wstawieniem
+     miejsc przez skrypt — bez niej kupon rósł po starcie i spychał wynik,
+     historię i stopkę. Musi liczyć tak jak siatka wyżej: szerokość (do
+     max-width) minus odstępy między kolumnami, przez liczbę kolumn. */
+  min-height: calc((min(100cqw, 360px) - (var(--ticket-size) - 1) * 8px) / var(--ticket-size));
 }
 
 .ball,
@@ -386,6 +491,17 @@ h2 {
     inset 0 -3px 6px rgba(0, 0, 0, 0.15);
 }
 
+/* Euroliczby wybrane, na kuponie i w historii — niebieskie, z obwódką jak złote. */
+.numbersList > .ball.euro[aria-pressed='true'],
+.selectedItems > .ball.euro,
+.historyBalls > .ball.euro {
+  color: var(--euro-text);
+  background: radial-gradient(circle at 32% 28%, var(--euro-hi), var(--euro) 45%, var(--euro-lo));
+  box-shadow:
+    0 0 0 3px var(--euro-ring),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.15);
+}
+
 .ball:disabled {
   cursor: default;
 }
@@ -402,6 +518,10 @@ h2 {
 
 .slot {
   border: 2px dashed var(--border);
+}
+
+.slot.euro {
+  border-color: var(--euro-ring);
 }
 
 /* ---------- start i postęp ---------- */
@@ -643,6 +763,14 @@ h2 {
   white-space: nowrap;
 }
 
+/* Siedem liczb z „+” nie mieści się w panelu w jednej linii, a zawijałoby
+   się zależnie od liczb (jednocyfrowe czy nie). Stałe dwie linie — wysokość
+   wyniku nie zależy od kuponu. */
+body[data-game='eurojackpot'] .winNumbers {
+  min-height: 3em;
+  white-space: normal;
+}
+
 .meanwhile {
   margin-top: 4px;
   font-size: 0.9rem;
@@ -689,6 +817,35 @@ h2 {
 .statLabel {
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+/* Jedenaście stopni Eurojackpota: kafelki jak w Lotto („3 041 512” nad
+   „× 2 + 1”), z węższym marginesem i mniejszą liczbą — stopień 2 + 1 to
+   miliony, czasem dziesięć cyfr, a kafelek w panelu ma ok. 96 px. Poniżej
+   420 px dwie kolumny kafelków zamiast jedenastu wierszy listy. */
+body[data-game='eurojackpot'] .stats > li {
+  padding: 10px 4px;
+}
+
+body[data-game='eurojackpot'] .statValue {
+  font-size: 0.95rem;
+}
+
+.statValue,
+.statLabel {
+  white-space: nowrap;
+}
+
+@media (max-width: 420px) {
+  body[data-game='eurojackpot'] .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  body[data-game='eurojackpot'] .stats > li {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 10px 4px;
+  }
 }
 
 .simulationTime {
@@ -854,6 +1011,17 @@ h2 {
   box-shadow:
     0 0 0 3px var(--gold-ring),
     inset 0 -3px 6px rgba(0, 0, 0, 0.15);
+}
+
+.historyBalls > .ball.euro:hover {
+  box-shadow:
+    0 0 0 3px var(--euro-ring),
+    inset 0 -3px 6px rgba(0, 0, 0, 0.15);
+}
+
+/* Odstęp przed euroliczbami: pula widać po układzie, nie tylko po kolorze. */
+.historyBalls > .ball:not(.euro) + .ball.euro {
+  margin-left: 6px;
 }
 
 .historyDate {

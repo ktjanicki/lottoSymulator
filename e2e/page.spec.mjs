@@ -4,7 +4,9 @@
 //   strona odpowiadała 200 i nic na niej nie działało);
 // - symulacja, która nie dochodzi do wyniku, i przerwanie, które go nie zatrzymuje;
 // - baner zgody, który zapisuje bez zgody albo nie wraca po odmowie;
-// - stopka z numerem innym niż wydanie.
+// - stopka z numerem innym niż wydanie;
+// - przełącznik gry, adres i Wstecz pokazujące różne gry, kupon albo wynik
+//   jednej gry w drugiej.
 // Scenariusze @prod idą też na produkcji (npm run check:prod): tylko czytają
 // stronę, a wszystko, co zapisują, zostaje w przeglądarce testu.
 
@@ -14,6 +16,11 @@ import { GTAG_SCRIPT } from '../analytics.js';
 
 const VERSION = readFileSync(new URL('../VERSION', import.meta.url), 'utf8').trim();
 const TICKET = [3, 11, 19, 27, 35, 43];
+// Eurojackpot: pięć liczb z 50, potem dwie z 12 (kolejność jak w GAMES).
+const EURO_TICKET = [
+  [4, 9, 23, 31, 47],
+  [3, 11],
+];
 const CONSENT_KEY = 'lottoSymulator.consent';
 const HISTORY_KEY = 'lottoSymulator.history';
 
@@ -43,6 +50,24 @@ const pickTicket = async (page) => {
   for (const number of TICKET) await page.locator(`.numbersList [data-number="${number}"]`).click();
 };
 
+const ball = (page, pool, number) => page.locator(`.numbersList[data-pool="${pool}"] [data-number="${number}"]`);
+
+const pickEuroTicket = async (page) => {
+  for (const [pool, numbers] of EURO_TICKET.entries()) {
+    for (const number of numbers) await ball(page, pool, number).click();
+  }
+};
+
+const gameButton = (page, name) => page.locator('.gameSwitch').getByRole('button', { name, exact: true });
+
+// Kafelki stopni: tyle, ile stopni gry, każdy z liczbą grupowaną twardą spacją.
+// Rozjazd protokołu strony i workera pokazuje tu „undefined” albo „NaN”.
+const expectTierCounts = async (page, count) => {
+  const values = page.locator('.stats .statValue');
+  await expect(values).toHaveCount(count);
+  for (const value of await values.all()) await expect(value).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
+};
+
 const stored = (page, key) => page.evaluate((k) => localStorage.getItem(k), key);
 
 // Atrapa workera: od razu zwraca wygraną z kolejnym numerem losowania.
@@ -57,12 +82,15 @@ const fakeWorker = () => {
     addEventListener(type, listener) {
       (this.listeners[type] ??= []).push(listener);
     }
-    postMessage({ numbers }) {
+    postMessage({ game, numbers }) {
+      // Liczba stopni jak w GAMES (simulation.js): Lotto 3, Eurojackpot 11.
+      const tiers = new Array(game === 'eurojackpot' ? 11 : 3).fill(0);
+      tiers[0] = 1;
       const data = {
         type: 'result',
         ticketNumbers: numbers.join(', '),
         drawsNumber: ++draws,
-        tiers: [1, 0, 0],
+        tiers,
         durationMs: 5,
       };
       setTimeout(() => this.listeners.message?.forEach((listener) => listener({ data })), 10);
@@ -291,11 +319,7 @@ test(
     await expect(page.locator('.winResult')).toBeVisible({ timeout: 140_000 });
     // Liczba grupowana twardą spacją: „12 345 678”.
     await expect(page.locator('.resultCounterTotal')).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
-    // Liczniki stopni z wiadomości workera — rozjazd protokołu strony
-    // i workera pokazuje tu „undefined” albo „NaN”.
-    for (const stat of ['.resultThrees', '.resultFours', '.resultFives']) {
-      await expect(page.locator(stat)).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
-    }
+    await expectTierCounts(page, 3);
     await expect(page.locator('.resultTicketNumbers')).toHaveText(TICKET.join(', '));
     await expect(page.locator('.simulationProgress')).toBeHidden();
     await expect(page.locator('.startButton')).toBeEnabled();
@@ -432,3 +456,190 @@ test('zgoda i wygrana z jednej karty od razu widoczne w drugiej, razem ze statys
   await expect(first.locator('.historyCount')).toHaveText('1');
   await expect(second.locator('.historyCount')).toHaveText('1');
 });
+
+test(
+  'Eurojackpot z adresu, z przełącznika i po Wstecz — inaczej link do gry otwiera Lotto albo adres i strona pokazują różne gry',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.goto('/#eurojackpot');
+    await page.locator('.cookieDecline').click();
+    await expect(gameButton(page, 'Eurojackpot')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(50);
+    await expect(page.locator('.numbersList[data-pool="1"] .ball')).toHaveCount(12);
+    await expect(page.locator('.selectedItems .slot')).toHaveCount(7);
+    await expect(page.getByRole('heading', { name: 'Na czym polega Eurojackpot?' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Na czym polega Lotto?' })).toBeHidden();
+
+    await gameButton(page, 'Lotto').click();
+    // Lotto bez fragmentu: jeden adres strony głównej, jak canonical.
+    await expect(page).toHaveURL(new URL('/', page.url()).href);
+    await expect(gameButton(page, 'Lotto')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(49);
+    await expect(page.locator('.numbersList[data-pool="1"] .ball')).toHaveCount(0);
+    await expect(page.locator('.euroBoard')).toBeHidden();
+    await expect(page.getByRole('heading', { name: 'Na czym polega Lotto?' })).toBeVisible();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/#eurojackpot$/);
+    await expect(gameButton(page, 'Eurojackpot')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(50);
+
+    // Fragment wpisany ręcznie w pasek adresu.
+    await page.evaluate(() => (location.hash = 'lotto'));
+    await expect(gameButton(page, 'Lotto')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(49);
+  }
+);
+
+test('nieznany fragment adresu (stary link, nazwa z prototypu obiektu) otwiera Lotto zamiast wywrócić stronę', async ({
+  page,
+}) => {
+  for (const hash of ['#historia', '#toString', '#constructor']) {
+    await page.goto('about:blank');
+    await page.goto(`/${hash}`);
+    await expect(gameButton(page, 'Lotto'), hash).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball'), hash).toHaveCount(49);
+  }
+});
+
+test('każda gra ma swój kupon, a ta sama liczba w obu pulach to dwie kule — inaczej zdjęcie jednej zdejmuje drugą', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await page.locator('.cookieDecline').click();
+  await pickTicket(page);
+
+  await gameButton(page, 'Eurojackpot').click();
+  await expect(page.locator('.selectedItems .ball')).toHaveCount(0);
+  await expect(page.locator('.selectedCount')).toHaveText('0/5 + 0/2');
+  await expect(page.locator('.startHint')).toHaveText('Wybierz jeszcze 5 liczb z 50 i 2 z 12.');
+
+  await ball(page, 0, 3).click();
+  await ball(page, 1, 3).click();
+  await expect(page.locator('.selectedCount')).toHaveText('1/5 + 1/2');
+  await page.getByRole('button', { name: 'Usuń liczbę 3 z 12' }).click();
+  await expect(ball(page, 1, 3)).toHaveAttribute('aria-pressed', 'false');
+  await expect(ball(page, 0, 3)).toHaveAttribute('aria-pressed', 'true');
+  // Fokus na kuli tej samej puli, nie na 3 z 50 ani na <body>.
+  await expect(ball(page, 1, 3)).toBeFocused();
+
+  for (const number of [11, 19, 27, 35]) await ball(page, 0, number).click();
+  await expect(page.locator('.startHint')).toHaveText('Wybierz jeszcze 2 liczby z 12.');
+  // Pełna pula główna blokuje resztę swojej planszy, nie euroliczby.
+  await expect(ball(page, 0, 50)).toBeDisabled();
+  await ball(page, 1, 5).click();
+  await expect(page.locator('.startHint')).toHaveText('Wybierz jeszcze 1 liczbę z 12.');
+  await ball(page, 1, 7).click();
+  await expect(page.locator('.startButton')).toBeEnabled();
+  await expect(ball(page, 1, 12)).toBeDisabled();
+
+  await gameButton(page, 'Lotto').click();
+  await expect(page.locator('.selectedCount')).toHaveText('6/6');
+  await expect(page.locator('.startButton')).toBeEnabled();
+  await gameButton(page, 'Eurojackpot').click();
+  await expect(page.locator('.selectedCount')).toHaveText('5/5 + 2/2');
+});
+
+test('wynik i historia Eurojackpota osobno od Lotto — inaczej wygrana jednej gry trafia na listę drugiej', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeWorker);
+  await page.goto('/');
+  await page.locator('.cookieAccept').click();
+  await pickTicket(page);
+  await page.locator('.startButton').click();
+  await expect(page.getByRole('heading', { name: 'Szóstka!' })).toBeVisible();
+  await expect(page.locator('.historyCount')).toHaveText('1');
+
+  await gameButton(page, 'Eurojackpot').click();
+  // Wynik Lotto nie zostaje nad kuponem Eurojackpota.
+  await expect(page.locator('.winResult')).toBeHidden();
+  await expect(page.locator('.history')).toBeHidden();
+
+  await pickEuroTicket(page);
+  await page.locator('.startButton').click();
+  await expect(page.getByRole('heading', { name: '5 + 2!' })).toBeVisible();
+  await expect(page.locator('.winDraw')).toContainText('„5 + 2” w losowaniu nr');
+  await expectTierCounts(page, 11);
+  await expect(page.locator('.stats .statLabel').first()).toHaveText('× 5 + 1');
+  await expect(page.locator('.stats .statLabel').last()).toHaveText('× 2 + 1');
+  await expect(page.locator('.historyCount')).toHaveText('1');
+  await page.locator('.historyToggle').click();
+  await expect(page.locator('.historyItem .ball')).toHaveCount(7);
+  await expect(page.locator('.historyItem .ball.euro')).toHaveText(['3', '11']);
+  const entries = JSON.parse(await stored(page, HISTORY_KEY));
+  expect(entries.map(({ game, numbers }) => [game, numbers])).toEqual([
+    ['eurojackpot', EURO_TICKET.flat()],
+    ['lotto', TICKET],
+  ]);
+
+  await gameButton(page, 'Lotto').click();
+  await expect(page.locator('.historyCount')).toHaveText('1');
+  await expect(page.locator('.historyItem .ball')).toHaveCount(6);
+  await expect(page.locator('.historyItem .ball.euro')).toHaveCount(0);
+});
+
+test('historia sprzed Eurojackpota (wpisy bez gry) zostaje w Lotto i nie trafia do Eurojackpota', async ({ page }) => {
+  await page.addInitScript(
+    ([consentKey, historyKey]) => {
+      localStorage.setItem(consentKey, 'accepted');
+      localStorage.setItem(
+        historyKey,
+        JSON.stringify([{ numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 1234, date: 1_790_000_000_000 }])
+      );
+    },
+    [CONSENT_KEY, HISTORY_KEY]
+  );
+  await page.goto('/');
+  await expect(page.locator('.historyCount')).toHaveText('1');
+  await gameButton(page, 'Eurojackpot').click();
+  await expect(page.locator('.history')).toBeHidden();
+});
+
+test('w trakcie symulacji gry nie da się zmienić, także przez Wstecz — inaczej wynik trafia do złej gry', async ({
+  page,
+}) => {
+  await page.addInitScript(endlessWorker);
+  await page.goto('/');
+  await page.locator('.cookieDecline').click();
+  await gameButton(page, 'Eurojackpot').click();
+  await pickEuroTicket(page);
+  await page.locator('.startButton').click();
+  await expect(page.locator('.progressCount')).toHaveText(/losowań/);
+  await expect(gameButton(page, 'Lotto')).toBeDisabled();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/#eurojackpot$/);
+  await expect(gameButton(page, 'Eurojackpot')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(50);
+  await expect(page.locator('.simulationProgress')).toBeVisible();
+
+  await page.locator('.abortButton').click();
+  await expect(gameButton(page, 'Lotto')).toBeEnabled();
+});
+
+test(
+  'pełna symulacja Eurojackpota prawdziwym workerem kończy się na 5 + 2 i wpisem w historii tej gry',
+  { tag: '@prod' },
+  async ({ page }) => {
+    // „5 + 2” pada średnio raz na 140 mln losowań: kilkanaście sekund na
+    // szybkim komputerze, kilka razy dłużej na wolnym, a czas ma rozkład
+    // geometryczny. Przy minucie średnio limit 10 min przekracza mniej niż
+    // 1 przebieg na 10 000; niższy daje losowo czerwone CI i check:prod.
+    test.setTimeout(660_000);
+    await page.addInitScript(recordViolations);
+    await page.goto('/#eurojackpot');
+    await page.locator('.cookieAccept').click();
+    await pickEuroTicket(page);
+    await page.locator('.startButton').click();
+
+    await expect(page.locator('.winResult')).toBeVisible({ timeout: 600_000 });
+    await expect(page.locator('.resultCounterTotal')).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
+    await expect(page.locator('.resultTicketNumbers')).toHaveText('4, 9, 23, 31, 47 + 3, 11');
+    await expectTierCounts(page, 11);
+    await expect(page.locator('.historyCount')).toHaveText('1');
+    const entries = JSON.parse(await stored(page, HISTORY_KEY));
+    expect(entries[0]).toMatchObject({ game: 'eurojackpot', numbers: EURO_TICKET.flat() });
+    expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
+  }
+);
