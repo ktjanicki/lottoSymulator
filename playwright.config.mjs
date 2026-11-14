@@ -30,5 +30,9 @@ export default defineConfig({
         env: { PORT: String(PORT) },
         timeout: 120_000,
         stdout: 'pipe',
+        // Bez tego Playwright zabija serwer SIGKILL i obsługa SIGTERM
+        // w serve.mjs nie usuwa buildu: każdy przebieg zostawiał w katalogu
+        // tymczasowym systemu kopię strony (kilka MB).
+        gracefulShutdown: { signal: 'SIGTERM', timeout: 5000 },
       },
 });
