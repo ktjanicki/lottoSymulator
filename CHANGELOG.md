@@ -2,6 +2,36 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.15.0] — 2026-11-14
+
+### Dodane
+
+- Eurojackpot: pięć liczb z 50 i dwie z 12, symulacja do „5 + 2”, w wyniku
+  jedenaście niższych stopni wygranych.
+- Przełącznik gry Lotto / Eurojackpot w nagłówku; Eurojackpot pod adresem
+  `lottosymulator.pl/#eurojackpot`.
+- Opis gry Eurojackpot pod symulatorem.
+
+### Zmienione
+
+- Historia wygranych osobno dla każdej gry, do 500 wpisów na grę;
+  dotychczasowa historia jest w Lotto.
+- Każda gra pamięta wybrane liczby do końca wizyty.
+- Tytuł i opis strony wymieniają Eurojackpot.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+- Wejście wprost na `#eurojackpot` raz przesuwa układ strony: zanim ruszy
+  skrypt, stoi plansza Lotto.
+- Karta ze stroną w wersji sprzed 1.15.0, otwarta w czasie aktualizacji,
+  przy zapisie wygranej usuwa z historii wpisy Eurojackpota.
+
 ## [1.14.2] — 2026-10-19
 
 ### Poprawione
