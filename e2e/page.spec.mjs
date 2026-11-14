@@ -491,6 +491,17 @@ test(
   }
 );
 
+// Jednorazowy odczyt, nie toHaveCSS: ta asercja ponawia, aż przejście koloru
+// się skończy, i przepuściłaby usterkę, którą test ma łapać.
+test('wejście wprost na #eurojackpot nie pokazuje pod banerem zgody Lotto jako wybranego', async ({ page }) => {
+  await page.goto('/#eurojackpot');
+  await expect(page.locator('.cookieBanner')).toBeVisible();
+  await expect(gameButton(page, 'Eurojackpot')).toHaveAttribute('aria-pressed', 'true');
+  const background = (name) => gameButton(page, name).evaluate((button) => getComputedStyle(button).backgroundColor);
+  expect(await background('Lotto')).not.toBe(await background('Eurojackpot'));
+  expect(await background('Lotto')).toBe('rgba(0, 0, 0, 0)');
+});
+
 test('nieznany fragment adresu (stary link, nazwa z prototypu obiektu) otwiera Lotto zamiast wywrócić stronę', async ({
   page,
 }) => {

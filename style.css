@@ -254,9 +254,9 @@ h1 {
   color: var(--muted);
   background: none;
   cursor: pointer;
-  transition:
-    background-color 0.15s ease,
-    color 0.15s ease;
+  /* Bez przejścia koloru: HTML zaznacza Lotto, a przy wejściu na
+     #eurojackpot skrypt przełącza zaznaczenie po pierwszym wyświetleniu —
+     z przejściem Lotto wygasało widocznie jako wybrane (pod banerem zgody). */
 }
 
 .gameSwitch > button:hover:not(:disabled) {
