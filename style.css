@@ -364,9 +364,9 @@ h2 {
    miała zero wysokości, a po wstawieniu 49 kul spychała na telefonie całą
    resztę strony o ~350 px (CLS 0,36 w Lighthouse). Lotto: siatka 7×7
    z równymi odstępami w obu osiach jest kwadratem. Plansze Eurojackpota
-   (10×5 i 6×2) — proporcja 2:1 i 3:1, o jeden odstęp za wysoka; nadmiar
-   rozkłada się między rzędy. Poniżej 600 px plansza główna 6×9 (niżej).
-   Inna pula w GAMES (simulation.js) — inna siatka tutaj. Wejście wprost na #eurojackpot przesuwa stronę raz: przed
+   (8×7 i 6×2) — proporcja 8:7 i 3:1, o jeden odstęp za wysoka; nadmiar
+   rozkłada się między rzędy. Inna pula w GAMES (simulation.js) — inna
+   siatka tutaj. Wejście wprost na #eurojackpot przesuwa stronę raz: przed
    skryptem stoi plansza Lotto. */
 .numbersList {
   display: grid;
@@ -377,23 +377,30 @@ h2 {
   aspect-ratio: 1;
 }
 
+/* Eurojackpot: 8 kolumn (50 = 6 pełnych rzędów + 49, 50) na całą szerokość
+   karty. Od 900 px kartę rozciąga do wysokości panel z jedenastoma
+   kafelkami wyniku — 10 kolumn (kule ~40 px) zostawiało po ~200 px pustki
+   nad planszą i pod nią, 8 kolumn (kule ~70 px) ją wypełnia. 640 px:
+   w jednej kolumnie układu (tablet) kule nie rosną ponad ~70 px. */
 body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
-  grid-template-columns: repeat(10, minmax(0, 1fr));
-  aspect-ratio: 2;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  max-width: 640px;
+  aspect-ratio: 8 / 7;
 }
 
-/* 6 z 10 kolumn planszy głównej (60% szerokości): kule tej samej wielkości. */
+/* 6 z 8 kolumn planszy głównej (75% jej szerokości): kule tej samej
+   wielkości, euroliczby pod kolumnami 2–7. */
 .euroList {
   grid-template-columns: repeat(6, minmax(0, 1fr));
-  width: 60%;
-  max-width: 300px;
+  width: 75%;
+  max-width: calc(640px * 0.75);
   aspect-ratio: 3;
 }
 
-/* Na telefonie 10 kolumn to kule ok. 24 px — na granicy celu dotyku
-   (WCAG 2.5.8) i z nieczytelnymi cyframi. 6 kolumn (50 = 8 pełnych rzędów
-   + 49, 50) daje kule jak w Lotto, a euroliczby stoją w tych samych
-   kolumnach co liczby główne. */
+/* Na telefonie 8 kolumn to kule ok. 33 px, a 10 — ok. 24 px, na granicy
+   celu dotyku (WCAG 2.5.8). 6 kolumn (50 = 8 pełnych rzędów + 49, 50) daje
+   kule jak w Lotto, a euroliczby stoją w tych samych kolumnach co liczby
+   główne. */
 @media (max-width: 599px) {
   body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
     grid-template-columns: repeat(6, minmax(0, 1fr));
@@ -402,7 +409,7 @@ body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
 
   .euroList {
     width: 100%;
-    max-width: 500px;
+    max-width: 640px;
   }
 }
 
