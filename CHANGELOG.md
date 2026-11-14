@@ -2,6 +2,31 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.15.1] — 2026-11-14
+
+### Zmienione
+
+- Plansza Eurojackpota tej samej szerokości co plansza Lotto (mniejsze kule).
+- ESLint 10.15.0 i minimatch 11.0.8 (narzędzia deweloperskie, poza stroną).
+
+### Poprawione
+
+- Przy wejściu wprost na `#eurojackpot` przycisk „Lotto” nie wygląda przez
+  chwilę na wybrany.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+- Wejście wprost na `#eurojackpot` raz przesuwa układ strony: zanim ruszy
+  skrypt, stoi plansza Lotto.
+- Karta ze stroną w wersji sprzed 1.15.0, otwarta w czasie aktualizacji,
+  przy zapisie wygranej usuwa z historii wpisy Eurojackpota.
+
 ## [1.15.0] — 2026-11-14
 
 ### Dodane
