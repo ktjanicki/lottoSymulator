@@ -2,7 +2,10 @@
 // Bez DOM: `storage` jest wstrzykiwany (strona podaje localStorage, testy
 // własny magazyn), żeby testy mogły sprawdzić każdą gałąź wprost.
 
-import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
+import { GAMES } from './simulation.js';
+
+// Historia zna na razie tylko Lotto (wpisy bez pola gry).
+const [{ max: MAX_NUMBER, size: TICKET_SIZE }] = GAMES.lotto.pools;
 
 // Zmiana klucza gubi historię i zgodę zapisane u odwiedzających.
 export const HISTORY_KEY = 'lottoSymulator.history';

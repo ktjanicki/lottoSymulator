@@ -57,14 +57,12 @@ const fakeWorker = () => {
     addEventListener(type, listener) {
       (this.listeners[type] ??= []).push(listener);
     }
-    postMessage(ticket) {
+    postMessage({ numbers }) {
       const data = {
         type: 'result',
-        ticketNumbers: ticket.join(', '),
+        ticketNumbers: numbers.join(', '),
         drawsNumber: ++draws,
-        threes: 1,
-        fours: 0,
-        fives: 0,
+        tiers: [1, 0, 0],
         durationMs: 5,
       };
       setTimeout(() => this.listeners.message?.forEach((listener) => listener({ data })), 10);
@@ -86,7 +84,7 @@ const endlessWorker = () => {
       (this.listeners[type] ??= []).push(listener);
     }
     postMessage() {
-      const data = { type: 'progress', drawsNumber: 1_000_000, threes: 0, fours: 0, fives: 0, durationMs: 300 };
+      const data = { type: 'progress', drawsNumber: 1_000_000, tiers: [0, 0, 0], durationMs: 300 };
       setTimeout(() => this.listeners.message?.forEach((listener) => listener({ data })), 10);
     }
     terminate() {
@@ -293,6 +291,11 @@ test(
     await expect(page.locator('.winResult')).toBeVisible({ timeout: 140_000 });
     // Liczba grupowana twardą spacją: „12 345 678”.
     await expect(page.locator('.resultCounterTotal')).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
+    // Liczniki stopni z wiadomości workera — rozjazd protokołu strony
+    // i workera pokazuje tu „undefined” albo „NaN”.
+    for (const stat of ['.resultThrees', '.resultFours', '.resultFives']) {
+      await expect(page.locator(stat)).toHaveText(/^\d{1,3}(\u00a0\d{3})*$/);
+    }
     await expect(page.locator('.resultTicketNumbers')).toHaveText(TICKET.join(', '));
     await expect(page.locator('.simulationProgress')).toBeHidden();
     await expect(page.locator('.startButton')).toBeEnabled();

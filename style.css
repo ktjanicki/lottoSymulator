@@ -309,7 +309,7 @@ h2 {
    miała zero wysokości, a po wstawieniu 49 kul spychała na telefonie całą
    resztę strony o ~350 px (CLS 0,36 w Lighthouse). Siatka 7×7 z równymi
    odstępami w obu osiach jest kwadratem — przy innej liczbie rzędów
-   (MAX_NUMBER w simulation.js) proporcja przestanie się zgadzać. */
+   (GAMES.lotto w simulation.js) proporcja przestanie się zgadzać. */
 .numbersList {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));

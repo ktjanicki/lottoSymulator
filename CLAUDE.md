@@ -52,7 +52,7 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   - adres strony — `og:url` w `index.html` (build liczy z niego `og:image`,
     canonical, dane strukturalne, `robots.txt` i `sitemap.xml`); nazwa
     witryny w danych strukturalnych i w `manifest.json` — `og:title`;
-  - gra — `MAX_NUMBER` i `TICKET_SIZE` w `simulation.js`;
+  - zasady gier (pule liczb, stopnie wygranych) — `GAMES` w `simulation.js`;
   - Node budujący produkcję — obraz w `grossnet-vps-iac`
     (`10_versions.yml` → `images.node`); `.github/workflows/ci.yml` przepisuje
     ten numer do macierzy i trzeba go zmieniać razem z obrazem.

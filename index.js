@@ -10,7 +10,11 @@ import {
   readHistory,
   recordWin,
 } from './history.js';
-import { MAX_NUMBER, TICKET_SIZE } from './simulation.js';
+import { GAMES } from './simulation.js';
+
+// Strona zna na razie tylko Lotto.
+const GAME = 'lotto';
+const [{ max: MAX_NUMBER, size: TICKET_SIZE }] = GAMES[GAME].pools;
 
 const numbersList = document.querySelector('.numbersList');
 const selectedItems = document.querySelector('.selectedItems');
@@ -380,9 +384,11 @@ startButton.addEventListener('click', () => {
     }
     resultTicketNumbers.textContent = data.ticketNumbers;
     resultCounterTotal.textContent = formatNumber(data.drawsNumber);
-    resultThrees.textContent = formatNumber(data.threes);
-    resultFours.textContent = formatNumber(data.fours);
-    resultFives.textContent = formatNumber(data.fives);
+    // Kolejność liczników jak w GAMES.lotto.tiers: trójki, czwórki, piątki.
+    const [threes, fours, fives] = data.tiers;
+    resultThrees.textContent = formatNumber(threes);
+    resultFours.textContent = formatNumber(fours);
+    resultFives.textContent = formatNumber(fives);
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
     // Bez zgody recordWin niczego nie zapisuje i zwraca historię bez zmian.
     const win = { numbers: [...ticketNumbers], drawsNumber: data.drawsNumber, date: Date.now() };
@@ -414,7 +420,7 @@ startButton.addEventListener('click', () => {
   // Przycisk startu znika na czas symulacji; fokus przechodzi na jego
   // następcę w tym samym miejscu, zamiast spaść na <body>.
   abortButton.focus();
-  simulationWorker.postMessage([...ticketNumbers]);
+  simulationWorker.postMessage({ game: GAME, numbers: [...ticketNumbers] });
 });
 
 // Pętla workera jest synchroniczna — nie odbierze wiadomości „stop”, więc

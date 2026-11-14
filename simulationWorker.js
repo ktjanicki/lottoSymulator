@@ -1,13 +1,15 @@
 import { simulation } from './simulation.js';
 
+// Wiadomość od strony: {game, numbers} — identyfikator z GAMES i kupon płasko.
 // Wiadomości do strony: {type: 'progress'} w trakcie, {type: 'result'} na końcu,
-// {type: 'error'} zamiast wyniku, gdy symulacja rzuci (np. zły kupon). Bez tej
-// ostatniej strona czekałaby na wynik bez końca z kręcącym się spinnerem.
+// {type: 'error'} zamiast wyniku, gdy symulacja rzuci (np. zły kupon, nieznana
+// gra). Bez tej ostatniej strona czekałaby na wynik bez końca z kręcącym się
+// spinnerem.
 // Przerwanie to worker.terminate() po stronie strony — pętla jest synchroniczna,
 // więc worker i tak nie odebrałby w jej trakcie żadnej wiadomości.
 onmessage = ({ data }) => {
   try {
-    const result = simulation(data, Math.random, {
+    const result = simulation(data?.game, data?.numbers, Math.random, {
       onProgress: (progress) => postMessage({ type: 'progress', ...progress }),
     });
     postMessage({ type: 'result', ...result });
