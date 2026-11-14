@@ -377,14 +377,14 @@ h2 {
   aspect-ratio: 1;
 }
 
-/* Eurojackpot: 8 kolumn (50 = 6 pełnych rzędów + 49, 50) na całą szerokość
-   karty. Od 900 px kartę rozciąga do wysokości panel z jedenastoma
-   kafelkami wyniku — 10 kolumn (kule ~40 px) zostawiało po ~200 px pustki
-   nad planszą i pod nią, 8 kolumn (kule ~70 px) ją wypełnia. 640 px:
-   w jednej kolumnie układu (tablet) kule nie rosną ponad ~70 px. */
+/* Eurojackpot: 8 kolumn (50 = 6 pełnych rzędów + 49, 50). Od 900 px kartę
+   rozciąga do wysokości panel z jedenastoma kafelkami wyniku — 10 kolumn
+   (kule ~40 px) zostawiało po ~200 px pustki nad planszą i pod nią.
+   Szerokość ta sama co w Lotto (max-width z .numbersList): na całą kartę
+   kule (~70 px) były większe niż w Lotto, a plansza bez marginesów po
+   bokach; przy 500 px marginesy są jak w Lotto, kule ~52 px. */
 body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
   grid-template-columns: repeat(8, minmax(0, 1fr));
-  max-width: 640px;
   aspect-ratio: 8 / 7;
 }
 
@@ -393,7 +393,7 @@ body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
 .euroList {
   grid-template-columns: repeat(6, minmax(0, 1fr));
   width: 75%;
-  max-width: calc(640px * 0.75);
+  max-width: calc(500px * 0.75);
   aspect-ratio: 3;
 }
 
@@ -409,7 +409,7 @@ body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
 
   .euroList {
     width: 100%;
-    max-width: 640px;
+    max-width: 500px;
   }
 }
 
