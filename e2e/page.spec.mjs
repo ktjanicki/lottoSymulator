@@ -300,7 +300,7 @@ test(
     await expect(page.locator('.simulationProgress')).toBeHidden();
     await expect(page.locator('.startButton')).toBeEnabled();
     await expect(page.locator('.historyCount')).toHaveText('1');
-    expect(JSON.parse(await stored(page, HISTORY_KEY))[0].numbers).toEqual(TICKET);
+    expect(JSON.parse(await stored(page, HISTORY_KEY))[0]).toMatchObject({ game: 'lotto', numbers: TICKET });
     await expect(page.locator('.appVersion')).toHaveText(VERSION);
     expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
   }

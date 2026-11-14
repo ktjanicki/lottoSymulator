@@ -2,18 +2,20 @@
 // Bez DOM: `storage` jest wstrzykiwany (strona podaje localStorage, testy
 // własny magazyn), żeby testy mogły sprawdzić każdą gałąź wprost.
 
-import { GAMES } from './simulation.js';
-
-// Historia zna na razie tylko Lotto (wpisy bez pola gry).
-const [{ max: MAX_NUMBER, size: TICKET_SIZE }] = GAMES.lotto.pools;
+import { splitTicket } from './simulation.js';
 
 // Zmiana klucza gubi historię i zgodę zapisane u odwiedzających.
 export const HISTORY_KEY = 'lottoSymulator.history';
 export const CONSENT_KEY = 'lottoSymulator.consent';
-// 500 wpisów to ok. 50 KB; bez limitu historia rośnie do ~5 MB limitu
-// przeglądarki i od tej chwili każdy zapis cicho się nie udaje.
+// Limit na grę: 500 wpisów to ok. 50 KB. Bez limitu historia rośnie do ~5 MB
+// limitu przeglądarki i od tej chwili każdy zapis cicho się nie udaje.
+// Wspólny limit dla gier pozwoliłby jednej wypchnąć z historii drugą.
 export const HISTORY_LIMIT = 500;
 export const HISTORY_PAGE = 15;
+// Gra wpisów sprzed 1.15.0 — wtedy strona znała tylko Lotto i nie zapisywała
+// gry. Inna wartość przepisałaby starą historię Lotto na inną grę albo ją
+// odrzuciła.
+export const LEGACY_GAME = 'lotto';
 
 // localStorage potrafi rzucić przy samym odczycie (zablokowane dane witryny,
 // tryb prywatny) i przy zapisie (pełny magazyn). Wyjątek z tego miejsca
@@ -26,20 +28,30 @@ const safely = (action, fallback) => {
   }
 };
 
-const isEntry = (entry) =>
-  Array.isArray(entry?.numbers) &&
-  entry.numbers.length === TICKET_SIZE &&
-  entry.numbers.every((n) => Number.isInteger(n) && n >= 1 && n <= MAX_NUMBER) &&
-  Number.isInteger(entry.drawsNumber) &&
-  entry.drawsNumber > 0 &&
-  Number.isFinite(entry.date);
+// Wpis z grą (stary wpis — z LEGACY_GAME) albo null, gdy nie pasuje do
+// żadnej gry. splitTicket rzuca przy nieznanej grze i kuponie niezgodnym
+// z grą. Liczby muszą być już liczbami: wpis z napisami to nie nasz zapis.
+const toEntry = (entry) => {
+  const game = entry?.game ?? LEGACY_GAME;
+  const valid = safely(
+    () =>
+      splitTicket(game, entry.numbers) &&
+      entry.numbers.every(Number.isInteger) &&
+      Number.isInteger(entry.drawsNumber) &&
+      entry.drawsNumber > 0 &&
+      Number.isFinite(entry.date),
+    false
+  );
+  return valid ? { game, numbers: entry.numbers, drawsNumber: entry.drawsNumber, date: entry.date } : null;
+};
 
-// Wpisy od najnowszego. Uszkodzony JSON albo obce wpisy (ręczna edycja,
-// dane starszej wersji) odpadają — lista ich nie wyrenderuje.
+// Wpisy wszystkich gier od najnowszego, każdy z polem `game`. Uszkodzony JSON
+// albo obce wpisy (ręczna edycja, dane nieznanej gry) odpadają — lista ich
+// nie wyrenderuje.
 export const readHistory = (storage) =>
   safely(() => {
     const entries = JSON.parse(storage.getItem(HISTORY_KEY) ?? '[]');
-    return Array.isArray(entries) ? entries.filter(isEntry) : [];
+    return Array.isArray(entries) ? entries.map(toEntry).filter(Boolean) : [];
   }, []);
 
 // Bez zgody baner wraca po co piątej ukończonej symulacji w wizycie. Rzadziej —
@@ -58,14 +70,28 @@ export const giveConsent = (storage) =>
     return true;
   }, false);
 
-// Dopisuje wygraną na początek, tnie do HISTORY_LIMIT. Bez zgody niczego nie
-// zapisuje. Zwraca historię po zmianie (bez zmiany, gdy zapis się nie udał).
-export const recordWin = (storage, { numbers, drawsNumber, date }) => {
+// Najnowsze HISTORY_LIMIT wpisów każdej gry, kolejność bez zmian.
+const trimPerGame = (history) => {
+  const kept = {};
+  return history.filter(({ game }) => (kept[game] = (kept[game] ?? 0) + 1) <= HISTORY_LIMIT);
+};
+
+// Dopisuje wygraną na początek, tnie do HISTORY_LIMIT na grę. Bez zgody niczego
+// nie zapisuje. Zwraca historię po zmianie (bez zmiany, gdy zapis się nie udał).
+// Gra jest obowiązkowa (splitTicket odrzuca brak gry): LEGACY_GAME dotyczy
+// tylko odczytu starych wpisów — domyślna gra przy zapisie wpisałaby wygraną
+// Eurojackpota jako Lotto.
+export const recordWin = (storage, { game, numbers, drawsNumber, date }) => {
   const history = readHistory(storage);
   if (!hasConsent(storage)) return history;
-  const entry = { numbers: numbers.map(Number).sort((a, b) => a - b), drawsNumber, date };
-  if (!isEntry(entry)) throw new RangeError(`Wpis historii nie pasuje do kuponu: ${JSON.stringify(entry)}.`);
-  const updated = [entry, ...history].slice(0, HISTORY_LIMIT);
+  const sorted = safely(() => splitTicket(game, numbers).flat(), null);
+  const entry = sorted && toEntry({ game, numbers: sorted, drawsNumber, date });
+  if (!entry) {
+    throw new RangeError(
+      `Wpis historii nie pasuje do kuponu gry: ${JSON.stringify({ game, numbers, drawsNumber, date })}.`
+    );
+  }
+  const updated = trimPerGame([entry, ...history]);
   return safely(() => {
     storage.setItem(HISTORY_KEY, JSON.stringify(updated));
     return updated;

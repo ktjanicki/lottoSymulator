@@ -88,7 +88,9 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
 - **Worker** liczy synchronicznie — przerwanie to `terminate()`, nie wiadomość.
   Protokół: `{type: 'progress' | 'result' | 'error'}`.
 - **localStorage** tylko za zgodą (klucze w `history.js`; zmiana klucza gubi
-  dane odwiedzających). Odmowy nie zapisujemy.
+  dane odwiedzających). Odmowy nie zapisujemy. Wpis historii niesie grę;
+  wpisy sprzed 1.15.0 jej nie mają i czytają się jako `LEGACY_GAME` (Lotto).
+  Wpis sprawdza `splitTicket` z `simulation.js` — ta sama funkcja co kupon.
 - **Google Analytics** w trybie zgody (Consent Mode v2, `analytics.js`):
   gtag.js wczytuje się zawsze, z odmową domyślną przed `config`; ciasteczka
   `_ga` dopiero po zgodzie z tego samego banera. Identyfikator stoi tylko

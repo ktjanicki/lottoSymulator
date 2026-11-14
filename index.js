@@ -391,7 +391,7 @@ startButton.addEventListener('click', () => {
     resultFives.textContent = formatNumber(fives);
     resultSimulationTime.textContent = formatSeconds(data.durationMs);
     // Bez zgody recordWin niczego nie zapisuje i zwraca historię bez zmian.
-    const win = { numbers: [...ticketNumbers], drawsNumber: data.drawsNumber, date: Date.now() };
+    const win = { game: GAME, numbers: [...ticketNumbers], drawsNumber: data.drawsNumber, date: Date.now() };
     history = recordWin(storage, win);
     // Nowa wygrana wjeżdża na górę listy; pozostałe wpisy stoją.
     renderHistory(0, 1);

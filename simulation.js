@@ -87,13 +87,16 @@ export const drawNumbers = (pool, size, random = Math.random) => {
 // „6 różnych liczb”, ale „2 różne liczby”.
 const differentNumbers = (size) => (size >= 2 && size <= 4 ? 'różne liczby' : 'różnych liczb');
 
-// Kupon jako liczby pula po puli. Zły kupon (np. 5 liczb Lotto albo
-// powtórka) nigdy nie trafi głównej wygranej — symulacja kręciłaby się bez
-// końca zamiast zgłosić błąd.
-const toTicket = (pools, ticketNumbers) => {
-  const numbers = ticketNumbers.map(Number);
+// Kupon jako liczby pula po puli, każda pula rosnąco. Zły kupon (np.
+// 5 liczb Lotto albo powtórka) nigdy nie trafi głównej wygranej — symulacja
+// kręciłaby się bez końca zamiast zgłosić błąd. Tę samą funkcję woła
+// historia: z osobną walidacją przyjęłaby wpis, którego gra nie uzna za
+// kupon, albo odrzuciła poprawny.
+export const splitTicket = (game, ticketNumbers) => {
+  const { pools } = gameRules(game);
+  const numbers = Array.isArray(ticketNumbers) ? ticketNumbers.map(Number) : [];
   let offset = 0;
-  const parts = pools.map(({ size }) => numbers.slice(offset, (offset += size)));
+  const parts = pools.map(({ size }) => numbers.slice(offset, (offset += size)).sort((a, b) => a - b));
   const valid =
     numbers.length === offset &&
     parts.every(
@@ -102,7 +105,9 @@ const toTicket = (pools, ticketNumbers) => {
     );
   if (!valid) {
     const expected = pools.map(({ max, size }) => `${size} ${differentNumbers(size)} 1–${max}`).join(' i ');
-    throw new RangeError(`Kupon ma mieć ${expected}, jest: ${ticketNumbers.join(', ')}.`);
+    throw new RangeError(
+      `Kupon ma mieć ${expected}, jest: ${Array.isArray(ticketNumbers) ? ticketNumbers.join(', ') : String(ticketNumbers)}.`
+    );
   }
   return parts;
 };
@@ -117,7 +122,7 @@ export const simulateUntilWin = (
   { onProgress, progressEvery = PROGRESS_EVERY } = {}
 ) => {
   const { pools: rules, tiers } = gameRules(game);
-  const parts = toTicket(rules, ticketNumbers);
+  const parts = splitTicket(game, ticketNumbers);
   const pools = rules.map(({ max }) => createPool(max));
   const sizes = rules.map(({ size }) => size);
   const onTicket = rules.map(({ max }, p) => {
@@ -165,9 +170,10 @@ export const simulation = (game, ticketNumbers, random = Math.random, { onProgre
     onProgress: onProgress && ((progress) => onProgress({ ...progress, durationMs: performance.now() - start })),
     progressEvery,
   });
-  const parts = toTicket(gameRules(game).pools, ticketNumbers);
   return {
-    ticketNumbers: parts.map((part) => part.sort((a, b) => a - b).join(', ')).join(' + '),
+    ticketNumbers: splitTicket(game, ticketNumbers)
+      .map((part) => part.join(', '))
+      .join(' + '),
     ...result,
     durationMs: performance.now() - start,
   };
