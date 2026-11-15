@@ -81,8 +81,10 @@
     --border: #272c47;
     --text: #e8eaf6;
     --muted: #a0a6c3;
-    --primary: #818cf8;
-    --primary-hover: #a5b4fc;
+    /* Żółty ciemniejszy od złotych kul (--gold): jaśniejszy zlałby się
+       z wylosowanymi liczbami obok przełączników. Tekst ma 6,6:1. */
+    --primary: #ca8a04;
+    --primary-hover: #eab308;
     --on-primary: #0b0d1a;
     --go: #22c55e;
     --go-hover: #4ade80;
@@ -90,7 +92,9 @@
     --danger: #f87171;
     --danger-hover: #fca5a5;
     --on-danger: #0b0d1a;
-    --focus: #a5b4fc;
+    /* Jaśniejszy od --primary: obrys wokół żółtego przycisku musi się od
+       niego odróżniać. */
+    --focus: #fde047;
     --ball: #262b45;
     --ball-hi: #3a4066;
     --ball-lo: #1a1e33;
