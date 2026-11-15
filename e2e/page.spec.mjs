@@ -6,7 +6,10 @@
 // - baner zgody, który zapisuje bez zgody albo nie wraca po odmowie;
 // - stopka z numerem innym niż wydanie;
 // - przełącznik gry, adres i Wstecz pokazujące różne gry, kupon albo wynik
-//   jednej gry w drugiej.
+//   jednej gry w drugiej;
+// - generator, który nie dochodzi do zestawu, liczy inną liczbę losowań niż
+//   wybrana, miesza swoją historię z wygranymi symulatora albo zostawia stronę
+//   w stanie „w toku”, gdy worker odmówi (brak pamięci na liczniki).
 // Scenariusze @prod idą też na produkcji (npm run check:prod): tylko czytają
 // stronę, a wszystko, co zapisują, zostaje w przeglądarce testu.
 
@@ -23,6 +26,15 @@ const EURO_TICKET = [
 ];
 const CONSENT_KEY = 'lottoSymulator.consent';
 const HISTORY_KEY = 'lottoSymulator.history';
+const GENERATED_KEY = 'lottoSymulator.generated';
+// Zestawy, które zwraca atrapa workera w trybie generatora (pula po puli).
+const GENERATED = {
+  lotto: [[2, 8, 15, 23, 38, 49]],
+  eurojackpot: [
+    [5, 12, 26, 33, 50],
+    [1, 12],
+  ],
+};
 
 // Google Analytics nigdy nie dostaje żądania z testu: inaczej każde wejście
 // w e2e i w check:prod liczyłoby się w statystykach strony jako wizyta. Zamiast gtag.js atrapa, która zapisuje, skąd ją wczytano; CSP
@@ -59,6 +71,8 @@ const pickEuroTicket = async (page) => {
 };
 
 const gameButton = (page, name) => page.locator('.gameSwitch').getByRole('button', { name, exact: true });
+const modeButton = (page, name) => page.locator('.modeSwitch').getByRole('button', { name, exact: true });
+const drawsButton = (page, name) => page.locator('.drawsChoice').getByRole('button', { name, exact: true });
 
 // Kafelki stopni: tyle, ile stopni gry, każdy z liczbą grupowaną twardą spacją.
 // Rozjazd protokołu strony i workera pokazuje tu „undefined” albo „NaN”.
@@ -70,11 +84,14 @@ const expectTierCounts = async (page, count) => {
 
 const stored = (page, key) => page.evaluate((k) => localStorage.getItem(k), key);
 
-// Atrapa workera: od razu zwraca wygraną z kolejnym numerem losowania.
+// Atrapa workera: od razu zwraca wygraną z kolejnym numerem losowania,
+// a w trybie generatora — zestaw z `generated` i liczbę losowań z wiadomości
+// (kolejne zestawy padają 3, 4, 5… razy).
 // Tylko tam, gdzie liczy się logika strony po wyniku, a nie sama symulacja —
 // pięć prawdziwych symulacji trwałoby minuty.
-const fakeWorker = () => {
+const fakeWorker = (generated) => {
   let draws = 100;
+  let hits = 2;
   window.Worker = class {
     constructor() {
       this.listeners = {};
@@ -82,17 +99,20 @@ const fakeWorker = () => {
     addEventListener(type, listener) {
       (this.listeners[type] ??= []).push(listener);
     }
-    postMessage({ game, numbers }) {
+    postMessage({ mode, game, numbers, draws: generatorDraws }) {
       // Liczba stopni jak w GAMES (simulation.js): Lotto 3, Eurojackpot 11.
       const tiers = new Array(game === 'eurojackpot' ? 11 : 3).fill(0);
       tiers[0] = 1;
-      const data = {
-        type: 'result',
-        ticketNumbers: numbers.join(', '),
-        drawsNumber: ++draws,
-        tiers,
-        durationMs: 5,
-      };
+      const data =
+        mode === 'generator'
+          ? { type: 'result', numbers: generated[game], hits: ++hits, drawsNumber: generatorDraws, durationMs: 5 }
+          : {
+              type: 'result',
+              ticketNumbers: numbers.join(', '),
+              drawsNumber: ++draws,
+              tiers,
+              durationMs: 5,
+            };
       setTimeout(() => this.listeners.message?.forEach((listener) => listener({ data })), 10);
     }
     terminate() {}
@@ -118,6 +138,24 @@ const endlessWorker = () => {
     terminate() {
       window.workerTerminated = true;
     }
+  };
+};
+
+// Atrapa workera, który odmawia: {type: 'error'} zamiast wyniku — tak kończy
+// się generator, gdy przeglądarka nie da pamięci na liczniki zestawów.
+const refusingWorker = () => {
+  window.Worker = class {
+    constructor() {
+      this.listeners = {};
+    }
+    addEventListener(type, listener) {
+      (this.listeners[type] ??= []).push(listener);
+    }
+    postMessage() {
+      const data = { type: 'error', message: 'Array buffer allocation failed' };
+      setTimeout(() => this.listeners.message?.forEach((listener) => listener({ data })), 10);
+    }
+    terminate() {}
   };
 };
 
@@ -505,10 +543,18 @@ test('wejście wprost na #eurojackpot nie pokazuje pod banerem zgody Lotto jako 
 test('nieznany fragment adresu (stary link, nazwa z prototypu obiektu) otwiera Lotto zamiast wywrócić stronę', async ({
   page,
 }) => {
-  for (const hash of ['#historia', '#toString', '#constructor']) {
+  for (const hash of [
+    '#historia',
+    '#toString',
+    '#constructor',
+    '#generator-keno',
+    '#generator-toString',
+    '#generatory',
+  ]) {
     await page.goto('about:blank');
     await page.goto(`/${hash}`);
     await expect(gameButton(page, 'Lotto'), hash).toHaveAttribute('aria-pressed', 'true');
+    await expect(modeButton(page, 'Symulator'), hash).toHaveAttribute('aria-pressed', 'true');
     await expect(page.locator('.numbersList[data-pool="0"] .ball'), hash).toHaveCount(49);
   }
 });
@@ -654,3 +700,270 @@ test(
     expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
   }
 );
+
+test(
+  'generator z adresu, z przełącznika i po Wstecz — inaczej link do generatora otwiera symulator albo adres i strona pokazują różne tryby',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.goto('/#generator-eurojackpot');
+    await page.locator('.cookieDecline').click();
+    // Plansza jest ukryta: fokus po banerze idzie na przycisk startu, nie na <body>.
+    await expect(page.locator('.startButton')).toBeFocused();
+    await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(gameButton(page, 'Eurojackpot')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.boards')).toBeHidden();
+    await expect(page.locator('.drawsChoice button')).toHaveText([
+      '10\u00a0mln',
+      '50\u00a0mln',
+      '100\u00a0mln',
+      '300\u00a0mln',
+      '500\u00a0mln',
+      '1\u00a0000\u00a0mln',
+    ]);
+    await expect(drawsButton(page, '10\u00a0mln')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.getByRole('heading', { name: 'Wygenerowane liczby' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Twoje liczby' })).toBeHidden();
+    await expect(page.locator('.selectedItems .slot')).toHaveCount(7);
+    await expect(page.locator('.startButton')).toHaveText('Generuj liczby');
+    await expect(page.locator('.startButton')).toBeEnabled();
+    await expect(page.getByRole('heading', { name: 'Jak działa generator?' })).toBeVisible();
+
+    await modeButton(page, 'Symulator').click();
+    await expect(page).toHaveURL(/#eurojackpot$/);
+    await expect(modeButton(page, 'Symulator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(50);
+    await expect(page.locator('.drawsChoice')).toBeHidden();
+    await expect(page.locator('.startButton')).toHaveText('Rozpocznij symulację');
+    await expect(page.locator('.startButton')).toBeDisabled();
+    await expect(page.getByRole('heading', { name: 'Jak działa generator?' })).toBeHidden();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/#generator-eurojackpot$/);
+    await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.drawsChoice')).toBeVisible();
+
+    // Generator Lotto to sam #generator; symulator Lotto — adres bez fragmentu.
+    await gameButton(page, 'Lotto').click();
+    await expect(page).toHaveURL(/#generator$/);
+    await expect(page.locator('.selectedItems .slot')).toHaveCount(6);
+    await modeButton(page, 'Symulator').click();
+    await expect(page).toHaveURL(new URL('/', page.url()).href);
+
+    // Fragment wpisany ręcznie w pasek adresu.
+    await page.evaluate(() => (location.hash = 'generator'));
+    await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
+    await expect(gameButton(page, 'Lotto')).toHaveAttribute('aria-pressed', 'true');
+  }
+);
+
+// Jednorazowy odczyt, jak przy #eurojackpot wyżej.
+test('wejście wprost na #generator nie pokazuje pod banerem zgody symulatora jako wybranego', async ({ page }) => {
+  await page.goto('/#generator');
+  await expect(page.locator('.cookieBanner')).toBeVisible();
+  await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
+  const background = (name) => modeButton(page, name).evaluate((button) => getComputedStyle(button).backgroundColor);
+  expect(await background('Symulator')).toBe('rgba(0, 0, 0, 0)');
+  expect(await background('Generator')).not.toBe('rgba(0, 0, 0, 0)');
+});
+
+// Zestaw z prawdziwego workera: liczby gry, każda pula rosnąco, bez powtórek.
+const expectGeneratedTicket = async (page, pools) => {
+  const balls = (await page.locator('.selectedItems .ball').allTextContents()).map(Number);
+  expect(balls).toHaveLength(pools.reduce((sum, { size }) => sum + size, 0));
+  let offset = 0;
+  for (const { max, size } of pools) {
+    const part = balls.slice(offset, (offset += size));
+    expect(part, `pula 1–${max}`).toEqual([...new Set(part)].sort((a, b) => a - b));
+    expect(Math.min(...part)).toBeGreaterThanOrEqual(1);
+    expect(Math.max(...part)).toBeLessThanOrEqual(max);
+  }
+  return balls;
+};
+
+for (const [game, hash, pools] of [
+  ['lotto', '#generator', [{ max: 49, size: 6 }]],
+  [
+    'eurojackpot',
+    '#generator-eurojackpot',
+    [
+      { max: 50, size: 5 },
+      { max: 12, size: 2 },
+    ],
+  ],
+]) {
+  test(
+    `generator (${game}) prawdziwym workerem kończy się zestawem, liczbą trafień i wpisem w swojej historii, bez naruszeń CSP`,
+    { tag: '@prod' },
+    async ({ page }) => {
+      await page.addInitScript(recordViolations);
+      await page.goto(`/${hash}`);
+      await page.locator('.cookieAccept').click();
+      // 10 mln losowań (domyślne): ułamek sekundy na komputerze, kilka na
+      // wolnej maszynie — bez sprawdzania paska postępu, jak w symulacji.
+      await page.locator('.startButton').click();
+
+      await expect(page.locator('.generatorResult')).toBeVisible({ timeout: 140_000 });
+      const balls = await expectGeneratedTicket(page, pools);
+      // Przy 10 mln losowań najczęstszy zestaw pada kilka razy; „1 raz”
+      // znaczyłoby, że liczniki nie liczą.
+      await expect(page.locator('.resultHits')).toHaveText(/^([2-9]|\d{2}) razy$/);
+      await expect(page.locator('.resultGeneratorDraws')).toHaveText('10\u00a0000\u00a0000');
+      await expect(page.locator('.winResult')).toBeHidden();
+      await expect(page.locator('.simulationProgress')).toBeHidden();
+      await expect(page.locator('.startButton')).toBeEnabled();
+      await expect(page.locator('.historyCount')).toHaveText('1');
+      const [entry] = JSON.parse(await stored(page, GENERATED_KEY));
+      expect(entry).toMatchObject({ game, numbers: balls, drawsNumber: 10_000_000 });
+      expect(await stored(page, HISTORY_KEY)).toBeNull();
+      expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
+    }
+  );
+}
+
+test('generator liczy wybraną liczbę losowań, a jego historia stoi osobno od wygranych i od drugiej gry', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeWorker, GENERATED);
+  await page.goto('/');
+  await page.locator('.cookieAccept').click();
+  await pickTicket(page);
+  await page.locator('.startButton').click();
+  await expect(page.locator('.historyCount')).toHaveText('1');
+
+  await modeButton(page, 'Generator').click();
+  // Wynik symulatora nie zostaje w generatorze, a wygrana nie jest zestawem.
+  await expect(page.locator('.winResult')).toBeHidden();
+  await expect(page.locator('.history')).toBeHidden();
+
+  await drawsButton(page, '500\u00a0mln').click();
+  await expect(drawsButton(page, '500\u00a0mln')).toHaveAttribute('aria-pressed', 'true');
+  await expect(drawsButton(page, '10\u00a0mln')).toHaveAttribute('aria-pressed', 'false');
+  await page.locator('.startButton').click();
+  await expect(page.getByRole('heading', { name: 'Najczęstszy zestaw' })).toBeVisible();
+  await expect(page.locator('.selectedItems .ball')).toHaveText(GENERATED.lotto.flat().map(String));
+  await expect(page.locator('.generatedDraw')).toHaveText(
+    /Ten zestaw padł\s+3 razy\s+w 500\u00a0000\u00a0000 losowań\./
+  );
+  await expect(page.locator('.historyCount')).toHaveText('1');
+  await page.locator('.historyToggle').click();
+  await expect(page.locator('.historyDraws')).toHaveText('3 razy w 500\u00a0000\u00a0000 losowań');
+
+  // Liczba losowań zostaje po zmianie gry; zestaw Lotto nie.
+  await gameButton(page, 'Eurojackpot').click();
+  await expect(page.locator('.generatorResult')).toBeHidden();
+  await expect(page.locator('.selectedItems .slot')).toHaveCount(7);
+  await expect(page.locator('.history')).toBeHidden();
+  await expect(drawsButton(page, '500\u00a0mln')).toHaveAttribute('aria-pressed', 'true');
+  await page.locator('.startButton').click();
+  await expect(page.locator('.selectedItems .ball.euro')).toHaveText(['1', '12']);
+  await expect(page.locator('.historyItem .ball')).toHaveCount(7);
+
+  expect(JSON.parse(await stored(page, GENERATED_KEY))).toMatchObject([
+    { game: 'eurojackpot', numbers: GENERATED.eurojackpot.flat(), drawsNumber: 500_000_000, hits: 4 },
+    { game: 'lotto', numbers: GENERATED.lotto.flat(), drawsNumber: 500_000_000, hits: 3 },
+  ]);
+  // Pod kluczem wygranych — tylko wygrana: karta sprzed 1.16.0 czyta go po swojemu.
+  expect(JSON.parse(await stored(page, HISTORY_KEY)).map(({ game }) => game)).toEqual(['lotto']);
+
+  // Wygrana symulatora dalej stoi na swojej liście.
+  await modeButton(page, 'Symulator').click();
+  await gameButton(page, 'Lotto').click();
+  await expect(page.locator('.historyCount')).toHaveText('1');
+  await expect(page.locator('.historyDraws')).toHaveText('101 losowań');
+});
+
+test('„Przenieś do symulatora” wypełnia kupon tej samej gry wygenerowanym zestawem — inaczej symulacja idzie na inne liczby', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeWorker, GENERATED);
+  await page.goto('/#generator-eurojackpot');
+  await page.locator('.cookieDecline').click();
+  await page.locator('.startButton').click();
+  await page.locator('.toSimulatorButton').click();
+
+  await expect(page).toHaveURL(/#eurojackpot$/);
+  await expect(modeButton(page, 'Symulator')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.selectedCount')).toHaveText('5/5 + 2/2');
+  for (const [pool, numbers] of GENERATED.eurojackpot.entries()) {
+    for (const number of numbers) await expect(ball(page, pool, number)).toHaveAttribute('aria-pressed', 'true');
+  }
+  await expect(page.locator('.numbersList [aria-pressed="true"]')).toHaveCount(7);
+  await expect(page.locator('.startButton')).toBeFocused();
+  // Kule kuponu to znów przyciski: zestaw da się poprawić.
+  await page.getByRole('button', { name: 'Usuń liczbę 12 z 12' }).click();
+  await expect(page.locator('.selectedCount')).toHaveText('5/5 + 1/2');
+
+  await ball(page, 1, 12).click();
+  await page.locator('.startButton').click();
+  await expect(page.locator('.resultTicketNumbers')).toHaveText('5, 12, 26, 33, 50, 1, 12');
+  // Wstecz wraca do generatora, już bez zestawu.
+  await page.goBack();
+  await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.selectedItems .slot')).toHaveCount(7);
+});
+
+test('w trakcie generowania trybu, gry i liczby losowań nie da się zmienić, a „Przerwij” oddaje stronę', async ({
+  page,
+}) => {
+  await page.addInitScript(endlessWorker);
+  await page.goto('/');
+  await page.locator('.cookieDecline').click();
+  await modeButton(page, 'Generator').click();
+  await drawsButton(page, '50\u00a0mln').click();
+  await page.locator('.startButton').click();
+  await expect(page.locator('.progressLabel')).toHaveText('Generowanie w toku');
+  await expect(page.locator('.progressCount')).toHaveText('1 z 50\u00a0mln losowań · 0,3 s');
+  await expect(modeButton(page, 'Symulator')).toBeDisabled();
+  await expect(gameButton(page, 'Eurojackpot')).toBeDisabled();
+  await expect(drawsButton(page, '10\u00a0mln')).toBeDisabled();
+
+  await page.goBack();
+  await expect(page).toHaveURL(/#generator$/);
+  await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
+  await expect(page.locator('.simulationProgress')).toBeVisible();
+
+  await page.locator('.abortButton').click();
+  await expect(page.locator('.simulationAborted')).toHaveText(
+    'Generowanie przerwane po ponad 1\u00a0000\u00a0000 losowaniach (0,3 s).'
+  );
+  expect(await page.evaluate(() => window.workerTerminated)).toBe(true);
+  await expect(page.locator('.generatorResult')).toBeHidden();
+  await expect(page.locator('.selectedItems .slot')).toHaveCount(6);
+  await expect(page.locator('.startButton')).toBeFocused();
+  await expect(modeButton(page, 'Symulator')).toBeEnabled();
+});
+
+test('worker, który odmawia (brak pamięci na liczniki), kończy generowanie komunikatem, zamiast kręcić spinnerem bez końca', async ({
+  page,
+}) => {
+  await page.addInitScript(refusingWorker);
+  await page.goto('/#generator-eurojackpot');
+  await page.locator('.cookieDecline').click();
+  await page.locator('.startButton').click();
+
+  await expect(page.locator('.simulationAborted')).toHaveText(/^Generowanie nie powiodło się/);
+  await expect(page.locator('.simulationProgress')).toBeHidden();
+  await expect(page.locator('.startButton')).toBeEnabled();
+  await expect(page.locator('.startButton')).toBeFocused();
+});
+
+test('bez zgody baner wraca po 5. generowaniu, a zgoda wtedy zapisuje ten zestaw na liście generatora', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeWorker, GENERATED);
+  await page.goto('/#generator');
+  await page.locator('.cookieDecline').click();
+
+  for (let run = 1; run <= 4; run++) {
+    await page.locator('.startButton').click();
+    await expect(page.locator('.resultHits')).toHaveText(`${2 + run} razy`);
+    await expect(page.locator('.cookieBanner'), `baner po ${run}. generowaniu`).toBeHidden();
+  }
+  await page.locator('.startButton').click();
+  await expect(page.locator('.cookieBanner')).toBeVisible();
+
+  await page.locator('.cookieAccept').click();
+  expect(JSON.parse(await stored(page, GENERATED_KEY)).map((entry) => entry.hits)).toEqual([7]);
+  expect(await stored(page, HISTORY_KEY)).toBeNull();
+  await expect(page.locator('.historyCount')).toHaveText('1');
+});

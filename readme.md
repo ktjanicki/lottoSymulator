@@ -11,6 +11,13 @@ to zajęło. Dwie gry, przełączane w nagłówku:
 Zasady gier (pule liczb, stopnie wygranych) stoją w jednym miejscu: `GAMES`
 w `simulation.js`.
 
+Drugi tryb, przełączany w nagłówku po prawej, to generator
+(`lottosymulator.pl/#generator`, dla Eurojackpota `#generator-eurojackpot`):
+przeprowadza wybraną liczbę losowań (10–1000 mln, `GENERATOR_DRAWS`
+w `generator.js`), liczy, ile razy padł każdy zestaw, i pokazuje najczęstszy.
+Zestaw można przenieść na kupon symulatora. Generator trzyma w pamięci
+licznik na każdy zestaw gry: 14 MB dla Lotto, 140 MB dla Eurojackpota.
+
 ## Uruchomienie
 
 Projekt używa Parcela 2. Instalacja zależności i serwer deweloperski:
@@ -99,7 +106,8 @@ Jednorazowe przeformatowanie Prettierem jest w `.git-blame-ignore-revs`; żeby
 
 Po każdym wdrożeniu uruchom `npm run check:prod`: sprawdza, że produkcja podaje
 numer z `VERSION` i że symulacja obu gier przechodzi do wyniku (Eurojackpot
-trwa zwykle kilkadziesiąt sekund, czasem kilka minut). Tylko czyta stronę —
+trwa zwykle kilkadziesiąt sekund, czasem kilka minut), a generator obu gier —
+do zestawu. Tylko czyta stronę —
 zapisuje wyłącznie w przeglądarce testu.
 
 ## Licencja

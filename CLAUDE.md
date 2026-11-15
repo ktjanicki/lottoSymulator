@@ -86,6 +86,10 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   wołały je wprost. `analytics.js` dostaje okno jako argument. DOM tylko
   w `index.js`; `render()` i `renderHistory()` to jedyne miejsca, które
   ustawiają stan kontrolek.
+- **Tryb i gra stoją we fragmencie adresu** (`#eurojackpot`, `#generator`,
+  `#generator-eurojackpot`; nieznany fragment to symulator Lotto). Bloki
+  jednego trybu (`data-for-mode` w `index.html`) ukrywa `style.css` według
+  `data-mode` na `<body>`; teksty zależne od gry (`data-for-game`) — `render()`.
 - **Worker** liczy synchronicznie — przerwanie to `terminate()`, nie wiadomość.
   Wejście: `{mode: 'simulator', game, numbers}` albo `{mode: 'generator', game,
 draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
@@ -106,12 +110,12 @@ draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
 
 ## Testy — cztery warstwy
 
-| Warstwa | Co                                                                                                                                                                                     | Polecenie                                                   | Kiedy                                                     |
-| ------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                                                                      | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
-| 2       | zbudowana strona (build jak na produkcji)                                                                                                                                              | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
-| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                                                              | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
-| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja obu gier, przełącznik gry, CSP, zgody GA, og:image, canonical, robots/sitemap, Search Console, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
+| Warstwa | Co                                                                                                                                                                                                          | Polecenie                                                   | Kiedy                                                     |
+| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                                                                                           | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
+| 2       | zbudowana strona (build jak na produkcji)                                                                                                                                                                   | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
+| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                                                                                   | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
+| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja i generator obu gier, przełączniki gry i trybu, CSP, zgody GA, og:image, canonical, robots/sitemap, Search Console, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
 
 Do tego `npm run lint` (ESLint + Prettier) — każdy commit, CI.
 

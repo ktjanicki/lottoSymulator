@@ -138,6 +138,16 @@ button {
   display: none !important;
 }
 
+/* Bloki i teksty jednego trybu (data-for-mode w index.html) znikają w drugim.
+   Tryb stoi w data-mode na <body> (render() w index.js); bez niego — zanim
+   ruszy skrypt — widać symulator. Reguły biją też rezerwowanie miejsca na
+   ukryty wynik (.winResult.inactive niżej): wynik drugiego trybu nie trzyma
+   wysokości. */
+body:not([data-mode='generator']) [data-for-mode='generator'],
+body[data-mode='generator'] [data-for-mode='simulator'] {
+  display: none !important;
+}
+
 /* ---------- nagłówek ---------- */
 
 /* Siatka logo | tytuł nad podtytułem. Link (logo + tytuł) dzieli siatkę
@@ -146,9 +156,11 @@ button {
    ląduje pod nim. */
 .appHeader {
   display: grid;
-  /* auto, nie 1fr: link nie sięga do prawego brzegu strony, więc puste
-     miejsce obok tytułu nie przenosi na stronę główną. */
-  grid-template-columns: auto auto;
+  /* Link zajmuje dwie kolumny auto, nie 1fr: nie sięga do prawego brzegu
+     strony, więc puste miejsce obok tytułu nie przenosi na stronę główną.
+     Trzecia kolumna (1fr) dociąga siatkę do brzegu — bez niej przełącznik
+     trybu nie miałby prawej krawędzi, do której mógłby się dosunąć. */
+  grid-template-columns: auto auto 1fr;
   justify-content: start;
   align-items: center;
   column-gap: 16px;
@@ -160,7 +172,7 @@ button {
 .homeLink {
   display: grid;
   grid-template: subgrid / subgrid;
-  grid-column: 1 / -1;
+  grid-column: 1 / 3;
   grid-row: 1 / span 2;
   align-items: center;
   color: inherit;
@@ -229,23 +241,31 @@ h1 {
   color: var(--muted);
 }
 
-/* Przełącznik gry pod tytułem, na całą szerokość nagłówka (oba wiersze
-   wyżej zajmuje link i podtytuł). Wybrana gra wypełniona kolorem —
-   odróżnia się kształtem, nie tylko barwą. */
-.gameSwitch {
-  display: inline-flex;
+/* Przełączniki pod tytułem, na całą szerokość nagłówka (oba wiersze wyżej
+   zajmuje link i podtytuł): gra po lewej, tryb po prawej. Na wąskim ekranie
+   tryb zawija się pod grę. */
+.switches {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  gap: 12px;
   grid-column: 1 / -1;
   grid-row: 3;
-  justify-self: start;
-  gap: 4px;
   margin-top: 20px;
+}
+
+/* Wybrana pozycja wypełniona kolorem — odróżnia się kształtem, nie tylko
+   barwą. */
+.switch {
+  display: inline-flex;
+  gap: 4px;
   padding: 4px;
   border-radius: 999px;
   background: var(--surface-2);
   box-shadow: inset 0 0 0 1px var(--border);
 }
 
-.gameSwitch > button {
+.switch > button {
   min-height: 40px;
   padding: 0 20px;
   border: none;
@@ -254,27 +274,36 @@ h1 {
   color: var(--muted);
   background: none;
   cursor: pointer;
-  /* Bez przejścia koloru: HTML zaznacza Lotto, a przy wejściu na
-     #eurojackpot skrypt przełącza zaznaczenie po pierwszym wyświetleniu —
-     z przejściem Lotto wygasało widocznie jako wybrane (pod banerem zgody). */
+  /* Bez przejścia koloru: HTML zaznacza Lotto i symulator, a przy wejściu na
+     #eurojackpot albo #generator skrypt przełącza zaznaczenie po pierwszym
+     wyświetleniu — z przejściem stara pozycja wygasała widocznie jako
+     wybrana (pod banerem zgody). */
 }
 
-.gameSwitch > button:hover:not(:disabled) {
+.switch > button:hover:not(:disabled) {
   color: var(--text);
 }
 
-.gameSwitch > button[aria-pressed='true'] {
+.switch > button[aria-pressed='true'] {
   color: var(--on-primary);
   background: var(--primary);
 }
 
-/* W trakcie symulacji gra się nie zmienia (index.js). */
-.gameSwitch > button:disabled {
+/* W trakcie liczenia gra i tryb się nie zmieniają (index.js). */
+.switch > button:disabled {
   cursor: not-allowed;
 }
 
-.gameSwitch > button:disabled:not([aria-pressed='true']) {
+.switch > button:disabled:not([aria-pressed='true']) {
   opacity: 0.5;
+}
+
+/* Cztery przyciski po 20 px wypełnienia nie mieszczą się w jednym wierszu
+   telefonu, a dwa wiersze przełączników spychają planszę. */
+@media (max-width: 599px) {
+  .switch > button {
+    padding: 0 14px;
+  }
 }
 
 /* ---------- układ i karty ---------- */
@@ -308,7 +337,8 @@ h1 {
     flex-direction: column;
   }
 
-  .numbersTable > .boards {
+  .numbersTable > .boards,
+  .numbersTable > .drawsChoice {
     margin: auto 0;
     width: 100%;
   }
@@ -354,6 +384,54 @@ h2 {
 .startHint {
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+/* ---------- liczba losowań generatora ---------- */
+
+/* Sześć przycisków (GENERATOR_DRAWS w generator.js) w trzech kolumnach;
+   wybrany wypełniony kolorem, jak w przełącznikach nagłówka. */
+.drawsChoice {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 12px;
+}
+
+.drawsChoice > button {
+  min-height: 64px;
+  padding: 8px;
+  border: none;
+  border-radius: 12px;
+  font-size: 1.05rem;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  color: var(--text);
+  background: var(--surface-2);
+  box-shadow: inset 0 0 0 1px var(--border);
+  cursor: pointer;
+}
+
+.drawsChoice > button:hover:not(:disabled) {
+  box-shadow: inset 0 0 0 2px var(--primary);
+}
+
+.drawsChoice > button[aria-pressed='true'] {
+  color: var(--on-primary);
+  background: var(--primary);
+  box-shadow: none;
+}
+
+.drawsChoice > button:disabled {
+  cursor: not-allowed;
+}
+
+.drawsChoice > button:disabled:not([aria-pressed='true']) {
+  opacity: 0.5;
+}
+
+@media (max-width: 420px) {
+  .drawsChoice {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* ---------- kule ---------- */
@@ -475,14 +553,15 @@ body[data-game='eurojackpot'] {
     opacity 0.2s ease;
 }
 
-.ball:hover:not(:disabled) {
+/* Podskok tylko dla przycisków: kule wygenerowanego zestawu to <span>. */
+button.ball:hover:not(:disabled) {
   transform: translateY(-2px);
   box-shadow:
     inset 0 -3px 6px rgba(0, 0, 0, 0.1),
     0 6px 14px rgba(0, 0, 0, 0.15);
 }
 
-.ball:active:not(:disabled) {
+button.ball:active:not(:disabled) {
   transform: scale(0.94);
 }
 
@@ -521,6 +600,10 @@ body[data-game='eurojackpot'] {
 
 .selectedItems > .ball {
   font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+}
+
+.selectedItems > span.ball {
+  cursor: default;
 }
 
 .slot {
@@ -647,14 +730,14 @@ body[data-game='eurojackpot'] {
    o przerwaniu. Bez tła też: od 900 px panel rozciąga go do dołu planszy
    i samo tło wisiałoby jako pusta karta (błąd 1.5.1). Komunikat w trakcie
    symulacji zostaje zwykłym tekstem pod kuponem. */
-.result:not(:has(.winResult:not(.inactive), .simulationAborted:not(.inactive))) {
+.result:not(:has(.winResult:not(.inactive), .generatorResult:not(.inactive), .simulationAborted:not(.inactive))) {
   border-color: transparent;
   background: none;
   box-shadow: none;
 }
 
 @media (max-width: 899px) {
-  .result:not(:has(.winResult:not(.inactive), .simulationAborted:not(.inactive))) {
+  .result:not(:has(.winResult:not(.inactive), .generatorResult:not(.inactive), .simulationAborted:not(.inactive))) {
     padding: 0;
     border: none;
   }
@@ -684,6 +767,7 @@ body[data-game='eurojackpot'] {
   }
 
   .winResult.inactive,
+  .generatorResult.inactive,
   .startHint.inactive {
     display: grid !important;
     visibility: hidden;
@@ -732,12 +816,14 @@ body[data-game='eurojackpot'] {
   color: var(--muted);
 }
 
-.winResult {
+.winResult,
+.generatorResult {
   display: grid;
   gap: 12px;
 }
 
-.winResult > h2 {
+.winResult > h2,
+.generatorResult > h2 {
   font-size: 1.5rem;
   font-weight: 800;
   background: linear-gradient(90deg, var(--gold-lo), var(--gold));
@@ -746,12 +832,15 @@ body[data-game='eurojackpot'] {
   color: transparent;
 }
 
-.winDraw {
+.winDraw,
+.generatedDraw {
   color: var(--muted);
 }
 
-/* Liczba losowań to najważniejsza informacja wyniku. */
-.resultCounterTotal {
+/* Liczba losowań (symulator) i trafień zestawu (generator) to najważniejsza
+   informacja wyniku. */
+.resultCounterTotal,
+.resultHits {
   display: block;
   font-size: clamp(2rem, 9vw, 2.6rem);
   font-weight: 800;
@@ -858,6 +947,24 @@ body[data-game='eurojackpot'] .statValue {
 .simulationTime {
   font-size: 0.9rem;
   color: var(--muted);
+}
+
+/* Jak przycisk startu, ale w kolorze przełączników: to przejście do
+   drugiego trybu, nie kolejne losowanie. */
+.toSimulatorButton {
+  min-height: 48px;
+  padding: 10px 20px;
+  border: none;
+  border-radius: 12px;
+  font-weight: 600;
+  color: var(--on-primary);
+  background: var(--primary);
+  cursor: pointer;
+  transition: background-color 0.15s ease;
+}
+
+.toSimulatorButton:hover {
+  background: var(--primary-hover);
 }
 
 /* ---------- historia ---------- */

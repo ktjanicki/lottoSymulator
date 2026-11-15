@@ -56,19 +56,32 @@
       <!-- Teksty zależne od gry: wszystkie warianty w HTML-u (wyszukiwarka widzi
            obie gry), widoczny ten z data-for-game równym wybranej grze —
            przełącza render() w index.js. W HTML-u widoczne Lotto: tak
-           wygląda strona, zanim skrypt sprawdzi adres. -->
+           wygląda strona, zanim skrypt sprawdzi adres.
+           Teksty i bloki zależne od trybu: data-for-mode; ukrywa je style.css
+           według data-mode na <body> (ustawia render()). Bez data-mode, czyli
+           zanim ruszy skrypt, widać symulator. -->
       <p class="tagline">
-        <span data-for-game="lotto">Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</span>
-        <span data-for-game="eurojackpot" class="inactive"
+        <span data-for-game="lotto" data-for-mode="simulator"
+          >Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</span
+        >
+        <span data-for-game="eurojackpot" data-for-mode="simulator" class="inactive"
           >Wybierz pięć liczb z 50 i dwie z 12 i sprawdź, ile losowań trzeba, żeby trafić „5 + 2”.</span
         >
+        <span data-for-mode="generator">Wylosuj miliony zestawów i zobacz, który padł najczęściej.</span>
       </p>
       <!-- Przyciski z aria-pressed, nie zakładki (role="tab"): wzorzec zakładek
            wymaga panelu, a byłby nim <main> — strona straciłaby punkt
            orientacyjny czytnika ekranu. Gra stoi w adresie (#eurojackpot). -->
-      <div class="gameSwitch" role="group" aria-label="Gra">
-        <button type="button" data-game="lotto" aria-pressed="true">Lotto</button>
-        <button type="button" data-game="eurojackpot" aria-pressed="false">Eurojackpot</button>
+      <div class="switches">
+        <div class="switch gameSwitch" role="group" aria-label="Gra">
+          <button type="button" data-game="lotto" aria-pressed="true">Lotto</button>
+          <button type="button" data-game="eurojackpot" aria-pressed="false">Eurojackpot</button>
+        </div>
+        <!-- Tryb też stoi w adresie: #generator, #generator-eurojackpot. -->
+        <div class="switch modeSwitch" role="group" aria-label="Tryb">
+          <button type="button" data-mode="simulator" aria-pressed="true">Symulator</button>
+          <button type="button" data-mode="generator" aria-pressed="false">Generator</button>
+        </div>
       </div>
     </header>
 
@@ -77,29 +90,36 @@
         <div class="cardHeader">
           <h2 id="numbersTitle">Maszyna losująca</h2>
           <p class="selectNumbersTip">
-            <span data-for-game="lotto">Wybierz sześć liczb z 49</span>
-            <span data-for-game="eurojackpot" class="inactive">Wybierz pięć liczb z 50</span>
+            <span data-for-game="lotto" data-for-mode="simulator">Wybierz sześć liczb z 49</span>
+            <span data-for-game="eurojackpot" data-for-mode="simulator" class="inactive">Wybierz pięć liczb z 50</span>
+            <span data-for-mode="generator">Wybierz liczbę losowań</span>
           </p>
         </div>
         <!-- Plansza na każdą pulę gry (data-pool = indeks w GAMES[gra].pools);
              kule wstawia index.js. -->
-        <div class="boards">
+        <div class="boards" data-for-mode="simulator">
           <div class="numbersList" role="group" aria-label="Liczby do wyboru" data-pool="0"></div>
           <div class="euroBoard inactive" data-for-game="eurojackpot">
             <p class="selectNumbersTip">Wybierz dwie liczby z 12</p>
             <div class="numbersList euroList" role="group" aria-label="Liczby z 12" data-pool="1"></div>
           </div>
         </div>
+        <!-- Przycisk na każdą liczbę losowań wstawia index.js (GENERATOR_DRAWS
+             w generator.js). -->
+        <div class="drawsChoice" role="group" aria-label="Liczba losowań" data-for-mode="generator"></div>
       </section>
 
       <div class="sidePanel">
         <section class="card selectedItemsBlock" aria-labelledby="selectedItemsTitle">
           <div class="cardHeader">
-            <h2 id="selectedItemsTitle">Twoje liczby</h2>
+            <h2 id="selectedItemsTitle">
+              <span data-for-mode="simulator">Twoje liczby</span>
+              <span data-for-mode="generator">Wygenerowane liczby</span>
+            </h2>
             <span class="selectedCount"></span>
           </div>
-          <div class="selectedItems" role="group" aria-label="Twoje liczby"></div>
-          <p class="selectedItemsTip">Kliknij liczbę na kuponie, aby ją usunąć.</p>
+          <div class="selectedItems" role="group" aria-labelledby="selectedItemsTitle"></div>
+          <p class="selectedItemsTip" data-for-mode="simulator">Kliknij liczbę na kuponie, aby ją usunąć.</p>
 
           <div class="lotteryStartButton">
             <button type="button" class="startButton" disabled>Rozpocznij symulację</button>
@@ -120,7 +140,7 @@
             W zależności od przeglądarki i sprzętu, może to zająć nawet do kilku minut.
           </p>
           <p class="simulationAborted inactive"></p>
-          <div class="winResult inactive">
+          <div class="winResult inactive" data-for-mode="simulator">
             <h2>
               <span data-for-game="lotto">Szóstka!</span>
               <span data-for-game="eurojackpot" class="inactive">5 + 2!</span>
@@ -136,6 +156,16 @@
             <!-- Kafelek na każdy stopień gry wstawia index.js (GAMES[gra].tiers). -->
             <ul class="stats"></ul>
             <p class="simulationTime">Symulacja trwała <span class="resultSimulationTime">0,0</span> s.</p>
+          </div>
+          <div class="generatorResult inactive" data-for-mode="generator">
+            <h2>Najczęstszy zestaw</h2>
+            <p class="generatedDraw">
+              Ten zestaw padł
+              <span class="resultHits">0 razy</span>
+              w <span class="resultGeneratorDraws">0</span> losowań.
+            </p>
+            <p class="simulationTime">Generowanie trwało <span class="resultGeneratorTime">0,0</span> s.</p>
+            <button type="button" class="toSimulatorButton">Przenieś do symulatora</button>
           </div>
         </section>
       </div>
@@ -157,6 +187,14 @@
 
       <!-- Tekst dla odwiedzających i wyszukiwarek: bez niego strona nie ma
            treści, do której pasowałyby pytania o Lotto i gry losowe. -->
+      <section class="about" aria-labelledby="aboutTitleGenerator" data-for-mode="generator">
+        <h2 id="aboutTitleGenerator">Jak działa generator?</h2>
+        <p>
+          Generator przeprowadza wybraną liczbę losowań, liczy, ile razy padł każdy zestaw liczb, i pokazuje ten, który
+          padł najczęściej. To wynik przypadku: każde losowanie jest niezależne od poprzednich, więc zestaw najczęstszy
+          w symulacji nie ma w prawdziwej grze większych szans od innych.
+        </p>
+      </section>
       <section class="about" aria-labelledby="aboutTitle" data-for-game="lotto">
         <h2 id="aboutTitle">Na czym polega Lotto?</h2>
         <p>

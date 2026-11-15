@@ -27,3 +27,6 @@ export const drawsNoun = (count) => {
   if (last >= 2 && last <= 4 && (lastTwo < 12 || lastTwo > 14)) return 'losowania';
   return 'losowań';
 };
+
+// „padł 1 raz”, „padł 2 razy”, „padł 27 razy”.
+export const timesNoun = (count) => (count === 1 ? 'raz' : 'razy');

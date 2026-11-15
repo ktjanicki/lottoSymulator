@@ -5,7 +5,7 @@
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { formatNumber, formatSeconds, formatDateTime, drawsNoun } = require('../format.js');
+const { formatNumber, formatSeconds, formatDateTime, drawsNoun, timesNoun } = require('../format.js');
 
 test('liczby grupowane po trzy cyfry od prawej twardą spacją, bez spacji na brzegach', () => {
   const cases = [
@@ -62,4 +62,16 @@ test('odmiana „losowanie” po liczbie, także dla nastek i dużych liczb', ()
 
 test('liczba nie ma zwykłej spacji, w której przeglądarka mogłaby złamać wiersz', () => {
   assert.doesNotMatch(formatNumber(3000000), / /);
+});
+
+test('„padł 1 raz”, ale „2 razy” i „27 razy” — inaczej wynik generatora mówi „1 razy”', () => {
+  for (const [count, expected] of [
+    [1, 'raz'],
+    [2, 'razy'],
+    [5, 'razy'],
+    [21, 'razy'],
+    [115, 'razy'],
+  ]) {
+    assert.equal(timesNoun(count), expected, `${count}`);
+  }
 });
