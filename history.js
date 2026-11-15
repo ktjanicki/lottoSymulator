@@ -1,4 +1,5 @@
-// Historia wygranych i zgoda na jej zapis — w localStorage przeglądarki.
+// Historia wygranych symulatora i zestawów generatora oraz zgoda na ich
+// zapis — w localStorage przeglądarki.
 // Bez DOM: `storage` jest wstrzykiwany (strona podaje localStorage, testy
 // własny magazyn), żeby testy mogły sprawdzić każdą gałąź wprost.
 
@@ -6,8 +7,12 @@ import { splitTicket } from './simulation.js';
 
 // Zmiana klucza gubi historię i zgodę zapisane u odwiedzających.
 export const HISTORY_KEY = 'lottoSymulator.history';
+// Zestawy generatora pod własnym kluczem, nie jako wpisy HISTORY_KEY z polem
+// więcej: karta ze stroną sprzed 1.16.0 przepisuje historię do czterech pól
+// wygranej i zamieniłaby zestaw generatora w wygraną symulatora.
+export const GENERATED_KEY = 'lottoSymulator.generated';
 export const CONSENT_KEY = 'lottoSymulator.consent';
-// Limit na grę: 500 wpisów to ok. 50 KB. Bez limitu historia rośnie do ~5 MB
+// Limit na grę (osobno w każdej z dwóch list): 500 wpisów to ok. 50 KB. Bez limitu historia rośnie do ~5 MB
 // limitu przeglądarki i od tej chwili każdy zapis cicho się nie udaje.
 // Wspólny limit dla gier pozwoliłby jednej wypchnąć z historii drugą.
 export const HISTORY_LIMIT = 500;
@@ -45,14 +50,41 @@ const toEntry = (entry) => {
   return valid ? { game, numbers: entry.numbers, drawsNumber: entry.drawsNumber, date: entry.date } : null;
 };
 
-// Wpisy wszystkich gier od najnowszego, każdy z polem `game`. Uszkodzony JSON
+// Zestaw generatora: liczby jak kupon gry (splitTicket), `hits` — ile razy
+// padł w `drawsNumber` losowaniach. Gra obowiązkowa: generator powstał po
+// Eurojackpocie, starych wpisów bez gry nie ma.
+const toGenerated = (entry) => {
+  const valid = safely(
+    () =>
+      splitTicket(entry.game, entry.numbers) &&
+      entry.numbers.every(Number.isInteger) &&
+      Number.isInteger(entry.drawsNumber) &&
+      entry.drawsNumber > 0 &&
+      Number.isInteger(entry.hits) &&
+      entry.hits > 0 &&
+      entry.hits <= entry.drawsNumber &&
+      Number.isFinite(entry.date),
+    false
+  );
+  return valid
+    ? { game: entry.game, numbers: entry.numbers, drawsNumber: entry.drawsNumber, hits: entry.hits, date: entry.date }
+    : null;
+};
+
+// Wpisy wszystkich gier spod klucza `key`, od najnowszego. Uszkodzony JSON
 // albo obce wpisy (ręczna edycja, dane nieznanej gry) odpadają — lista ich
 // nie wyrenderuje.
-export const readHistory = (storage) =>
+const readEntries = (storage, key, toValid) =>
   safely(() => {
-    const entries = JSON.parse(storage.getItem(HISTORY_KEY) ?? '[]');
-    return Array.isArray(entries) ? entries.map(toEntry).filter(Boolean) : [];
+    const entries = JSON.parse(storage.getItem(key) ?? '[]');
+    return Array.isArray(entries) ? entries.map(toValid).filter(Boolean) : [];
   }, []);
+
+// Wygrane symulatora, każda z polem `game`.
+export const readHistory = (storage) => readEntries(storage, HISTORY_KEY, toEntry);
+
+// Zestawy generatora.
+export const readGenerated = (storage) => readEntries(storage, GENERATED_KEY, toGenerated);
 
 // Bez zgody baner wraca po co piątej ukończonej symulacji w wizycie. Rzadziej —
 // odwiedzający zapomina, że historię da się włączyć; częściej — baner zasłania
@@ -76,24 +108,28 @@ const trimPerGame = (history) => {
   return history.filter(({ game }) => (kept[game] = (kept[game] ?? 0) + 1) <= HISTORY_LIMIT);
 };
 
-// Dopisuje wygraną na początek, tnie do HISTORY_LIMIT na grę. Bez zgody niczego
-// nie zapisuje. Zwraca historię po zmianie (bez zmiany, gdy zapis się nie udał).
-// Gra jest obowiązkowa (splitTicket odrzuca brak gry): LEGACY_GAME dotyczy
-// tylko odczytu starych wpisów — domyślna gra przy zapisie wpisałaby wygraną
-// Eurojackpota jako Lotto.
-export const recordWin = (storage, { game, numbers, drawsNumber, date }) => {
-  const history = readHistory(storage);
-  if (!hasConsent(storage)) return history;
-  const sorted = safely(() => splitTicket(game, numbers).flat(), null);
-  const entry = sorted && toEntry({ game, numbers: sorted, drawsNumber, date });
-  if (!entry) {
-    throw new RangeError(
-      `Wpis historii nie pasuje do kuponu gry: ${JSON.stringify({ game, numbers, drawsNumber, date })}.`
-    );
-  }
-  const updated = trimPerGame([entry, ...history]);
+// Dopisuje wpis na początek listy spod `key`, tnie do HISTORY_LIMIT na grę.
+// Bez zgody niczego nie zapisuje. Zwraca listę po zmianie (bez zmiany, gdy
+// zapis się nie udał). Liczby wpisu idą pula po puli, każda rosnąco.
+const record = (storage, key, toValid, entry) => {
+  const entries = readEntries(storage, key, toValid);
+  if (!hasConsent(storage)) return entries;
+  const sorted = safely(() => splitTicket(entry.game, entry.numbers).flat(), null);
+  const valid = sorted && toValid({ ...entry, numbers: sorted });
+  if (!valid) throw new RangeError(`Wpis historii nie pasuje do kuponu gry: ${JSON.stringify(entry)}.`);
+  const updated = trimPerGame([valid, ...entries]);
   return safely(() => {
-    storage.setItem(HISTORY_KEY, JSON.stringify(updated));
+    storage.setItem(key, JSON.stringify(updated));
     return updated;
-  }, history);
+  }, entries);
 };
+
+// Wygrana symulatora. Gra jest obowiązkowa (splitTicket odrzuca brak gry):
+// LEGACY_GAME dotyczy tylko odczytu starych wpisów — domyślna gra przy
+// zapisie wpisałaby wygraną Eurojackpota jako Lotto.
+export const recordWin = (storage, { game, numbers, drawsNumber, date }) =>
+  record(storage, HISTORY_KEY, toEntry, { game, numbers, drawsNumber, date });
+
+// Zestaw generatora — osobna lista, osobny limit.
+export const recordGenerated = (storage, { game, numbers, drawsNumber, hits, date }) =>
+  record(storage, GENERATED_KEY, toGenerated, { game, numbers, drawsNumber, hits, date });

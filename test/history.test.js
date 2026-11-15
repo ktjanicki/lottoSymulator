@@ -7,15 +7,20 @@
 //   zostawiłby stronę w stanie „symulacja w toku”.
 // - historia sprzed Eurojackpota (wpisy bez gry) znika albo trafia do złej gry;
 // - wpis Eurojackpota odrzucony albo przyjęty wbrew zasadom gry;
-// - wygrane jednej gry wypychają z historii drugą.
+// - wygrane jednej gry wypychają z historii drugą;
+// - zestaw generatora zapisany jako wygrana symulatora (albo odwrotnie),
+//   zapisany bez zgody albo z liczbą trafień, której strona nie pokaże.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const {
+  readGenerated,
   readHistory,
+  recordGenerated,
   recordWin,
   hasConsent,
   giveConsent,
+  GENERATED_KEY,
   HISTORY_KEY,
   CONSENT_KEY,
   HISTORY_LIMIT,
@@ -206,4 +211,74 @@ test(`bez zgody baner wraca dokładnie po co ${CONSENT_REMINDER_EVERY}. ukończo
     due,
     [1, 2, 3].map((n) => n * CONSENT_REMINDER_EVERY)
   );
+});
+
+const generated = (hits, date = 1_790_000_000_000) => ({
+  game: 'eurojackpot',
+  numbers: [47, 4, 31, 9, 23, 11, 3],
+  drawsNumber: 10_000_000,
+  hits,
+  date,
+});
+
+test('bez zgody zestaw generatora nie trafia do magazynu', () => {
+  const storage = memoryStorage();
+  assert.deepEqual(recordGenerated(storage, generated(5)), []);
+  assert.equal(storage.data.size, 0);
+});
+
+test('zestaw generatora trafia na własną listę, z trafieniami — nie między wygrane symulatora', () => {
+  const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
+  recordWin(storage, win(100));
+  recordGenerated(storage, generated(5, 1));
+  const list = recordGenerated(storage, generated(7, 2));
+  assert.deepEqual(list, [
+    { game: 'eurojackpot', numbers: [4, 9, 23, 31, 47, 3, 11], drawsNumber: 10_000_000, hits: 7, date: 2 },
+    { game: 'eurojackpot', numbers: [4, 9, 23, 31, 47, 3, 11], drawsNumber: 10_000_000, hits: 5, date: 1 },
+  ]);
+  assert.deepEqual(readGenerated(storage), list);
+  assert.deepEqual(
+    readHistory(storage).map(({ game, drawsNumber }) => [game, drawsNumber]),
+    [['lotto', 100]]
+  );
+  // Tak czyta wspólny klucz karta sprzed 1.16.0: nie może w nim być zestawów.
+  assert.equal(JSON.parse(storage.getItem(HISTORY_KEY)).length, 1);
+  assert.equal(JSON.parse(storage.getItem(GENERATED_KEY)).length, 2);
+});
+
+test('obce i uszkodzone zestawy generatora odpadają przy odczycie — strona pokazałaby „undefined razy”', () => {
+  const good = { game: 'lotto', numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, hits: 2, date: 5 };
+  const foreign = [
+    good,
+    // Wygrana symulatora (bez trafień) i wpis bez gry.
+    { game: 'lotto', numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, date: 5 },
+    { numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, hits: 2, date: 5 },
+    { ...good, hits: 0 },
+    { ...good, hits: 11 },
+    { ...good, hits: '2' },
+    { ...good, numbers: [1, 2, 3, 4, 5, 50] },
+    { ...good, game: 'toString' },
+    null,
+  ];
+  assert.deepEqual(readGenerated(memoryStorage({ [GENERATED_KEY]: JSON.stringify(foreign) })), [good]);
+  assert.deepEqual(readGenerated(memoryStorage({ [GENERATED_KEY]: '{nie json' })), []);
+  assert.deepEqual(readGenerated(throwingStorage()), []);
+});
+
+test('zestaw generatora niepasujący do gry albo bez trafień to błąd programu, nie cichy wpis', () => {
+  const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
+  for (const bad of [{ game: 'lotto' }, { hits: undefined }, { hits: 0 }, { game: undefined }]) {
+    assert.throws(() => recordGenerated(storage, { ...generated(5), ...bad }), RangeError, JSON.stringify(bad));
+  }
+  assert.equal(storage.data.has(GENERATED_KEY), false);
+});
+
+test(`limit ${HISTORY_LIMIT} zestawów generatora na grę nie zabiera miejsca wygranym symulatora`, () => {
+  const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
+  recordWin(storage, euroWin(1));
+  let list;
+  for (let i = 1; i <= HISTORY_LIMIT + 1; i++) list = recordGenerated(storage, generated(5, i));
+  assert.equal(list.length, HISTORY_LIMIT);
+  assert.equal(list.at(-1).date, 2, 'Najstarszy zestaw miał wypaść.');
+  assert.equal(readHistory(storage).length, 1);
 });

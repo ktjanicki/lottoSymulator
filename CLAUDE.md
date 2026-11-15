@@ -97,6 +97,8 @@ draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
   dane odwiedzających). Odmowy nie zapisujemy. Wpis historii niesie grę;
   wpisy sprzed 1.15.0 jej nie mają i czytają się jako `LEGACY_GAME` (Lotto).
   Wpis sprawdza `splitTicket` z `simulation.js` — ta sama funkcja co kupon.
+  Zestawy generatora mają własny klucz i własny limit: pod wspólnym kluczem
+  karta sprzed 1.16.0 zamieniłaby je w wygrane symulatora.
 - **Google Analytics** w trybie zgody (Consent Mode v2, `analytics.js`):
   gtag.js wczytuje się zawsze, z odmową domyślną przed `config`; ciasteczka
   `_ga` dopiero po zgodzie z tego samego banera. Identyfikator stoi tylko
