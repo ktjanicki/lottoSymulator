@@ -2,6 +2,30 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.17.0] — 2026-11-15
+
+### Zmienione
+
+- Historia jest wspólna dla Lotto i Eurojackpota, osobna dla symulatora
+  i generatora; każdy wpis podaje nazwę gry przy dacie.
+- Zmiana gry nie chowa wpisów doczytanych przyciskiem „więcej”.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+- Wejście wprost na `#eurojackpot` albo `#generator` raz przesuwa układ
+  strony: zanim ruszy skrypt, stoi plansza symulatora Lotto.
+- Karta ze stroną w wersji sprzed 1.15.0, otwarta w czasie aktualizacji,
+  przy zapisie wygranej usuwa z historii wpisy Eurojackpota.
+- Generator Eurojackpota potrzebuje ok. 140 MB pamięci; gdy przeglądarka jej
+  nie da (słabszy telefon), generowanie kończy się komunikatem o niepowodzeniu.
+- Tytuł i opis strony nie wspominają o generatorze.
+
 ## [1.16.1] — 2026-11-15
 
 ### Zmienione
