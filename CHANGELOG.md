@@ -2,6 +2,40 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.16.0] — 2026-11-15
+
+### Dodane
+
+- Generator: przeprowadza wybraną liczbę losowań (10, 50, 100, 300, 500 albo
+  1000 mln) i pokazuje sześć zestawów, które padły najczęściej, z liczbą
+  trafień; dla Lotto i Eurojackpota.
+- Przełącznik trybu Symulator / Generator w nagłówku; generator pod adresem
+  `lottosymulator.pl/#generator` (Eurojackpot: `#generator-eurojackpot`).
+- Przycisk „Do symulatora” przy każdym wygenerowanym zestawie przenosi go na
+  kupon symulatora tej samej gry.
+- Historia generowań, osobno dla każdej gry, do 500 wpisów na grę.
+- Opis działania generatora pod stroną.
+
+### Zmienione
+
+- Baner zgody wraca po co piątej ukończonej symulacji albo generowaniu.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+- Wejście wprost na `#eurojackpot` albo `#generator` raz przesuwa układ
+  strony: zanim ruszy skrypt, stoi plansza symulatora Lotto.
+- Karta ze stroną w wersji sprzed 1.15.0, otwarta w czasie aktualizacji,
+  przy zapisie wygranej usuwa z historii wpisy Eurojackpota.
+- Generator Eurojackpota potrzebuje ok. 140 MB pamięci; gdy przeglądarka jej
+  nie da (słabszy telefon), generowanie kończy się komunikatem o niepowodzeniu.
+- Tytuł i opis strony nie wspominają o generatorze.
+
 ## [1.15.2] — 2026-11-14
 
 ### Poprawione
