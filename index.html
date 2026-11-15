@@ -67,7 +67,7 @@
         <span data-for-game="eurojackpot" data-for-mode="simulator" class="inactive"
           >Wybierz pięć liczb z 50 i dwie z 12 i sprawdź, ile losowań trzeba, żeby trafić „5 + 2”.</span
         >
-        <span data-for-mode="generator">Wylosuj miliony zestawów i zobacz, który padł najczęściej.</span>
+        <span data-for-mode="generator">Wylosuj miliony zestawów i zobacz, które padły najczęściej.</span>
       </p>
       <!-- Przyciski z aria-pressed, nie zakładki (role="tab"): wzorzec zakładek
            wymaga panelu, a byłby nim <main> — strona straciłaby punkt
@@ -92,7 +92,7 @@
           <p class="selectNumbersTip">
             <span data-for-game="lotto" data-for-mode="simulator">Wybierz sześć liczb z 49</span>
             <span data-for-game="eurojackpot" data-for-mode="simulator" class="inactive">Wybierz pięć liczb z 50</span>
-            <span data-for-mode="generator">Wybierz liczbę losowań</span>
+            <span data-for-mode="generator">Sześć zestawów, które padły najczęściej</span>
           </p>
         </div>
         <!-- Plansza na każdą pulę gry (data-pool = indeks w GAMES[gra].pools);
@@ -104,9 +104,9 @@
             <div class="numbersList euroList" role="group" aria-label="Liczby z 12" data-pool="1"></div>
           </div>
         </div>
-        <!-- Przycisk na każdą liczbę losowań wstawia index.js (GENERATOR_DRAWS
-             w generator.js). -->
-        <div class="drawsChoice" role="group" aria-label="Liczba losowań" data-for-mode="generator"></div>
+        <!-- Wiersz na każdy zestaw wyniku generatora wstawia index.js
+             (GENERATOR_SETS w generator.js); przed wynikiem — puste miejsca. -->
+        <ol class="generatedSets" aria-label="Najczęstsze zestawy" data-for-mode="generator"></ol>
       </section>
 
       <div class="sidePanel">
@@ -114,11 +114,14 @@
           <div class="cardHeader">
             <h2 id="selectedItemsTitle">
               <span data-for-mode="simulator">Twoje liczby</span>
-              <span data-for-mode="generator">Wygenerowane liczby</span>
+              <span data-for-mode="generator">Liczba losowań</span>
             </h2>
             <span class="selectedCount"></span>
           </div>
-          <div class="selectedItems" role="group" aria-labelledby="selectedItemsTitle"></div>
+          <div class="selectedItems" role="group" aria-labelledby="selectedItemsTitle" data-for-mode="simulator"></div>
+          <!-- Przycisk na każdą liczbę losowań wstawia index.js (GENERATOR_DRAWS
+               w generator.js). -->
+          <div class="drawsChoice" role="group" aria-labelledby="selectedItemsTitle" data-for-mode="generator"></div>
           <p class="selectedItemsTip" data-for-mode="simulator">Kliknij liczbę na kuponie, aby ją usunąć.</p>
 
           <div class="lotteryStartButton">
@@ -158,14 +161,13 @@
             <p class="simulationTime">Symulacja trwała <span class="resultSimulationTime">0,0</span> s.</p>
           </div>
           <div class="generatorResult inactive" data-for-mode="generator">
-            <h2>Najczęstszy zestaw</h2>
+            <h2>Gotowe</h2>
             <p class="generatedDraw">
-              Ten zestaw padł
-              <span class="resultHits">0 razy</span>
-              w <span class="resultGeneratorDraws">0</span> losowań.
+              Przeprowadzono
+              <span class="resultGeneratorDraws">0</span>
+              losowań.
             </p>
             <p class="simulationTime">Generowanie trwało <span class="resultGeneratorTime">0,0</span> s.</p>
-            <button type="button" class="toSimulatorButton">Przenieś do symulatora</button>
           </div>
         </section>
       </div>
@@ -190,9 +192,9 @@
       <section class="about" aria-labelledby="aboutTitleGenerator" data-for-mode="generator">
         <h2 id="aboutTitleGenerator">Jak działa generator?</h2>
         <p>
-          Generator przeprowadza wybraną liczbę losowań, liczy, ile razy padł każdy zestaw liczb, i pokazuje ten, który
-          padł najczęściej. To wynik przypadku: każde losowanie jest niezależne od poprzednich, więc zestaw najczęstszy
-          w symulacji nie ma w prawdziwej grze większych szans od innych.
+          Generator przeprowadza wybraną liczbę losowań, liczy, ile razy padł każdy zestaw liczb, i pokazuje sześć
+          zestawów, które padły najczęściej. To wynik przypadku: każde losowanie jest niezależne od poprzednich, więc
+          zestawy najczęstsze w symulacji nie mają w prawdziwej grze większych szans od innych.
         </p>
       </section>
       <section class="about" aria-labelledby="aboutTitle" data-for-game="lotto">

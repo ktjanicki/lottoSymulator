@@ -12,7 +12,8 @@ export const HISTORY_KEY = 'lottoSymulator.history';
 // wygranej i zamieniłaby zestaw generatora w wygraną symulatora.
 export const GENERATED_KEY = 'lottoSymulator.generated';
 export const CONSENT_KEY = 'lottoSymulator.consent';
-// Limit na grę (osobno w każdej z dwóch list): 500 wpisów to ok. 50 KB. Bez limitu historia rośnie do ~5 MB
+// Limit na grę (osobno w każdej z dwóch list): 500 wygranych to ok. 50 KB,
+// 500 generowań (po sześć zestawów) — ok. 150 KB. Bez limitu historia rośnie do ~5 MB
 // limitu przeglądarki i od tej chwili każdy zapis cicho się nie udaje.
 // Wspólny limit dla gier pozwoliłby jednej wypchnąć z historii drugą.
 export const HISTORY_LIMIT = 500;
@@ -50,24 +51,42 @@ const toEntry = (entry) => {
   return valid ? { game, numbers: entry.numbers, drawsNumber: entry.drawsNumber, date: entry.date } : null;
 };
 
-// Zestaw generatora: liczby jak kupon gry (splitTicket), `hits` — ile razy
-// padł w `drawsNumber` losowaniach. Gra obowiązkowa: generator powstał po
+// Najwyżej tyle zestawów we wpisie generatora. Z zapasem ponad
+// GENERATOR_SETS (generator.js): wpis ma się czytać także wtedy, gdy strona
+// zacznie pokazywać inną liczbę zestawów; bez górnej granicy obcy wpis
+// z tysiącami zestawów wyrenderowałby tysiące kul.
+const GENERATED_SETS_LIMIT = 20;
+
+// Wpis generatora: jedno generowanie, czyli `sets` — zestawy od najczęstszego,
+// każdy z liczbami jak kupon gry (splitTicket) i `hits`, ile razy padł
+// w `drawsNumber` losowaniach. Gra obowiązkowa: generator powstał po
 // Eurojackpocie, starych wpisów bez gry nie ma.
 const toGenerated = (entry) => {
   const valid = safely(
     () =>
-      splitTicket(entry.game, entry.numbers) &&
-      entry.numbers.every(Number.isInteger) &&
+      Array.isArray(entry.sets) &&
+      entry.sets.length > 0 &&
+      entry.sets.length <= GENERATED_SETS_LIMIT &&
       Number.isInteger(entry.drawsNumber) &&
       entry.drawsNumber > 0 &&
-      Number.isInteger(entry.hits) &&
-      entry.hits > 0 &&
-      entry.hits <= entry.drawsNumber &&
-      Number.isFinite(entry.date),
+      Number.isFinite(entry.date) &&
+      entry.sets.every(
+        ({ numbers, hits }) =>
+          splitTicket(entry.game, numbers) &&
+          numbers.every(Number.isInteger) &&
+          Number.isInteger(hits) &&
+          hits > 0 &&
+          hits <= entry.drawsNumber
+      ),
     false
   );
   return valid
-    ? { game: entry.game, numbers: entry.numbers, drawsNumber: entry.drawsNumber, hits: entry.hits, date: entry.date }
+    ? {
+        game: entry.game,
+        sets: entry.sets.map(({ numbers, hits }) => ({ numbers, hits })),
+        drawsNumber: entry.drawsNumber,
+        date: entry.date,
+      }
     : null;
 };
 
@@ -110,12 +129,12 @@ const trimPerGame = (history) => {
 
 // Dopisuje wpis na początek listy spod `key`, tnie do HISTORY_LIMIT na grę.
 // Bez zgody niczego nie zapisuje. Zwraca listę po zmianie (bez zmiany, gdy
-// zapis się nie udał). Liczby wpisu idą pula po puli, każda rosnąco.
-const record = (storage, key, toValid, entry) => {
+// zapis się nie udał). `normalize` układa liczby wpisu pula po puli, każdą
+// rosnąco (rzuca, gdy nie pasują do gry).
+const record = (storage, key, toValid, normalize, entry) => {
   const entries = readEntries(storage, key, toValid);
   if (!hasConsent(storage)) return entries;
-  const sorted = safely(() => splitTicket(entry.game, entry.numbers).flat(), null);
-  const valid = sorted && toValid({ ...entry, numbers: sorted });
+  const valid = safely(() => toValid(normalize(entry)), null);
   if (!valid) throw new RangeError(`Wpis historii nie pasuje do kuponu gry: ${JSON.stringify(entry)}.`);
   const updated = trimPerGame([valid, ...entries]);
   return safely(() => {
@@ -128,8 +147,22 @@ const record = (storage, key, toValid, entry) => {
 // LEGACY_GAME dotyczy tylko odczytu starych wpisów — domyślna gra przy
 // zapisie wpisałaby wygraną Eurojackpota jako Lotto.
 export const recordWin = (storage, { game, numbers, drawsNumber, date }) =>
-  record(storage, HISTORY_KEY, toEntry, { game, numbers, drawsNumber, date });
+  record(storage, HISTORY_KEY, toEntry, (entry) => ({ ...entry, numbers: splitTicket(game, numbers).flat() }), {
+    game,
+    numbers,
+    drawsNumber,
+    date,
+  });
 
-// Zestaw generatora — osobna lista, osobny limit.
-export const recordGenerated = (storage, { game, numbers, drawsNumber, hits, date }) =>
-  record(storage, GENERATED_KEY, toGenerated, { game, numbers, drawsNumber, hits, date });
+// Generowanie (wszystkie jego zestawy to jeden wpis) — osobna lista, osobny limit.
+export const recordGenerated = (storage, { game, sets, drawsNumber, date }) =>
+  record(
+    storage,
+    GENERATED_KEY,
+    toGenerated,
+    (entry) => ({
+      ...entry,
+      sets: sets.map(({ numbers, hits }) => ({ numbers: splitTicket(game, numbers).flat(), hits })),
+    }),
+    { game, sets, drawsNumber, date }
+  );

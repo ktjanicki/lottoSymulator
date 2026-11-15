@@ -1,6 +1,6 @@
 import { grantAnalytics, startAnalytics } from './analytics.js';
 import { drawsNoun, formatDateTime, formatNumber, formatSeconds, timesNoun } from './format.js';
-import { GENERATOR_DRAWS } from './generator.js';
+import { GENERATOR_DRAWS, GENERATOR_SETS } from './generator.js';
 import {
   CONSENT_KEY,
   GENERATED_KEY,
@@ -61,10 +61,9 @@ const winResultElement = document.querySelector('.winResult');
 const progressLabel = document.querySelector('.progressLabel');
 const progressCount = document.querySelector('.progressCount');
 const generatorResultElement = document.querySelector('.generatorResult');
-const resultHits = document.querySelector('.resultHits');
 const resultGeneratorDraws = document.querySelector('.resultGeneratorDraws');
 const resultGeneratorTime = document.querySelector('.resultGeneratorTime');
-const toSimulatorButton = document.querySelector('.toSimulatorButton');
+const generatedSets = document.querySelector('.generatedSets');
 const abortButton = document.querySelector('.abortButton');
 const abortedElement = document.querySelector('.simulationAborted');
 const historySection = document.querySelector('.history');
@@ -102,8 +101,9 @@ let { mode, game } = viewFromUrl();
 const tickets = Object.fromEntries(Object.entries(GAMES).map(([id, { pools }]) => [id, pools.map(() => [])]));
 // Liczba losowań generatora — wspólna dla gier, do końca wizyty.
 let generatorDraws = GENERATOR_DRAWS[0];
-// Zestaw pokazany na karcie generatora (liczby pula po puli) albo null:
-// przed pierwszym wynikiem, w trakcie liczenia i po zmianie gry lub trybu.
+// Zestawy pokazane na karcie generatora, od najczęstszego ({numbers — pula
+// po puli, hits}), albo null: przed pierwszym wynikiem, w trakcie liczenia
+// i po zmianie gry lub trybu.
 let generated = null;
 let simulationRunning = false;
 let simulationWorker = null;
@@ -209,11 +209,7 @@ cookieDecline.addEventListener('click', () => cookieBanner.close());
 // Kule historii to <span>, nie przyciski: wyglądają jak na kuponie, ale nic
 // się na nie nie klika. Liczby wpisu idą pula po puli (history.js); kule
 // dalszych pul — w kolorze euroliczb, jak na kuponie.
-// Wpis generatora (z `hits`) mówi, ile razy zestaw padł; wygrana — ile
-// losowań trwała.
-const createHistoryItem = ({ game: entryGame, numbers, drawsNumber, hits, date }) => {
-  const item = document.createElement('li');
-  item.className = 'historyItem';
+const createHistoryBalls = (entryGame, numbers) => {
   const balls = document.createElement('div');
   balls.className = 'historyBalls';
   let offset = 0;
@@ -225,6 +221,14 @@ const createHistoryItem = ({ game: entryGame, numbers, drawsNumber, hits, date }
       balls.append(ball);
     }
   });
+  return balls;
+};
+
+// Wygrana symulatora: kule, data, liczba losowań. Generowanie (wpis
+// z `sets`): data i liczba losowań, pod nimi zestawy z liczbą trafień.
+const createHistoryItem = ({ game: entryGame, numbers, sets, drawsNumber, date }) => {
+  const item = document.createElement('li');
+  item.className = sets ? 'historyItem historyRun' : 'historyItem';
   const time = document.createElement('time');
   time.className = 'historyDate';
   time.dateTime = new Date(date).toISOString();
@@ -232,14 +236,25 @@ const createHistoryItem = ({ game: entryGame, numbers, drawsNumber, hits, date }
   const draws = document.createElement('p');
   draws.className = 'historyDraws';
   const count = document.createElement('strong');
-  if (hits === undefined) {
-    count.textContent = formatNumber(drawsNumber);
-    draws.append(count, ` ${drawsNoun(drawsNumber)}`);
-  } else {
-    count.textContent = `${formatNumber(hits)} ${timesNoun(hits)}`;
-    draws.append(count, ` w ${formatNumber(drawsNumber)} ${drawsNoun(drawsNumber)}`);
+  count.textContent = formatNumber(drawsNumber);
+  draws.append(count, ` ${drawsNoun(drawsNumber)}`);
+  if (!sets) {
+    item.append(createHistoryBalls(entryGame, numbers), time, draws);
+    return item;
   }
-  item.append(balls, time, draws);
+  const list = document.createElement('ol');
+  list.className = 'runSets';
+  list.append(
+    ...sets.map(({ numbers: setNumbers, hits }) => {
+      const row = document.createElement('li');
+      const times = document.createElement('span');
+      times.className = 'runHits';
+      times.textContent = `${formatNumber(hits)} ${timesNoun(hits)}`;
+      row.append(createHistoryBalls(entryGame, setNumbers), times);
+      return row;
+    })
+  );
+  item.append(time, draws, list);
   return item;
 };
 
@@ -379,6 +394,39 @@ const createStaticBall = (number, pool) => {
   return ball;
 };
 
+// Wiersz wyniku generatora: miejsce w czołówce, kule, liczba trafień
+// i przycisk przenoszący zestaw do symulatora. Bez zestawu (przed wynikiem,
+// w trakcie liczenia) — puste miejsca i przycisk ukryty, ale trzymający
+// miejsce: wiersze stoją od początku, żeby karta nie rosła z wynikiem.
+const createGeneratedSet = (pools, set, index) => {
+  const row = document.createElement('li');
+  row.className = 'generatedSet';
+  const rank = document.createElement('span');
+  rank.className = 'setRank';
+  rank.textContent = `${index + 1}.`;
+  const balls = document.createElement('div');
+  balls.className = 'setBalls';
+  balls.append(
+    ...pools.flatMap(({ size }, pool) =>
+      set
+        ? set.numbers[pool].map((number) => createStaticBall(number, pool))
+        : Array.from({ length: size }, () => createSlot(pool))
+    )
+  );
+  const hits = document.createElement('span');
+  hits.className = 'setHits';
+  hits.textContent = set ? `${formatNumber(set.hits)} ${timesNoun(set.hits)}` : '';
+  const button = document.createElement('button');
+  button.type = 'button';
+  button.className = 'toSimulatorButton';
+  button.dataset.set = index;
+  button.textContent = 'Do symulatora';
+  button.setAttribute('aria-label', `Przenieś zestaw ${index + 1} do symulatora`);
+  button.disabled = !set;
+  row.append(rank, balls, hits, button);
+  return row;
+};
+
 // Puste miejsce na kuponie: sam wygląd, czytnik ekranu go pomija (liczbę
 // wybranych podaje licznik obok nagłówka).
 const createSlot = (pool) => {
@@ -478,28 +526,23 @@ const render = () => {
       ball.disabled = simulationRunning || (poolFull && !selected);
     }
   });
-  // Symulator: kupon z kulami do zdjęcia. Generator: wygenerowany zestaw
-  // albo same puste miejsca, zanim będzie wynik.
   selectedItems.replaceChildren(
-    ...pools.flatMap(({ max, size }, pool) => {
-      if (!simulator) {
-        return generated
-          ? generated[pool].map((number) => createStaticBall(number, pool))
-          : Array.from({ length: size }, () => createSlot(pool));
-      }
-      return [
-        ...ticket[pool].map((number) => {
-          const ball = createBall(number, pool, removeLabel(number, max));
-          ball.disabled = simulationRunning;
-          return ball;
-        }),
-        ...Array.from({ length: size - ticket[pool].length }, () => createSlot(pool)),
-      ];
-    })
+    ...pools.flatMap(({ max, size }, pool) => [
+      ...ticket[pool].map((number) => {
+        const ball = createBall(number, pool, removeLabel(number, max));
+        ball.disabled = simulationRunning;
+        return ball;
+      }),
+      ...Array.from({ length: size - ticket[pool].length }, () => createSlot(pool)),
+    ])
   );
   selectedCount.textContent = simulator
     ? pools.map(({ size }, pool) => `${ticket[pool].length}/${size}`).join(' + ')
     : '';
+  // Zawsze GENERATOR_SETS wierszy: z zestawami wyniku albo puste.
+  generatedSets.replaceChildren(
+    ...Array.from({ length: GENERATOR_SETS }, (_, index) => createGeneratedSet(pools, generated?.[index], index))
+  );
   // Przycisk stoi na miejscu od początku (zablokowany), żeby układ nie skakał
   // po wybraniu ostatniej liczby; podpowiedź mówi, czego jeszcze brakuje.
   startButton.textContent = MODE_TEXTS[mode].start;
@@ -586,8 +629,7 @@ boards.forEach((board, pool) =>
 );
 
 selectedItems.addEventListener('click', ({ target }) => {
-  // Tylko przyciski: kule wygenerowanego zestawu to <span> bez data-pool.
-  const ball = target.closest('button.ball');
+  const ball = target.closest('.ball');
   if (!ball) return;
   const pool = Number(ball.dataset.pool);
   toggleNumber(pool, ball.dataset.number);
@@ -627,19 +669,17 @@ const showWin = (data, runGame, runNumbers) => {
   return { game: runGame, numbers: runNumbers, drawsNumber: data.drawsNumber, date: Date.now() };
 };
 
-// Wynik generatora: zestaw na karcie liczb (render()), trafienia i czas
-// w karcie wyniku. Zwraca wpis do historii.
+// Wynik generatora: zestawy w karcie planszy (render()), liczba losowań
+// i czas w karcie wyniku. Zwraca wpis do historii — całe generowanie.
 const showGenerated = (data, runGame) => {
-  generated = data.numbers;
-  resultHits.textContent = `${formatNumber(data.hits)} ${timesNoun(data.hits)}`;
+  generated = data.sets;
   resultGeneratorDraws.textContent = formatNumber(data.drawsNumber);
   resultGeneratorTime.textContent = formatSeconds(data.durationMs);
   generatorResultElement.classList.remove('inactive');
   return {
     game: runGame,
-    numbers: data.numbers.flat(),
+    sets: data.sets.map(({ numbers, hits }) => ({ numbers: numbers.flat(), hits })),
     drawsNumber: data.drawsNumber,
-    hits: data.hits,
     date: Date.now(),
   };
 };
@@ -727,10 +767,12 @@ abortButton.addEventListener('click', () => {
   startButton.focus();
 });
 
-// Wygenerowany zestaw staje się kuponem symulatora tej samej gry (napisy,
-// jak z data-number planszy) i strona przechodzi do symulatora.
-toSimulatorButton.addEventListener('click', () => {
-  tickets[game] = generated.map((numbers) => numbers.map(String));
+// Zestaw z klikniętego wiersza staje się kuponem symulatora tej samej gry
+// (napisy, jak z data-number planszy) i strona przechodzi do symulatora.
+generatedSets.addEventListener('click', ({ target }) => {
+  const button = target.closest('.toSimulatorButton');
+  if (!button) return;
+  tickets[game] = generated[Number(button.dataset.set)].numbers.map((numbers) => numbers.map(String));
   openView(SIMULATOR, game);
   // Przycisk zniknął razem z wynikiem generatora; kupon jest pełny, więc
   // następny krok to start symulacji.

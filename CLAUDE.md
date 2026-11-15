@@ -53,7 +53,8 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
     canonical, dane strukturalne, `robots.txt` i `sitemap.xml`); nazwa
     witryny w danych strukturalnych i w `manifest.json` — `og:title`;
   - zasady gier (pule liczb, stopnie wygranych) — `GAMES` w `simulation.js`;
-  - liczby losowań generatora — `GENERATOR_DRAWS` w `generator.js`;
+  - liczby losowań generatora i liczba zestawów w wyniku — `GENERATOR_DRAWS`
+    i `GENERATOR_SETS` w `generator.js`;
   - Node budujący produkcję — obraz w `grossnet-vps-iac`
     (`10_versions.yml` → `images.node`); `.github/workflows/ci.yml` przepisuje
     ten numer do macierzy i trzeba go zmieniać razem z obrazem.
@@ -96,12 +97,13 @@ draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
 - **Generator** nie wyciąga kul: losuje numer zestawu (ten sam rozkład, kilka
   razy szybciej) i trzyma bajt licznika na każdy zestaw gry (Eurojackpot:
   140 MB w workerze). Nowa gra albo większa liczba losowań musi się zmieścić
-  w tym liczniku — pilnuje wejście `mostFrequentDraw`.
+  w tym liczniku — pilnuje wejście `mostFrequentDraws`.
 - **localStorage** tylko za zgodą (klucze w `history.js`; zmiana klucza gubi
   dane odwiedzających). Odmowy nie zapisujemy. Wpis historii niesie grę;
   wpisy sprzed 1.15.0 jej nie mają i czytają się jako `LEGACY_GAME` (Lotto).
   Wpis sprawdza `splitTicket` z `simulation.js` — ta sama funkcja co kupon.
-  Zestawy generatora mają własny klucz i własny limit: pod wspólnym kluczem
+  Generowania (wpis to wszystkie zestawy jednego wyniku) mają własny klucz
+  i własny limit: pod wspólnym kluczem
   karta sprzed 1.16.0 zamieniłaby je w wygrane symulatora.
 - **Google Analytics** w trybie zgody (Consent Mode v2, `analytics.js`):
   gtag.js wczytuje się zawsze, z odmową domyślną przed `config`; ciasteczka

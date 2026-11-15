@@ -213,28 +213,35 @@ test(`bez zgody baner wraca dokładnie po co ${CONSENT_REMINDER_EVERY}. ukończo
   );
 });
 
+// Generowanie Eurojackpota: dwa zestawy, pierwszy padł `hits` razy.
 const generated = (hits, date = 1_790_000_000_000) => ({
   game: 'eurojackpot',
-  numbers: [47, 4, 31, 9, 23, 11, 3],
+  sets: [
+    { numbers: [47, 4, 31, 9, 23, 11, 3], hits },
+    { numbers: [1, 2, 3, 4, 5, 1, 2], hits: 1 },
+  ],
   drawsNumber: 10_000_000,
-  hits,
   date,
 });
 
-test('bez zgody zestaw generatora nie trafia do magazynu', () => {
+test('bez zgody generowanie nie trafia do magazynu', () => {
   const storage = memoryStorage();
   assert.deepEqual(recordGenerated(storage, generated(5)), []);
   assert.equal(storage.data.size, 0);
 });
 
-test('zestaw generatora trafia na własną listę, z trafieniami — nie między wygrane symulatora', () => {
+test('generowanie trafia na własną listę jako jeden wpis ze wszystkimi zestawami — nie między wygrane symulatora', () => {
   const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
   recordWin(storage, win(100));
   recordGenerated(storage, generated(5, 1));
   const list = recordGenerated(storage, generated(7, 2));
+  const sets = (hits) => [
+    { numbers: [4, 9, 23, 31, 47, 3, 11], hits },
+    { numbers: [1, 2, 3, 4, 5, 1, 2], hits: 1 },
+  ];
   assert.deepEqual(list, [
-    { game: 'eurojackpot', numbers: [4, 9, 23, 31, 47, 3, 11], drawsNumber: 10_000_000, hits: 7, date: 2 },
-    { game: 'eurojackpot', numbers: [4, 9, 23, 31, 47, 3, 11], drawsNumber: 10_000_000, hits: 5, date: 1 },
+    { game: 'eurojackpot', sets: sets(7), drawsNumber: 10_000_000, date: 2 },
+    { game: 'eurojackpot', sets: sets(5), drawsNumber: 10_000_000, date: 1 },
   ]);
   assert.deepEqual(readGenerated(storage), list);
   assert.deepEqual(
@@ -246,17 +253,22 @@ test('zestaw generatora trafia na własną listę, z trafieniami — nie między
   assert.equal(JSON.parse(storage.getItem(GENERATED_KEY)).length, 2);
 });
 
-test('obce i uszkodzone zestawy generatora odpadają przy odczycie — strona pokazałaby „undefined razy”', () => {
-  const good = { game: 'lotto', numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, hits: 2, date: 5 };
+test('obce i uszkodzone wpisy generatora odpadają przy odczycie — strona pokazałaby „undefined razy” albo tysiące kul', () => {
+  const set = { numbers: [1, 2, 3, 4, 5, 6], hits: 2 };
+  const good = { game: 'lotto', sets: [set, { numbers: [7, 8, 9, 10, 11, 12], hits: 1 }], drawsNumber: 10, date: 5 };
   const foreign = [
     good,
-    // Wygrana symulatora (bez trafień) i wpis bez gry.
+    // Wygrana symulatora (bez zestawów) i wpis bez gry.
     { game: 'lotto', numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, date: 5 },
-    { numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 10, hits: 2, date: 5 },
-    { ...good, hits: 0 },
-    { ...good, hits: 11 },
-    { ...good, hits: '2' },
-    { ...good, numbers: [1, 2, 3, 4, 5, 50] },
+    { sets: [set], drawsNumber: 10, date: 5 },
+    { ...good, sets: [] },
+    { ...good, sets: 'x' },
+    { ...good, sets: Array.from({ length: 21 }, () => set) },
+    { ...good, sets: [set, { ...set, hits: 0 }] },
+    { ...good, sets: [{ ...set, hits: 11 }] },
+    { ...good, sets: [{ ...set, hits: '2' }] },
+    { ...good, sets: [{ ...set, numbers: [1, 2, 3, 4, 5, 50] }] },
+    { ...good, sets: [null] },
     { ...good, game: 'toString' },
     null,
   ];
@@ -265,20 +277,29 @@ test('obce i uszkodzone zestawy generatora odpadają przy odczycie — strona po
   assert.deepEqual(readGenerated(throwingStorage()), []);
 });
 
-test('zestaw generatora niepasujący do gry albo bez trafień to błąd programu, nie cichy wpis', () => {
+test('generowanie z zestawem niepasującym do gry, bez trafień albo bez zestawów to błąd programu, nie cichy wpis', () => {
   const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
-  for (const bad of [{ game: 'lotto' }, { hits: undefined }, { hits: 0 }, { game: undefined }]) {
+  const [set] = generated(5).sets;
+  for (const bad of [
+    { game: 'lotto' },
+    { game: undefined },
+    { sets: [] },
+    { sets: undefined },
+    { sets: [{ ...set, hits: undefined }] },
+    { sets: [set, { ...set, hits: 0 }] },
+    { sets: [set, { numbers: [1, 2, 3], hits: 1 }] },
+  ]) {
     assert.throws(() => recordGenerated(storage, { ...generated(5), ...bad }), RangeError, JSON.stringify(bad));
   }
   assert.equal(storage.data.has(GENERATED_KEY), false);
 });
 
-test(`limit ${HISTORY_LIMIT} zestawów generatora na grę nie zabiera miejsca wygranym symulatora`, () => {
+test(`limit ${HISTORY_LIMIT} generowań na grę nie zabiera miejsca wygranym symulatora`, () => {
   const storage = memoryStorage({ [CONSENT_KEY]: 'accepted' });
   recordWin(storage, euroWin(1));
   let list;
   for (let i = 1; i <= HISTORY_LIMIT + 1; i++) list = recordGenerated(storage, generated(5, i));
   assert.equal(list.length, HISTORY_LIMIT);
-  assert.equal(list.at(-1).date, 2, 'Najstarszy zestaw miał wypaść.');
+  assert.equal(list.at(-1).date, 2, 'Najstarsze generowanie miało wypaść.');
   assert.equal(readHistory(storage).length, 1);
 });

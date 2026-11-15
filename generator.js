@@ -1,4 +1,4 @@
-// Rdzeń generatora: losuje zadaną liczbę razy i zwraca zestaw, który padł
+// Rdzeń generatora: losuje zadaną liczbę razy i zwraca zestawy, które padły
 // najczęściej. Bez DOM i bez komunikacji z wątkiem strony, jak simulation.js;
 // `random` jest wstrzykiwany — testy podają generator z ziarnem.
 //
@@ -6,14 +6,18 @@
 // w prawdziwym losowaniu z tym samym prawdopodobieństwem, więc równomierny
 // wybór numeru daje ten sam rozkład co wyciąganie kul (drawNumbers), a jest
 // sześć razy szybszy: kule trzeba by sortować, żeby policzyć numer zestawu
-// (pomiar: 4,4 mln losowań/s zamiast 27 mln; miliard losowań trwałby
-// 4 minuty zamiast 40 sekund).
+// (pomiar: 4,4 mln losowań/s zamiast kilkunastu; miliard losowań trwałby
+// 4 minuty zamiast jednej).
 
 import { PROGRESS_EVERY, gameRules } from './simulation.js';
 
 // Liczby losowań do wyboru na stronie — jedyne miejsce, z którego bierze je
 // strona (przyciski) i testy.
 export const GENERATOR_DRAWS = [10_000_000, 50_000_000, 100_000_000, 300_000_000, 500_000_000, 1_000_000_000];
+
+// Tyle najczęstszych zestawów zwraca generator i pokazuje strona (wiersze
+// wyniku w index.js, wysokość karty w style.css).
+export const GENERATOR_SETS = 6;
 
 // Licznik zestawu ma jeden bajt (Eurojackpot: 139 838 160 zestawów to 140 MB;
 // dwa bajty to 280 MB, których telefon nie da). Bajt mieści 255 trafień
@@ -74,11 +78,13 @@ export const combinationAt = (pools, index) => {
   return numbers;
 };
 
-// Losuje `draws` razy z pul o zasadach `pools` i zwraca zestaw, który padł
-// najczęściej: `numbers` pula po puli (rosnąco) i `hits` — ile razy padł.
-// Przy remisie wygrywa zestaw, który pierwszy doszedł do tej liczby trafień.
+// Losuje `draws` razy z pul o zasadach `pools` i zwraca `sets`: najwyżej
+// GENERATOR_SETS zestawów, które padły najczęściej, od najczęstszego — każdy
+// z `numbers` (pula po puli, rosnąco) i `hits` (ile razy padł). Przy remisie
+// wyżej stoi zestaw, który pierwszy doszedł do swojej liczby trafień;
+// kolejność według numeru zestawu faworyzowałaby zestawy z małych liczb.
 // onProgress dostaje liczbę losowań co progressEvery (nie po ostatnim).
-export const mostFrequentDraw = (
+export const mostFrequentDraws = (
   pools,
   draws,
   random = Math.random,
@@ -98,8 +104,19 @@ export const mostFrequentDraw = (
   }
   const counts = new Uint8Array(total);
 
-  let best = 0;
-  let bestIndex = 0;
+  // Czołówka liczona w trakcie losowań: zestaw wchodzi do niej, gdy jego
+  // licznik przebije najsłabszy z czołówki (`weakest`), na miejsce tego
+  // najsłabszego. Najsłabszy nigdy nie maleje, więc poza czołówką nie ma
+  // zestawu z większą liczbą trafień. Warunek w pętli spełnia się rzadko —
+  // przeglądanie wszystkich liczników po losowaniach nie znałoby kolejności
+  // dochodzenia do remisu.
+  // Tablice i zwykłe pętle, bez obiektów i funkcji strzałkowych: to środek
+  // pętli losowań.
+  const size = Math.min(GENERATOR_SETS, total);
+  const topIndex = new Float64Array(size).fill(-1);
+  const topHits = new Uint8Array(size);
+  const topReachedAt = new Float64Array(size);
+  let weakest = 0;
   let untilProgress = progressEvery;
   for (let draw = 1; draw <= draws; draw++) {
     const index = Math.floor(random() * total);
@@ -107,9 +124,24 @@ export const mostFrequentDraw = (
     // Bez tego warunku 256. trafienie przekręca bajt przez zero.
     if (count <= MAX_HITS) {
       counts[index] = count;
-      if (count > best) {
-        best = count;
-        bestIndex = index;
+      if (count > weakest) {
+        // Miejsce zestawu w czołówce albo — gdy go tam nie ma — miejsce
+        // najsłabszego (przy remisie tego, który doszedł najpóźniej).
+        let slot = 0;
+        for (let i = 0; i < size; i++) {
+          if (topIndex[i] === index) {
+            slot = i;
+            break;
+          }
+          if (topHits[i] < topHits[slot] || (topHits[i] === topHits[slot] && topReachedAt[i] > topReachedAt[slot])) {
+            slot = i;
+          }
+        }
+        topIndex[slot] = index;
+        topHits[slot] = count;
+        topReachedAt[slot] = draw;
+        weakest = MAX_HITS;
+        for (let i = 0; i < size; i++) if (topHits[i] < weakest) weakest = topHits[i];
       }
     }
     if (--untilProgress === 0 && draw !== draws) {
@@ -118,14 +150,20 @@ export const mostFrequentDraw = (
     }
   }
 
-  return { numbers: combinationAt(pools, bestIndex), hits: best, drawsNumber: draws };
+  return {
+    sets: Array.from(topIndex, (index, i) => ({ index, hits: topHits[i], reachedAt: topReachedAt[i] }))
+      .filter(({ hits }) => hits > 0)
+      .sort((a, b) => b.hits - a.hits || a.reachedAt - b.reachedAt)
+      .map(({ index, hits }) => ({ numbers: combinationAt(pools, index), hits })),
+    drawsNumber: draws,
+  };
 };
 
 // Wejście i wyjście workera strony: gra z GAMES i liczba losowań; wynik
 // i postęp z czasem trwania w milisekundach (formatowanie należy do strony).
 export const generator = (game, draws, random = Math.random, { onProgress, progressEvery } = {}) => {
   const start = performance.now();
-  const result = mostFrequentDraw(gameRules(game).pools, draws, random, {
+  const result = mostFrequentDraws(gameRules(game).pools, draws, random, {
     onProgress: onProgress && ((progress) => onProgress({ ...progress, durationMs: performance.now() - start })),
     progressEvery,
   });

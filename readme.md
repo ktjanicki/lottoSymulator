@@ -14,8 +14,8 @@ w `simulation.js`.
 Drugi tryb, przełączany w nagłówku po prawej, to generator
 (`lottosymulator.pl/#generator`, dla Eurojackpota `#generator-eurojackpot`):
 przeprowadza wybraną liczbę losowań (10–1000 mln, `GENERATOR_DRAWS`
-w `generator.js`), liczy, ile razy padł każdy zestaw, i pokazuje najczęstszy.
-Zestaw można przenieść na kupon symulatora. Generator trzyma w pamięci
+w `generator.js`), liczy, ile razy padł każdy zestaw, i pokazuje sześć
+najczęstszych. Każdy z nich można przenieść na kupon symulatora. Generator trzyma w pamięci
 licznik na każdy zestaw gry: 14 MB dla Lotto, 140 MB dla Eurojackpota.
 
 ## Uruchomienie
