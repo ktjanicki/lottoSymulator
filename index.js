@@ -544,7 +544,7 @@ startButton.addEventListener('click', () => {
   // Przycisk startu znika na czas symulacji; fokus przechodzi na jego
   // następcę w tym samym miejscu, zamiast spaść na <body>.
   abortButton.focus();
-  simulationWorker.postMessage({ game: runGame, numbers: runNumbers });
+  simulationWorker.postMessage({ mode: 'simulator', game: runGame, numbers: runNumbers });
 });
 
 // Pętla workera jest synchroniczna — nie odbierze wiadomości „stop”, więc

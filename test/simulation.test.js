@@ -273,7 +273,7 @@ test('worker wysyła postęp i wynik oznaczone polem type — inaczej strona pom
   Math.random = losingThenWin(PROGRESS_EVERY + 1);
   let messages;
   try {
-    messages = runWorker({ game: 'lotto', numbers: TICKET });
+    messages = runWorker({ mode: 'simulator', game: 'lotto', numbers: TICKET });
   } finally {
     Math.random = originalRandom;
   }
@@ -293,7 +293,7 @@ test('worker liczy grę z wiadomości, nie Lotto na sztywno', () => {
   Math.random = zeros();
   let messages;
   try {
-    messages = runWorker({ game: 'eurojackpot', numbers: ['1', '2', '3', '4', '5', '1', '2'] });
+    messages = runWorker({ mode: 'simulator', game: 'eurojackpot', numbers: ['1', '2', '3', '4', '5', '1', '2'] });
   } finally {
     Math.random = originalRandom;
   }
@@ -305,8 +305,13 @@ test('worker liczy grę z wiadomości, nie Lotto na sztywno', () => {
 
 test('wyjątek w workerze wraca do strony jako {type: error} — inaczej strona czeka na wynik z kręcącym się spinnerem', () => {
   for (const [data, message] of [
-    [{ game: 'lotto', numbers: ['1', '2', '3', '4', '5'] }, /6 różnych liczb/],
-    [{ game: 'keno', numbers: TICKET }, /Nieznana gra/],
+    [{ mode: 'simulator', game: 'lotto', numbers: ['1', '2', '3', '4', '5'] }, /6 różnych liczb/],
+    [{ mode: 'simulator', game: 'keno', numbers: TICKET }, /Nieznana gra/],
+    [{ mode: 'generator', game: 'keno', draws: 10 }, /Nieznana gra/],
+    [{ mode: 'generator', game: 'lotto', draws: 0 }, /Liczba losowań/],
+    // Wiadomość bez trybu (strona sprzed 1.16.0) i tryb z prototypu obiektu.
+    [{ game: 'lotto', numbers: TICKET }, /Nieznany tryb/],
+    [{ mode: 'toString', game: 'lotto', numbers: TICKET }, /Nieznany tryb/],
   ]) {
     const messages = runWorker(data);
     assert.equal(

@@ -53,6 +53,7 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
     canonical, dane strukturalne, `robots.txt` i `sitemap.xml`); nazwa
     witryny w danych strukturalnych i w `manifest.json` — `og:title`;
   - zasady gier (pule liczb, stopnie wygranych) — `GAMES` w `simulation.js`;
+  - liczby losowań generatora — `GENERATOR_DRAWS` w `generator.js`;
   - Node budujący produkcję — obraz w `grossnet-vps-iac`
     (`10_versions.yml` → `images.node`); `.github/workflows/ci.yml` przepisuje
     ten numer do macierzy i trzeba go zmieniać razem z obrazem.
@@ -80,13 +81,18 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   zmienia się z każdym buildem. Nowy skrypt inline albo zasób z obcej domeny
   wymaga zmiany polityki w `scripts/build.mjs`, inaczej przeglądarka go zablokuje.
   Jedyne obce domeny to Google Analytics (skrypt, pomiary).
-- **Rdzeń bez DOM**: `simulation.js`, `format.js`, `history.js` nie dotykają
-  strony — zależności (`random`, `storage`) są wstrzykiwane, żeby testy
+- **Rdzeń bez DOM**: `simulation.js`, `generator.js`, `format.js`, `history.js`
+  nie dotykają strony — zależności (`random`, `storage`) są wstrzykiwane, żeby testy
   wołały je wprost. `analytics.js` dostaje okno jako argument. DOM tylko
   w `index.js`; `render()` i `renderHistory()` to jedyne miejsca, które
   ustawiają stan kontrolek.
 - **Worker** liczy synchronicznie — przerwanie to `terminate()`, nie wiadomość.
-  Protokół: `{type: 'progress' | 'result' | 'error'}`.
+  Wejście: `{mode: 'simulator', game, numbers}` albo `{mode: 'generator', game,
+draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
+- **Generator** nie wyciąga kul: losuje numer zestawu (ten sam rozkład, kilka
+  razy szybciej) i trzyma bajt licznika na każdy zestaw gry (Eurojackpot:
+  140 MB w workerze). Nowa gra albo większa liczba losowań musi się zmieścić
+  w tym liczniku — pilnuje wejście `mostFrequentDraw`.
 - **localStorage** tylko za zgodą (klucze w `history.js`; zmiana klucza gubi
   dane odwiedzających). Odmowy nie zapisujemy. Wpis historii niesie grę;
   wpisy sprzed 1.15.0 jej nie mają i czytają się jako `LEGACY_GAME` (Lotto).
