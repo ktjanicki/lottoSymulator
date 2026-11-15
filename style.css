@@ -1135,14 +1135,14 @@ body[data-game='eurojackpot'] .statValue {
   list-style: none;
 }
 
-/* Od lewej kule, data pośrodku wolnego miejsca, liczba losowań przy prawej
+/* Od lewej kule, gra z datą pośrodku wolnego miejsca, liczba losowań przy prawej
    krawędzi. Separator między wierszami (nie nad pierwszym — tam jest linia
    przełącznika) wygasa ku brzegom. */
 .historyItem {
   display: grid;
   grid-column: 1 / -1;
   grid-template-columns: subgrid;
-  grid-template-areas: 'balls date draws';
+  grid-template-areas: 'balls meta draws';
   align-items: center;
   row-gap: 8px;
   padding: 22px 4px;
@@ -1206,8 +1206,8 @@ body[data-game='eurojackpot'] .statValue {
   margin-left: 6px;
 }
 
-.historyDate {
-  grid-area: date;
+.historyMeta {
+  grid-area: meta;
   text-align: center;
   font-size: 0.85rem;
   color: var(--muted);
@@ -1229,16 +1229,16 @@ body[data-game='eurojackpot'] .statValue {
   color: var(--text);
 }
 
-/* Generowanie (wpis historii generatora): data i liczba losowań w pierwszym
+/* Generowanie (wpis historii generatora): gra z datą i liczba losowań w pierwszym
    wierszu, pod nimi zestawy z liczbą trafień — w dwóch kolumnach, gdy się
    mieszczą. */
 .historyRun {
   grid-template-areas:
-    'date date draws'
+    'meta meta draws'
     'sets sets sets';
 }
 
-.historyRun > .historyDate {
+.historyRun > .historyMeta {
   text-align: left;
 }
 
@@ -1263,7 +1263,7 @@ body[data-game='eurojackpot'] .statValue {
   white-space: nowrap;
 }
 
-/* Na telefonie kule w pierwszym wierszu, data i liczba losowań pod nimi —
+/* Na telefonie kule w pierwszym wierszu, gra z datą i liczba losowań pod nimi —
    w jednym wierszu liczba losowań wyszłaby poza kartę. */
 @media (max-width: 600px) {
   .historyList {
@@ -1273,16 +1273,26 @@ body[data-game='eurojackpot'] .statValue {
   .historyItem {
     grid-template-areas:
       'balls balls'
-      'date draws';
+      'meta draws';
   }
 
-  .historyDate {
+  .historyMeta {
     text-align: left;
+  }
+
+  /* Gra nad datą: gra, data i liczba losowań nie mieszczą się w jednej linii,
+     a zawinięte łamią się w przypadkowym miejscu („Lotto · 21.09.2026, / 16:13”). */
+  .historyGame {
+    display: block;
+  }
+
+  .historySeparator {
+    display: none;
   }
 
   .historyRun {
     grid-template-areas:
-      'date draws'
+      'meta draws'
       'sets sets';
   }
 

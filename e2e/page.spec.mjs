@@ -635,7 +635,7 @@ test('każda gra ma swój kupon, a ta sama liczba w obu pulach to dwie kule — 
   await expect(page.locator('.selectedCount')).toHaveText('5/5 + 2/2');
 });
 
-test('wynik i historia Eurojackpota osobno od Lotto — inaczej wygrana jednej gry trafia na listę drugiej', async ({
+test('wynik Eurojackpota osobno od Lotto, a wygrane obu gier na jednej liście z nazwą gry — inaczej wygrana znika po zmianie gry albo nie wiadomo, czyja jest', async ({
   page,
 }) => {
   await page.addInitScript(fakeWorker);
@@ -647,9 +647,9 @@ test('wynik i historia Eurojackpota osobno od Lotto — inaczej wygrana jednej g
   await expect(page.locator('.historyCount')).toHaveText('1');
 
   await gameButton(page, 'Eurojackpot').click();
-  // Wynik Lotto nie zostaje nad kuponem Eurojackpota.
+  // Wynik Lotto nie zostaje nad kuponem Eurojackpota; wygrana Lotto zostaje na liście.
   await expect(page.locator('.winResult')).toBeHidden();
-  await expect(page.locator('.history')).toBeHidden();
+  await expect(page.locator('.historyCount')).toHaveText('1');
 
   await pickEuroTicket(page);
   await page.locator('.startButton').click();
@@ -658,10 +658,14 @@ test('wynik i historia Eurojackpota osobno od Lotto — inaczej wygrana jednej g
   await expectTierCounts(page, 11);
   await expect(page.locator('.stats .statLabel').first()).toHaveText('× 5 + 1');
   await expect(page.locator('.stats .statLabel').last()).toHaveText('× 2 + 1');
-  await expect(page.locator('.historyCount')).toHaveText('1');
+  await expect(page.locator('.historyCount')).toHaveText('2');
   await page.locator('.historyToggle').click();
-  await expect(page.locator('.historyItem .ball')).toHaveCount(7);
-  await expect(page.locator('.historyItem .ball.euro')).toHaveText(['3', '11']);
+  // Od najnowszego: Eurojackpot (5 + 2 kule), pod nim Lotto (6 kul).
+  await expect(page.locator('.historyGame')).toHaveText(['Eurojackpot', 'Lotto']);
+  await expect(page.locator('.historyItem').first().locator('.ball')).toHaveCount(7);
+  await expect(page.locator('.historyItem').first().locator('.ball.euro')).toHaveText(['3', '11']);
+  await expect(page.locator('.historyItem').last().locator('.ball')).toHaveCount(6);
+  await expect(page.locator('.historyItem').last().locator('.ball.euro')).toHaveCount(0);
   const entries = JSON.parse(await stored(page, HISTORY_KEY));
   expect(entries.map(({ game, numbers }) => [game, numbers])).toEqual([
     ['eurojackpot', EURO_TICKET.flat()],
@@ -669,26 +673,48 @@ test('wynik i historia Eurojackpota osobno od Lotto — inaczej wygrana jednej g
   ]);
 
   await gameButton(page, 'Lotto').click();
-  await expect(page.locator('.historyCount')).toHaveText('1');
-  await expect(page.locator('.historyItem .ball')).toHaveCount(6);
-  await expect(page.locator('.historyItem .ball.euro')).toHaveCount(0);
+  await expect(page.locator('.historyCount')).toHaveText('2');
+  await expect(page.locator('.historyGame')).toHaveText(['Eurojackpot', 'Lotto']);
 });
 
-test('historia sprzed Eurojackpota (wpisy bez gry) zostaje w Lotto i nie trafia do Eurojackpota', async ({ page }) => {
+test('historia symulatora łączy gry: wpis sprzed Eurojackpota (bez gry) to Lotto, a zmiana gry nie zwija pokazanych porcji', async ({
+  page,
+}) => {
+  // 20 wpisów: dwie porcje „więcej” (po 15). Najstarszy bez gry — zapis sprzed 1.15.0.
   await page.addInitScript(
     ([consentKey, historyKey]) => {
+      const euro = Array.from({ length: 19 }, (_, index) => ({
+        game: 'eurojackpot',
+        numbers: [1, 2, 3, 4, 5, 1, 2],
+        drawsNumber: 1000 + index,
+        date: 1_790_000_100_000 - index,
+      }));
+      const legacy = { numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 1234, date: 1_790_000_000_000 };
       localStorage.setItem(consentKey, 'accepted');
-      localStorage.setItem(
-        historyKey,
-        JSON.stringify([{ numbers: [1, 2, 3, 4, 5, 6], drawsNumber: 1234, date: 1_790_000_000_000 }])
-      );
+      localStorage.setItem(historyKey, JSON.stringify([...euro, legacy]));
     },
     [CONSENT_KEY, HISTORY_KEY]
   );
   await page.goto('/');
-  await expect(page.locator('.historyCount')).toHaveText('1');
+  await expect(page.locator('.historyCount')).toHaveText('20');
+  await page.locator('.historyToggle').click();
+  await expect(page.locator('.historyItem')).toHaveCount(15);
+  await page.locator('.historyMore').click();
+  await expect(page.locator('.historyItem')).toHaveCount(20);
+  await expect(page.locator('.historyMore')).toBeHidden();
+  await expect(page.locator('.historyItem').last().locator('.historyGame')).toHaveText('Lotto');
+  await expect(page.locator('.historyItem').last().locator('.ball')).toHaveCount(6);
+
   await gameButton(page, 'Eurojackpot').click();
+  await expect(page.locator('.historyCount')).toHaveText('20');
+  await expect(page.locator('.historyItem')).toHaveCount(20);
+  await expect(page.locator('.historyItem').last().locator('.historyGame')).toHaveText('Lotto');
+
+  // Zmiana trybu pokazuje listę generatora (pustą), a po powrocie — od pierwszej porcji.
+  await modeButton(page, 'Generator').click();
   await expect(page.locator('.history')).toBeHidden();
+  await modeButton(page, 'Symulator').click();
+  await expect(page.locator('.historyItem')).toHaveCount(15);
 });
 
 test('w trakcie symulacji gry nie da się zmienić, także przez Wstecz — inaczej wynik trafia do złej gry', async ({
@@ -877,7 +903,7 @@ for (const [game, hash, pools] of [
   );
 }
 
-test('generator liczy wybraną liczbę losowań, a jego historia stoi osobno od wygranych i od drugiej gry', async ({
+test('generator liczy wybraną liczbę losowań, a jego historia stoi osobno od wygranych i łączy obie gry', async ({
   page,
 }) => {
   await page.addInitScript(fakeWorker, GENERATED);
@@ -908,15 +934,18 @@ test('generator liczy wybraną liczbę losowań, a jego historia stoi osobno od 
   await expect(page.locator('.runSets > li')).toHaveCount(6);
   await expect(page.locator('.runHits').first()).toHaveText('9 razy');
 
-  // Liczba losowań zostaje po zmianie gry; zestawy Lotto nie.
+  // Liczba losowań zostaje po zmianie gry; wynik Lotto nie, jego wpis w historii tak.
   await gameButton(page, 'Eurojackpot').click();
   await expect(page.locator('.generatorResult')).toBeHidden();
   await expect(page.locator('.generatedSets .slot')).toHaveCount(6 * 7);
-  await expect(page.locator('.history')).toBeHidden();
+  await expect(page.locator('.historyCount')).toHaveText('1');
   await expect(drawsButton(page, '500\u00a0mln')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('.startButton').click();
   await expect(setRows(page).first().locator('.ball.euro')).toHaveText(['1', '12']);
-  await expect(page.locator('.runSets > li').first().locator('.ball')).toHaveCount(7);
+  await expect(page.locator('.historyCount')).toHaveText('2');
+  await expect(page.locator('.historyGame')).toHaveText(['Eurojackpot', 'Lotto']);
+  await expect(page.locator('.historyItem').first().locator('.runSets > li').first().locator('.ball')).toHaveCount(7);
+  await expect(page.locator('.historyItem').last().locator('.runSets > li').first().locator('.ball')).toHaveCount(6);
 
   expect(JSON.parse(await stored(page, GENERATED_KEY))).toMatchObject([
     {
@@ -933,8 +962,10 @@ test('generator liczy wybraną liczbę losowań, a jego historia stoi osobno od 
   // Pod kluczem wygranych — tylko wygrana: karta sprzed 1.16.0 czyta go po swojemu.
   expect(JSON.parse(await stored(page, HISTORY_KEY)).map(({ game }) => game)).toEqual(['lotto']);
 
-  // Wygrana symulatora dalej stoi na swojej liście.
+  // Wygrana symulatora dalej stoi na swojej liście — także w Eurojackpocie.
   await modeButton(page, 'Symulator').click();
+  await expect(page.locator('.historyCount')).toHaveText('1');
+  await expect(page.locator('.historyDraws')).toHaveText('101 losowań');
   await gameButton(page, 'Lotto').click();
   await expect(page.locator('.historyCount')).toHaveText('1');
   await expect(page.locator('.historyDraws')).toHaveText('101 losowań');

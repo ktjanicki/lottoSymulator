@@ -224,22 +224,37 @@ const createHistoryBalls = (entryGame, numbers) => {
   return balls;
 };
 
-// Wygrana symulatora: kule, data, liczba losowań. Generowanie (wpis
-// z `sets`): data i liczba losowań, pod nimi zestawy z liczbą trafień.
+// Nazwa gry z jej przycisku w przełączniku — jedno miejsce w index.html.
+const gameName = (id) => gameButtons.find((button) => button.dataset.game === id).textContent;
+
+// Wygrana symulatora: kule, gra z datą, liczba losowań. Generowanie (wpis
+// z `sets`): gra z datą i liczba losowań, pod nimi zestawy z liczbą trafień.
+// Nazwa gry stoi przy każdym wpisie: lista trybu miesza gry, a zestaw Lotto
+// i główne liczby Eurojackpota wyglądają podobnie.
 const createHistoryItem = ({ game: entryGame, numbers, sets, drawsNumber, date }) => {
   const item = document.createElement('li');
   item.className = sets ? 'historyItem historyRun' : 'historyItem';
+  const meta = document.createElement('p');
+  meta.className = 'historyMeta';
+  const name = document.createElement('span');
+  name.className = 'historyGame';
+  name.textContent = gameName(entryGame);
   const time = document.createElement('time');
-  time.className = 'historyDate';
   time.dateTime = new Date(date).toISOString();
   time.textContent = formatDateTime(new Date(date));
+  // Kropka we własnym elemencie: na telefonie gra stoi nad datą i kropka
+  // znika (style.css) — jako sam tekst zaczynałaby drugą linię.
+  const separator = document.createElement('span');
+  separator.className = 'historySeparator';
+  separator.textContent = ' · ';
+  meta.append(name, separator, time);
   const draws = document.createElement('p');
   draws.className = 'historyDraws';
   const count = document.createElement('strong');
   count.textContent = formatNumber(drawsNumber);
   draws.append(count, ` ${drawsNoun(drawsNumber)}`);
   if (!sets) {
-    item.append(createHistoryBalls(entryGame, numbers), time, draws);
+    item.append(createHistoryBalls(entryGame, numbers), meta, draws);
     return item;
   }
   const list = document.createElement('ol');
@@ -254,7 +269,7 @@ const createHistoryItem = ({ game: entryGame, numbers, sets, drawsNumber, date }
       return row;
     })
   );
-  item.append(time, draws, list);
+  item.append(meta, draws, list);
   return item;
 };
 
@@ -304,16 +319,18 @@ const scrollToNewEntries = (first, last) => {
   requestAnimationFrame(step);
 };
 
-// Wpisy wybranego trybu i gry, od najnowszego — lista i licznik pokazują
-// tylko je.
-const gameHistory = () => (mode === GENERATOR ? generatedHistory : history).filter((entry) => entry.game === game);
+// Wpisy wybranego trybu, wszystkich gier, od najnowszego — lista i licznik
+// pokazują tylko je. Bez filtra gry: wygrana Lotto zostaje na liście także
+// w Eurojackpocie (nazwę gry niesie wpis). Lista trybu łączy gry, nie tryby —
+// generowanie to nie wygrana.
+const modeHistory = () => (mode === GENERATOR ? generatedHistory : history);
 
 // Jedyne miejsce, które ustawia listę historii na podstawie `history`
-// i `generatedHistory`, wybranego trybu i gry oraz liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
+// i `generatedHistory`, wybranego trybu oraz liczby pokazanych wpisów (rośnie o HISTORY_PAGE po „więcej”).
 // Wpisy o indeksach [animateFrom, animateTo) wjeżdżają po kolei — tylko
 // nowo pokazane; reszta stoi, inaczej każde „więcej” migałoby całą listą.
 const renderHistory = (animateFrom = 0, animateTo = 0) => {
-  const entries = gameHistory();
+  const entries = modeHistory();
   historySection.classList.toggle('inactive', entries.length === 0);
   historyCount.textContent = entries.length;
   historyList.replaceChildren(
@@ -366,7 +383,7 @@ historyMore.addEventListener('click', () => {
   // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
   // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
   // preventScroll: fokus przewinąłby stronę skokiem, w poprzek przewijania wyżej.
-  if (historyShown >= gameHistory().length) {
+  if (historyShown >= modeHistory().length) {
     firstItem.tabIndex = -1;
     firstItem.focus({ preventScroll: true });
   }
@@ -556,7 +573,7 @@ const render = () => {
 };
 
 // Przełącza stronę na tryb i grę: plansze i kafelki wyniku od nowa, historia
-// trybu i gry. Wynik i komunikat poprzedniego widoku znikają — „Szóstka!” nad
+// trybu. Wynik i komunikat poprzedniego widoku znikają — „Szóstka!” nad
 // kuponem Eurojackpota albo zestaw Lotto w generatorze Eurojackpota myliłyby.
 // Kafelki stoją od razu (z zerami): od 900 px ukryty wynik trzyma miejsce,
 // a bez nich plansza skoczyłaby przy wyniku.
@@ -576,9 +593,13 @@ const showView = (viewMode, id) => {
   winResultElement.classList.add('inactive');
   generatorResultElement.classList.add('inactive');
   abortedElement.classList.add('inactive');
-  historyShown = HISTORY_PAGE;
   render();
-  renderHistory();
+  // Historia łączy gry, więc zmiana gry jej nie dotyka: przerysowanie
+  // zwinęłoby porcje „więcej” i zabrało fokus wpisowi.
+  if (modeChanged) {
+    historyShown = HISTORY_PAGE;
+    renderHistory();
+  }
   // Fokus na kuli, wpisie albo przycisku, który zniknął (np. Wstecz
   // z klawiatury, „Przenieś do symulatora”), spada na <body> albo zostaje na
   // ukrytym elemencie — wraca na przycisk przełącznika, który się zmienił.
