@@ -7,6 +7,7 @@
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
 const fs = require('node:fs');
+const os = require('node:os');
 const path = require('node:path');
 const { execFileSync } = require('node:child_process');
 
@@ -126,11 +127,18 @@ const checkTags = (version, changelogText, tags, versionAtTag) => {
   return errors;
 };
 
-const git = (...args) =>
-  execFileSync('git', args, { cwd: ROOT, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const gitIn = (cwd, ...args) =>
+  execFileSync('git', args, { cwd, encoding: 'utf8', stdio: ['ignore', 'pipe', 'ignore'] });
+const git = (...args) => gitIn(ROOT, ...args);
 const hasGit = fs.existsSync(path.join(ROOT, '.git'));
 
 const repoVersion = () => read('VERSION').trim();
+
+// Tylko tagi z historii HEAD. CI sprawdza też commit starszego tagu, a checkout
+// z pełną historią przynosi wszystkie tagi: wypchnięte naraz v1.17.2 i v1.17.3
+// dały czerwone CI tagu v1.17.2 — test widział nowszy v1.17.3, którego nie ma
+// w CHANGELOG.md tamtego commitu. Tag poza historią HEAD nie jest sprawdzany.
+const releaseTags = (cwd) => gitIn(cwd, 'tag', '--list', '--merged', 'HEAD', 'v*').split('\n').filter(Boolean);
 
 test('VERSION to czysty numer X.Y.Z — inaczej reszta kontroli porównuje z niczym', () => {
   assert.deepEqual(checkVersionFile(read('VERSION')), []);
@@ -153,7 +161,7 @@ test(
   'każdy tag v* ma wydanie w CHANGELOG.md i stoi na commicie z tym numerem — inaczej tag kłamie o stanie kodu',
   { skip: !hasGit && 'brak .git' },
   () => {
-    const tags = git('tag', '--list', 'v*').split('\n').filter(Boolean);
+    const tags = releaseTags(ROOT);
     const versionAtTag = (tag) => {
       try {
         return git('show', `${tag}:VERSION`).trim();
@@ -162,6 +170,42 @@ test(
       }
     };
     assert.deepEqual(checkTags(repoVersion(), read('CHANGELOG.md'), tags, versionAtTag), []);
+  }
+);
+
+test(
+  'na commicie starszego wydania kontrola tagów nie widzi nowszych — inaczej push dwóch wydań naraz czerwieni CI starszego tagu',
+  { skip: !hasGit && 'brak .git' },
+  () => {
+    const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'lotto-tags-'));
+    // Autor i podpisy podane wprost: CI nie ma user.name, a lokalny wymóg
+    // podpisu GPG zatrzymałby commit.
+    const run = (...args) =>
+      gitIn(
+        dir,
+        '-c',
+        'user.name=test',
+        '-c',
+        'user.email=test@example.invalid',
+        '-c',
+        'commit.gpgsign=false',
+        '-c',
+        'tag.gpgsign=false',
+        ...args
+      );
+    try {
+      run('init', '-q');
+      for (const version of ['1.0.0', '1.0.1']) {
+        fs.writeFileSync(path.join(dir, 'VERSION'), `${version}\n`);
+        run('add', 'VERSION');
+        run('commit', '-q', '-m', version);
+        run('tag', '-a', `v${version}`, '-m', version);
+      }
+      run('checkout', '-q', 'v1.0.0');
+      assert.deepEqual(releaseTags(dir), ['v1.0.0']);
+    } finally {
+      fs.rmSync(dir, { recursive: true, force: true });
+    }
   }
 );
 
