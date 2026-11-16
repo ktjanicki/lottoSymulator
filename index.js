@@ -57,6 +57,7 @@ const resultSimulationTime = document.querySelector('.resultSimulationTime');
 const resultTicketNumbers = document.querySelector('.resultTicketNumbers');
 const simulationProgressElement = document.querySelector('.simulationProgress');
 const simulationProgressMessage = document.querySelector('.simulationProgressMessage');
+const resultElement = document.querySelector('.result');
 const winResultElement = document.querySelector('.winResult');
 const progressLabel = document.querySelector('.progressLabel');
 const progressCount = document.querySelector('.progressCount');
@@ -279,17 +280,19 @@ const createHistoryItem = ({ game: entryGame, numbers, sets, drawsNumber, date }
 // wygląda na zawieszone, krócej — wpisy zlewają się w jeden błysk.
 const HISTORY_STAGGER_MS = 100;
 const HISTORY_ENTER_MS = 550;
-// Pierwszy nowy wpis staje tyle pikseli pod górną krawędzią okna.
-const HISTORY_SCROLL_OFFSET_PX = 24;
-// Przewijanie trwa zawsze tyle samo, niezależnie od liczby nowych wpisów.
-const HISTORY_SCROLL_MS = 1000;
+// Odsłaniany element (pierwszy nowy wpis historii, karta wyniku) staje tyle
+// pikseli pod górną krawędzią okna.
+const SCROLL_OFFSET_PX = 24;
+// Przewijanie trwa zawsze tyle samo, niezależnie od odległości.
+const SCROLL_MS = 1000;
 const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
-// Przewija stronę (przez HISTORY_SCROLL_MS) tak, żeby pierwszy nowy stanął
-// tuż pod górną krawędzią okna — tylko gdy nowe wpisy nie mieszczą się
-// w oknie (inaczej widać je bez przewijania). Kółko, dotyk albo klawisz
-// przerywają przewijanie: bez tego strona szarpałaby się z odwiedzającym.
-const scrollToNewEntries = (first, last) => {
+// Przewija stronę (przez SCROLL_MS) tak, żeby `first` stanął tuż pod górną
+// krawędzią okna — tylko gdy `last` nie mieści się w oknie (inaczej nowe
+// widać bez przewijania; na desktopie wynik w bocznym panelu zwykle tak).
+// Kółko, dotyk albo klawisz przerywają przewijanie: bez tego strona
+// szarpałaby się z odwiedzającym.
+const scrollToReveal = (first, last) => {
   // getBoundingClientRect liczy z przesunięciem z początku animacji (wpis
   // startuje niżej) — bez odjęcia go wpis staje o tyle za wysoko.
   const shift = new DOMMatrixReadOnly(getComputedStyle(first).transform).m42;
@@ -297,7 +300,7 @@ const scrollToNewEntries = (first, last) => {
   if (last.getBoundingClientRect().bottom <= window.innerHeight) return;
   const start = window.scrollY;
   const maxScroll = document.documentElement.scrollHeight - window.innerHeight;
-  const target = Math.min(start + top - HISTORY_SCROLL_OFFSET_PX, maxScroll);
+  const target = Math.min(start + top - SCROLL_OFFSET_PX, maxScroll);
   if (target <= start) return;
   if (reducedMotion.matches) {
     window.scrollTo(0, target);
@@ -309,7 +312,7 @@ const scrollToNewEntries = (first, last) => {
   const events = ['wheel', 'touchstart', 'keydown'];
   for (const type of events) window.addEventListener(type, cancel, { once: true, passive: true });
   const step = (now) => {
-    const progress = Math.min((now - began) / HISTORY_SCROLL_MS, 1);
+    const progress = Math.min((now - began) / SCROLL_MS, 1);
     // Łagodny start i koniec (ease-in-out), jak wjazd wpisów.
     const eased = progress < 0.5 ? 2 * progress ** 2 : 1 - (-2 * progress + 2) ** 2 / 2;
     if (!cancelled) window.scrollTo(0, start + (target - start) * eased);
@@ -371,7 +374,7 @@ historyToggle.addEventListener('click', () => {
   if (expanded) renderHistory(0, historyShown);
   historyBody.classList.toggle('inactive', !expanded);
   // Po odsłonięciu — ukryta lista nie ma jeszcze położenia do przewinięcia.
-  if (expanded) scrollToNewEntries(historyList.firstElementChild, historyList.lastElementChild);
+  if (expanded) scrollToReveal(historyList.firstElementChild, historyList.lastElementChild);
 });
 
 historyMore.addEventListener('click', () => {
@@ -379,7 +382,7 @@ historyMore.addEventListener('click', () => {
   historyShown += HISTORY_PAGE;
   renderHistory(firstNew, historyShown);
   const firstItem = historyList.children[firstNew];
-  scrollToNewEntries(firstItem, historyList.lastElementChild);
+  scrollToReveal(firstItem, historyList.lastElementChild);
   // Po ostatniej porcji „więcej” znika; fokus przechodzi na pierwszy nowy
   // wpis zamiast spaść na <body>. Póki przycisk jest, fokus zostaje na nim.
   // preventScroll: fokus przewinąłby stronę skokiem, w poprzek przewijania wyżej.
@@ -749,6 +752,11 @@ startButton.addEventListener('click', () => {
     render();
     // Jak po przerwaniu: znikający „Przerwij” zrzuciłby fokus na <body>.
     if (abortFocused) startButton.focus();
+    // W jednej kolumnie wynik wyrasta pod przyciskiem startu, poza oknem
+    // telefonu — bez przewinięcia odwiedzający widzi tylko, że pasek zniknął.
+    // W generatorze ma się zmieścić także lista zestawów pod kartą wyniku.
+    // Po fokusie: focus() przewija skokiem, przewijanie zaczyna od tego miejsca.
+    scrollToReveal(resultElement, runMode === GENERATOR ? generatedSets : winResultElement);
     // Na końcu: wynik stoi już na ekranie, a baner zwróci fokus tam, gdzie go zastał.
     if (!consentGiven && consentReminderDue(++completedWithoutConsent)) {
       unsavedResult = result;

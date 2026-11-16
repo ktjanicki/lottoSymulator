@@ -11,7 +11,8 @@
 //   wybrana, przenosi do symulatora nie ten zestaw, miesza swoją historię
 //   z wygranymi symulatora albo zostawia stronę
 //   w stanie „w toku”, gdy worker odmówi (brak pamięci na liczniki);
-// - na telefonie przycisk startu generatora pod sześcioma wierszami zestawów.
+// - na telefonie przycisk startu generatora pod sześcioma wierszami zestawów
+//   i wynik, który pojawia się pod ekranem, bez przewinięcia do niego.
 // Scenariusze @prod idą też na produkcji (npm run check:prod): tylko czytają
 // stronę, a wszystko, co zapisują, zostaje w przeglądarce testu.
 
@@ -1036,6 +1037,43 @@ test('na telefonie generator ma liczbę losowań i start nad zestawami, a symula
   await page.setViewportSize({ width: 1280, height: 800 });
   await modeButton(page, 'Generator').click();
   expect((await box(page.locator('.selectedItemsBlock'))).x).toBeGreaterThan((await box(sets)).x);
+});
+
+// Górna krawędź karty wyniku względem okna; po przewinięciu — 24 px
+// (SCROLL_OFFSET_PX w index.js).
+const resultTop = (page) => page.locator('.result').evaluate((element) => element.getBoundingClientRect().top);
+
+test('na telefonie strona po wyniku przewija się do karty wyniku — inaczej wygrana i zestawy zostają pod ekranem', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeWorker, GENERATED);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/');
+  await page.locator('.cookieDecline').click();
+  await pickTicket(page);
+  await page.locator('.startButton').click();
+  await expect(page.locator('.winResult')).toBeVisible();
+  // Przewijanie trwa sekundę (SCROLL_MS); poll czeka na jego koniec.
+  await expect.poll(async () => Math.round(await resultTop(page))).toBe(24);
+
+  // Bez animacji (prefers-reduced-motion) — skok od razu, w generatorze też.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await modeButton(page, 'Generator').click();
+  await page.evaluate(() => window.scrollTo(0, 0));
+  await page.locator('.startButton').click();
+  await expect(page.locator('.generatorResult')).toBeVisible();
+  expect(Math.round(await resultTop(page))).toBe(24);
+});
+
+test('na desktopie, gdzie wynik generatora mieści się w oknie, strona nie przewija się po wyniku', async ({ page }) => {
+  await page.addInitScript(fakeWorker, GENERATED);
+  await page.emulateMedia({ reducedMotion: 'reduce' });
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await page.goto('/#generator');
+  await page.locator('.cookieDecline').click();
+  await page.locator('.startButton').click();
+  await expect(page.locator('.generatorResult')).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(0);
 });
 
 test('w trakcie generowania trybu, gry i liczby losowań nie da się zmienić, a „Przerwij” oddaje stronę', async ({
