@@ -834,6 +834,15 @@ button.ball:active:not(:disabled) {
   .sidePanel > .result:not(:has(> :not(.inactive))) {
     margin-top: -20px;
   }
+
+  /* W jednej kolumnie generator stawia wybór liczby losowań i start nad
+     zestawami: w kolejności DOM sześć wierszy (przed wynikiem puste) spychało
+     przycisk pod ekran telefonu. Symulator zostaje przy kolejności DOM —
+     najpierw plansza, potem kupon. Zmiana dotyczy tylko wyglądu: fokus
+     i czytnik ekranu dalej idą przez „Do symulatora” przed panelem. */
+  body[data-mode='generator'] .sidePanel {
+    order: -1;
+  }
 }
 
 /* Od 900 px plansza ma wysokość wiersza, a wiersz — wyższej kolumny. Gdy

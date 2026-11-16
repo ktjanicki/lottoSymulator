@@ -10,7 +10,8 @@
 // - generator, który nie dochodzi do zestawu, liczy inną liczbę losowań niż
 //   wybrana, przenosi do symulatora nie ten zestaw, miesza swoją historię
 //   z wygranymi symulatora albo zostawia stronę
-//   w stanie „w toku”, gdy worker odmówi (brak pamięci na liczniki).
+//   w stanie „w toku”, gdy worker odmówi (brak pamięci na liczniki);
+// - na telefonie przycisk startu generatora pod sześcioma wierszami zestawów.
 // Scenariusze @prod idą też na produkcji (npm run check:prod): tylko czytają
 // stronę, a wszystko, co zapisują, zostaje w przeglądarce testu.
 
@@ -1002,6 +1003,39 @@ test('„Do symulatora” wypełnia kupon tej samej gry zestawem z klikniętego 
   await expect(modeButton(page, 'Generator')).toHaveAttribute('aria-pressed', 'true');
   await expect(page.locator('.generatedSets .slot')).toHaveCount(6 * 7);
   await expect(page.locator('.toSimulatorButton:visible')).toHaveCount(0);
+});
+
+const box = async (locator) => {
+  await expect(locator).toBeVisible();
+  return locator.boundingBox();
+};
+
+test('na telefonie generator ma liczbę losowań i start nad zestawami, a symulator planszę nad kuponem — inaczej przycisk ląduje pod ekranem', async ({
+  page,
+}) => {
+  await page.addInitScript(fakeWorker, GENERATED);
+  await page.setViewportSize({ width: 390, height: 844 });
+  await page.goto('/#generator');
+  await page.locator('.cookieDecline').click();
+
+  const sets = page.locator('.generatedSets');
+  expect((await box(page.locator('.startButton'))).y).toBeLessThan((await box(sets)).y);
+  expect((await box(page.locator('.drawsChoice'))).y).toBeLessThan((await box(sets)).y);
+  await page.locator('.startButton').click();
+  // Podsumowanie wyniku zostaje w panelu, pod przyciskiem i nad zestawami.
+  const summary = await box(page.locator('.generatorResult'));
+  expect(summary.y).toBeGreaterThan((await box(page.locator('.startButton'))).y);
+  expect(summary.y).toBeLessThan((await box(sets)).y);
+
+  await modeButton(page, 'Symulator').click();
+  expect((await box(page.locator('.numbersList[data-pool="0"]'))).y).toBeLessThan(
+    (await box(page.locator('.selectedItemsBlock'))).y
+  );
+
+  // Od 900 px panel zostaje po prawej, także w generatorze.
+  await page.setViewportSize({ width: 1280, height: 800 });
+  await modeButton(page, 'Generator').click();
+  expect((await box(page.locator('.selectedItemsBlock'))).x).toBeGreaterThan((await box(sets)).x);
 });
 
 test('w trakcie generowania trybu, gry i liczby losowań nie da się zmienić, a „Przerwij” oddaje stronę', async ({
