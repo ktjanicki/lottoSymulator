@@ -2,6 +2,21 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.18.1] — 2026-11-17
+
+### Poprawione
+
+- Generator: przyciski liczby losowań podpisane „1 mld”, „2 mld”, „3 mld”
+  zamiast „1 000 mln”, „2 000 mln”, „3 000 mln”.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+
 ## [1.18.0] — 2026-11-17
 
 ### Dodane
