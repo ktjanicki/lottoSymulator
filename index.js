@@ -1,5 +1,5 @@
 import { grantAnalytics, startAnalytics } from './analytics.js';
-import { drawsNoun, formatDateTime, formatNumber, formatSeconds, timesNoun } from './format.js';
+import { drawsNoun, formatDateTime, formatDrawsChoice, formatNumber, formatSeconds, timesNoun } from './format.js';
 import { GENERATOR_DRAWS, GENERATOR_SETS } from './generator.js';
 import {
   CONSENT_KEY,
@@ -493,14 +493,13 @@ const createStat = (tier) => {
   return item;
 };
 
-// Przycisk na każdą liczbę losowań generatora: „100 mln” … „3 000 mln”.
-// GENERATOR_DRAWS to pełne miliony — inna wartość wymaga innego podpisu.
+// Przycisk na każdą liczbę losowań generatora: „100 mln” … „3 mld”.
 drawsChoice.replaceChildren(
   ...GENERATOR_DRAWS.map((draws) => {
     const button = document.createElement('button');
     button.type = 'button';
     button.dataset.draws = draws;
-    button.textContent = `${formatNumber(draws / 1_000_000)}\u00a0mln`;
+    button.textContent = formatDrawsChoice(draws);
     return button;
   })
 );

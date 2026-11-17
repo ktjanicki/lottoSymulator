@@ -5,6 +5,16 @@
 // do końca liczby — i nigdy na początku (\B).
 export const formatNumber = (number) => String(number).replace(/\B(?=(\d{3})+$)/g, '\u00a0');
 
+// Podpis przycisku liczby losowań generatora: „100 mln”, „1 mld”. Pełne
+// miliardy w miliardach — „3 000 mln” czytało się gorzej niż „3 mld”;
+// reszta w milionach, bez ułamków (1,5 mld → „1 500 mln”). Liczba, która
+// nie jest pełnym milionem, dostałaby podpis z kropką dziesiętną
+// („0.5 mln”) — GENERATOR_DRAWS to pełne miliony.
+export const formatDrawsChoice = (draws) =>
+  draws % 1_000_000_000 === 0
+    ? `${formatNumber(draws / 1_000_000_000)}\u00a0mld`
+    : `${formatNumber(draws / 1_000_000)}\u00a0mln`;
+
 // Sekundy z jedną cyfrą po przecinku: 2345 ms → „2,3”. Przecinek wstawiamy
 // sami — toLocaleString zależy od języka przeglądarki i pokazałby „2.3”
 // odwiedzającemu z angielskim interfejsem.

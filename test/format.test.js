@@ -1,11 +1,19 @@
 // Formatowanie liczb w podsumowaniu (format.js). Awarie: spacja w złym miejscu
 // albo na początku liczby („ 819 580”); zwykła spacja zamiast twardej — liczba
 // łamie się w środku wiersza; kropka dziesiętna zamiast przecinka;
-// data bez zer wiodących albo z miesiącem liczonym od zera; „22 losowań”.
+// data bez zer wiodących albo z miesiącem liczonym od zera; „22 losowań”;
+// przycisk generatora „3 000 mln” zamiast „3 mld”.
 
 const { test } = require('node:test');
 const assert = require('node:assert/strict');
-const { formatNumber, formatSeconds, formatDateTime, drawsNoun, timesNoun } = require('../format.js');
+const {
+  formatNumber,
+  formatSeconds,
+  formatDateTime,
+  formatDrawsChoice,
+  drawsNoun,
+  timesNoun,
+} = require('../format.js');
 
 test('liczby grupowane po trzy cyfry od prawej twardą spacją, bez spacji na brzegach', () => {
   const cases = [
@@ -73,5 +81,20 @@ test('„padł 1 raz”, ale „2 razy” i „27 razy” — inaczej wynik gene
     [115, 'razy'],
   ]) {
     assert.equal(timesNoun(count), expected, `${count}`);
+  }
+});
+
+test('przyciski generatora: pełne miliardy w „mld”, reszta w „mln” — inaczej „3 000 mln” albo „0,1 mld”', () => {
+  const cases = [
+    [100_000_000, '100 mln'],
+    [500_000_000, '500 mln'],
+    [1_000_000_000, '1 mld'],
+    [1_500_000_000, '1 500 mln'],
+    [3_000_000_000, '3 mld'],
+    [12_000_000_000, '12 mld'],
+  ];
+  // Jak wyżej: zwykła spacja w przypadkach, twarda w wyniku.
+  for (const [draws, expected] of cases) {
+    assert.equal(formatDrawsChoice(draws), expected.replaceAll(' ', '\u00a0'), `${draws}`);
   }
 });

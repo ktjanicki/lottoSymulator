@@ -859,9 +859,9 @@ test(
       '100\u00a0mln',
       '300\u00a0mln',
       '500\u00a0mln',
-      '1\u00a0000\u00a0mln',
-      '2\u00a0000\u00a0mln',
-      '3\u00a0000\u00a0mln',
+      '1\u00a0mld',
+      '2\u00a0mld',
+      '3\u00a0mld',
     ]);
     await expect(drawsButton(page, '100\u00a0mln')).toHaveAttribute('aria-pressed', 'true');
     await expect(page.getByRole('heading', { name: 'Liczba losowań' })).toBeVisible();
@@ -1196,7 +1196,7 @@ test('w trakcie generowania trybu, gry i liczby losowań nie da się zmienić, a
   await page.goto('/');
   await page.locator('.cookieDecline').click();
   await modeButton(page, 'Generator').click();
-  await drawsButton(page, '3\u00a0000\u00a0mln').click();
+  await drawsButton(page, '3\u00a0mld').click();
   await page.locator('.startButton').click();
   await expect(page.locator('.progressLabel')).toHaveText('Generowanie w toku');
   await expect(page.locator('.progressCount')).toHaveText('1 z 3\u00a0000\u00a0mln losowań · 0,3 s');
