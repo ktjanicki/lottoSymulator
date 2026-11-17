@@ -2,6 +2,44 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.18.0] — 2026-11-17
+
+### Dodane
+
+- Mini Lotto (pięć liczb z 42, do „piątki”) w symulatorze i generatorze;
+  adresy `#minilotto` i `#generator-minilotto`.
+- Generator: 2000 i 3000 mln losowań.
+
+### Zmienione
+
+- Generator zaczyna od 100 mln losowań (zaznaczone przy wejściu).
+- Tytuł i opis strony wymieniają Mini Lotto.
+- Komunikat w trakcie liczenia: „nawet kilkanaście minut”.
+- Generator Lotto od 2000 mln losowań potrzebuje ok. 28 MB pamięci.
+
+### Usunięte
+
+- Generator: 10 i 50 mln losowań.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+- Bez trybu offline: zainstalowana aplikacja wymaga sieci.
+- Wejście wprost na `#minilotto`, `#eurojackpot` albo `#generator` raz
+  przesuwa układ strony: zanim ruszy skrypt, stoi plansza symulatora Lotto.
+- Karta ze stroną w wersji sprzed 1.15.0, otwarta w czasie aktualizacji,
+  przy zapisie wygranej usuwa z historii wpisy Eurojackpota; karta sprzed
+  1.18.0 — wpisy Mini Lotto.
+- Generator Eurojackpota potrzebuje ok. 140 MB pamięci; gdy przeglądarka jej
+  nie da (słabszy telefon), generowanie kończy się komunikatem o niepowodzeniu.
+- Tytuł i opis strony nie wspominają o generatorze.
+- Symulacja Mini Lotto trwa zwykle ułamek sekundy; wynik podaje wtedy czas
+  „0,0 s”.
+
 ## [1.17.4] — 2026-11-16
 
 ### Poprawione
