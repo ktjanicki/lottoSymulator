@@ -160,7 +160,7 @@ body[data-mode='generator'] [data-for-mode='simulator'] {
   justify-items: center;
   max-width: 1080px;
   margin: 0 auto;
-  padding: 40px 0 28px;
+  padding: 48px 0 28px;
 }
 
 /* Logo ma proporcje 8,74 : 1, więc szerokość decyduje o wysokości napisu:
@@ -196,7 +196,7 @@ body[data-mode='generator'] [data-for-mode='simulator'] {
 }
 
 .tagline {
-  margin-top: 12px;
+  margin-top: 18px;
   color: var(--muted);
   text-align: center;
 }
