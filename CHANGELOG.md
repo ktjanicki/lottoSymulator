@@ -2,6 +2,21 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.18.2] — 2026-11-17
+
+### Poprawione
+
+- Na desktopie (dwie kolumny, od 900 px) strona nie przewija się do wyniku
+  po zakończeniu symulacji albo generowania.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+
 ## [1.18.1] — 2026-11-17
 
 ### Poprawione
