@@ -31,15 +31,22 @@ try {
   await page.addInitScript(() => localStorage.setItem('lottoSymulator.consent', 'accepted'));
   await page.goto(`${ORIGIN}/`);
   for (const number of TICKET) await page.locator(`.numbersList [data-number="${number}"]`).click();
-  // Plansza jest wyższa niż 630 px: pomniejszenie mieści nagłówek i wszystkie
-  // 49 kul. Kliknięcia przewijają stronę, pasek przewijania zjadałby brzeg.
-  await page.addStyleTag({ content: 'html { zoom: 0.78; scrollbar-width: none; }' });
+  // Plansza jest wyższa niż 630 px: pomniejszenie mieści nagłówek
+  // (z przełącznikami) i wszystkie 49 kul — og:image:alt w index.html mówi
+  // o 49 liczbach. Po zmianie wysokości nagłówka sprawdź, czy dolny rząd
+  // nie jest ucięty. Kliknięcia przewijają stronę, pasek przewijania
+  // zjadałby brzeg.
+  await page.addStyleTag({ content: 'html { zoom: 0.72; scrollbar-width: none; }' });
   // Kursor po ostatnim kliknięciu stoi po pomniejszeniu nad przyciskiem startu.
   await page.mouse.move(0, 0);
   await page.evaluate(() => {
     document.activeElement?.blur();
     window.scrollTo(0, 0);
-    return document.fonts.ready;
+    // Przycisk startu włącza się po szóstej liczbie z przejściem koloru —
+    // bez czekania zrzut łapie go w pół drogi, przygaszonego. Tylko przejścia:
+    // animacja nieskończona (wskaźnik postępu) nigdy się nie kończy.
+    const transitions = document.getAnimations().filter((animation) => animation instanceof CSSTransition);
+    return Promise.all([document.fonts.ready, ...transitions.map((transition) => transition.finished)]);
   });
   await page.screenshot({ path: join(ROOT, 'og-image.png') });
   console.log(`og-image.png: ${statSync(join(ROOT, 'og-image.png')).size} B`);

@@ -1,20 +1,17 @@
-<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64">
-  <!-- Złota kula jak .logo w nagłówku (kolory gold ze style.css). Cyfra
-       to kontur „6” z Inter (fonts/, ta sama co w nagłówku) zapisany
-       ścieżką, nie <text>: ikona karty nie wczytuje czcionek strony, więc
-       tekst dostałby krój systemu i wyglądał inaczej w każdym. Cyfra jest
-       większa niż w nagłówku (34 z 64, nie 21,5) — przy 16 px mniejsza
-       zlewa się w plamę. Grubość 600, nie 800 jak w nagłówku: przy tej
-       wielkości 800 zalewa brzuszek cyfry; 500 przy 16 px blednie. -->
-  <defs>
-    <radialGradient id="ball" cx="0.34" cy="0.28" r="0.78">
-      <stop offset="0" stop-color="#fef3c7"/>
-      <stop offset="0.45" stop-color="#fbbf24"/>
-      <stop offset="1" stop-color="#d97706"/>
-    </radialGradient>
-  </defs>
-  <circle cx="32" cy="32" r="31" fill="url(#ball)"/>
-  <!-- Ciemniejszy brzeg: bez niego jasna kula zlewa się z jasnym paskiem kart. -->
-  <circle cx="32" cy="32" r="30.25" fill="none" stroke="#b45309" stroke-opacity="0.55" stroke-width="1.5"/>
-  <path fill="#1f1500" d="M32.36 49Q29.99 49 27.74 48.19Q25.48 47.38 23.67 45.53Q21.87 43.68 20.8 40.59Q19.74 37.5 19.74 32.95Q19.74 28.7 20.64 25.37Q21.54 22.05 23.24 19.73Q24.94 17.41 27.33 16.21Q29.73 15 32.7 15Q35.8 15 38.21 16.22Q40.61 17.44 42.11 19.55Q43.6 21.66 43.95 24.35H38.12Q37.66 22.45 36.26 21.3Q34.86 20.14 32.7 20.14Q30.4 20.14 28.79 21.49Q27.18 22.85 26.35 25.37Q25.51 27.89 25.51 31.39H25.75Q26.55 29.97 27.8 28.94Q29.05 27.92 30.65 27.37Q32.24 26.83 34.01 26.83Q36.91 26.83 39.23 28.22Q41.55 29.6 42.91 32.04Q44.26 34.47 44.26 37.62Q44.26 40.88 42.77 43.45Q41.28 46.02 38.61 47.51Q35.93 49 32.36 49ZM32.32 44.18Q34.09 44.18 35.49 43.32Q36.88 42.46 37.7 41Q38.51 39.54 38.51 37.73Q38.51 35.95 37.72 34.5Q36.93 33.06 35.55 32.22Q34.16 31.37 32.4 31.37Q31.08 31.37 29.94 31.87Q28.81 32.38 27.96 33.27Q27.11 34.16 26.64 35.31Q26.17 36.47 26.17 37.76Q26.17 39.5 26.97 40.96Q27.77 42.41 29.17 43.3Q30.57 44.18 32.32 44.18Z"/>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="2 2 96 96" width="100" height="100" role="img" aria-label="Lotto Symulator">
+<!-- Kula z „6” z logo (logo-light.svg, logo-dark.svg) — ten sam rysunek,
+     żeby karta i nagłówek wyglądały tak samo. Cyfra jest ścieżką, nie <text>:
+     ikona karty nie wczytuje czcionek strony, więc tekst dostałby krój
+     systemu. Ciemniejszy brzeg (gradient fav-sh) odcina jasną kulę od
+     jasnego paska kart. PNG-i liczy z tego pliku scripts/icons.mjs. -->
+<g transform="translate(0.000 0.000) scale(1.00000)">
+<defs>
+<radialGradient id="fav-hl" cx="44%" cy="36%" r="62%"><stop offset="0" stop-color="#FFF6C8" stop-opacity="0.85"/><stop offset="0.45" stop-color="#FFF6C8" stop-opacity="0.25"/><stop offset="1" stop-color="#FFF6C8" stop-opacity="0"/></radialGradient>
+<radialGradient id="fav-sh" cx="46%" cy="40%" r="62%"><stop offset="0.62" stop-color="#7A3E00" stop-opacity="0"/><stop offset="1" stop-color="#7A3E00" stop-opacity="0.45"/></radialGradient>
+</defs>
+<circle cx="50" cy="50" r="48" fill="#F7B90F"/>
+<circle cx="50" cy="50" r="48" fill="url(#fav-hl)"/>
+<circle cx="50" cy="50" r="48" fill="url(#fav-sh)"/>
+<path d="M64 57.4Q64 63.76 60.43 67.38Q56.87 71 50.59 71Q43.55 71 39.78 66.07Q36 61.13 36 51.43Q36 40.77 39.83 35.39Q43.67 30 50.79 30Q55.85 30 58.78 32.23Q61.71 34.47 62.92 39.16L55.43 40.21Q54.35 36.28 50.62 36.28Q47.43 36.28 45.6 39.47Q43.78 42.67 43.78 49.17Q45.05 47.05 47.31 45.92Q49.58 44.79 52.43 44.79Q57.78 44.79 60.89 48.18Q64 51.57 64 57.4ZM56.02 57.63Q56.02 54.23 54.45 52.44Q52.88 50.64 50.14 50.64Q47.51 50.64 45.93 52.32Q44.34 54.01 44.34 56.78Q44.34 60.26 46 62.53Q47.65 64.81 50.34 64.81Q53.03 64.81 54.52 62.9Q56.02 60.99 56.02 57.63Z" fill="#111111"/>
+</g>
 </svg>
