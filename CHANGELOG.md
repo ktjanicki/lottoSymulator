@@ -2,6 +2,23 @@
 
 Sekcje wydania: Dodane, Zmienione, Poprawione, Usunięte, Znane ograniczenia.
 
+## [1.19.0] — 2026-11-17
+
+### Zmienione
+
+- Nowe logo w nagłówku, wyśrodkowane, w wariancie dla jasnego i ciemnego
+  motywu; podtytuł wyśrodkowany pod nim.
+- Nowa ikona karty i aplikacji: kula z „6” z logo.
+- Obrazek podglądu linku (`og-image.png`) z nowym nagłówkiem.
+
+### Znane ograniczenia
+
+- Zgody nie da się wycofać na stronie (historia i statystyki); ciasteczka
+  `_ga` trzeba usunąć w przeglądarce.
+- `www.lottosymulator.pl` podaje stronę zamiast przekierowania na
+  `lottosymulator.pl` (wskazuje go adres kanoniczny); serwer nie kompresuje
+  odpowiedzi.
+
 ## [1.18.2] — 2026-11-17
 
 ### Poprawione
