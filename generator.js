@@ -13,7 +13,8 @@ import { PROGRESS_EVERY, gameRules } from './simulation.js';
 
 // Liczby losowań do wyboru na stronie — jedyne miejsce, z którego bierze je
 // strona (przyciski) i testy.
-export const GENERATOR_DRAWS = [10_000_000, 50_000_000, 100_000_000, 300_000_000, 500_000_000, 1_000_000_000];
+// Pierwsza jest zaznaczona przy wejściu na stronę.
+export const GENERATOR_DRAWS = [100_000_000, 300_000_000, 500_000_000, 1_000_000_000, 2_000_000_000, 3_000_000_000];
 
 // Tyle najczęstszych zestawów zwraca generator i pokazuje strona (wiersze
 // wyniku w index.js, wysokość karty w style.css).
@@ -27,7 +28,11 @@ export const GENERATOR_SETS = 6;
 // Licznik staje na maxHits — zestawy, które by go przebiły, remisowałyby na
 // nim. Przy średniej do maxMeanHits żaden tam nie dochodzi (dla bajtu ponad
 // 15 odchyleń standardowych, dla dwóch bajtów — setki). Bajt dostaje
-// najgęściej Lotto przy miliardzie losowań: średnio 71,5 trafienia na zestaw.
+// najgęściej Lotto przy miliardzie losowań: średnio 71,5 trafienia na zestaw;
+// od 2 mld Lotto liczy dwoma bajtami (28 MB), Eurojackpot przy 3 mld — dalej
+// jednym (średnio 21,5).
+// Ponad 2^31 losowań licznik pętli wychodzi poza 32-bitowe liczby całkowite
+// silnika — pomiar (Node): tempo spada o ok. 5%, wynik bez zmian.
 const COUNTERS = [
   { Counter: Uint8Array, maxHits: 255, maxMeanHits: 100 },
   { Counter: Uint16Array, maxHits: 65_535, maxMeanHits: 25_000 },

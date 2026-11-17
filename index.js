@@ -493,7 +493,7 @@ const createStat = (tier) => {
   return item;
 };
 
-// Przycisk na każdą liczbę losowań generatora: „10 mln” … „1000 mln”.
+// Przycisk na każdą liczbę losowań generatora: „100 mln” … „3 000 mln”.
 // GENERATOR_DRAWS to pełne miliony — inna wartość wymaga innego podpisu.
 drawsChoice.replaceChildren(
   ...GENERATOR_DRAWS.map((draws) => {

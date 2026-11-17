@@ -171,7 +171,7 @@ test('czołówka zgadza się z naiwnym zliczaniem tych samych losowań — każd
 });
 
 test('każda liczba losowań ze strony mieści się w liczniku każdej gry — inaczej generator odmawia po kliknięciu', () => {
-  assert.deepEqual(GENERATOR_DRAWS, [10e6, 50e6, 100e6, 300e6, 500e6, 1000e6]);
+  assert.deepEqual(GENERATOR_DRAWS, [100e6, 300e6, 500e6, 1000e6, 2000e6, 3000e6]);
   for (const { pools } of Object.values(GAMES)) {
     for (const draws of GENERATOR_DRAWS) {
       // Bez losowania: sama kontrola wejścia, przerwana pierwszym wywołaniem random.
