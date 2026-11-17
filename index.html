@@ -48,11 +48,21 @@
   <body>
     <header class="appHeader">
       <!-- „./”, nie adres z og:url: lokalnie i w e2e link ma zostać na
-           testowanym serwerze, a nie prowadzić na produkcję. -->
-      <a class="homeLink" href="./">
-        <span class="logo" aria-hidden="true">6</span>
-        <h1>Lotto Symulator</h1>
-      </a>
+           testowanym serwerze, a nie prowadzić na produkcję.
+           Logo w dwóch plikach, wybiera je przeglądarka według motywu systemu
+           (bez skryptu, przełącza się na żywo; pobiera tylko jeden). Napis
+           w SVG jest krzywymi, nie tekstem — alt to jedyna nazwa nagłówka
+           i linku dla czytnika ekranu i wyszukiwarki. width/height to
+           proporcje pliku: bez nich logo zajmuje miejsce dopiero po
+           wczytaniu i strona podskakuje. -->
+      <h1 class="brand">
+        <a class="homeLink" href="./">
+          <picture>
+            <source srcset="logo-dark.svg" media="(prefers-color-scheme: dark)" />
+            <img src="logo-light.svg" alt="Lotto Symulator" width="1869" height="214" />
+          </picture>
+        </a>
+      </h1>
       <!-- Teksty zależne od gry: wszystkie warianty w HTML-u (wyszukiwarka widzi
            każdą grę), widoczny ten z data-for-game równym wybranej grze —
            przełącza render() w index.js. W HTML-u widoczne Lotto: tak

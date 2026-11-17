@@ -154,107 +154,62 @@ body[data-mode='generator'] [data-for-mode='simulator'] {
 
 /* ---------- nagłówek ---------- */
 
-/* Siatka logo | tytuł nad podtytułem. Link (logo + tytuł) dzieli siatkę
-   nagłówka (subgrid), żeby logo stało na środku obu wierszy, a podtytuł nie
-   był częścią linku. Bez subgridu logo równa się tylko z tytułem, a podtytuł
-   ląduje pod nim. */
+/* Logo i podtytuł na środku, przełączniki pod nimi na całą szerokość. */
 .appHeader {
   display: grid;
-  /* Link zajmuje dwie kolumny auto, nie 1fr: nie sięga do prawego brzegu
-     strony, więc puste miejsce obok tytułu nie przenosi na stronę główną.
-     Trzecia kolumna (1fr) dociąga siatkę do brzegu — bez niej przełącznik
-     trybu nie miałby prawej krawędzi, do której mógłby się dosunąć. */
-  grid-template-columns: auto auto 1fr;
-  justify-content: start;
-  align-items: center;
-  column-gap: 16px;
+  justify-items: center;
   max-width: 1080px;
   margin: 0 auto;
   padding: 40px 0 28px;
 }
 
+/* Logo ma proporcje 8,74 : 1, więc szerokość decyduje o wysokości napisu:
+   560 px daje 64 px wysokości (jak dawna kula), a na telefonie logo bierze
+   całą szerokość — przy 320 px litery mają jeszcze ok. 12 px. Szersze logo
+   na desktopie zepchnęłoby planszę w dół; węższe niż ekran telefonu byłoby
+   nieczytelne. */
+.brand {
+  width: min(100%, 560px);
+  line-height: 0;
+}
+
+/* Link szerokości logo, nie nagłówka: puste miejsce obok nie przenosi na
+   stronę główną, a obrys fokusu przylega do logo. */
 .homeLink {
-  display: grid;
-  grid-template: subgrid / subgrid;
-  grid-column: 1 / 3;
-  grid-row: 1 / span 2;
-  align-items: center;
-  color: inherit;
-  text-decoration: none;
-}
-
-.homeLink > .logo {
-  grid-row: 1 / -1;
-  transition: transform 0.2s ease;
-}
-
-/* Kula obraca się pod kursorem — znak, że nagłówek jest klikalny, bez
-   podkreślania tytułu. */
-.homeLink:hover > .logo,
-.homeLink:focus-visible > .logo {
-  transform: rotate(-15deg);
-}
-
-/* Pudełko linku sięga przez oba wiersze siatki, więc obrys na nim otaczałby
-   też podtytuł, który linkiem nie jest. Obrys idzie na tytuł. */
-.homeLink:focus-visible {
-  outline: none;
-}
-
-.homeLink:focus-visible > h1 {
-  outline: 3px solid var(--focus);
-  outline-offset: 2px;
+  display: inline-block;
+  max-width: 100%;
   border-radius: 6px;
 }
 
-/* Tytuł szerokości tekstu, nie kolumny (tę wyznacza dłuższy podtytuł) — inaczej
-   obrys fokusu ciągnie się w pustkę. */
-.homeLink > h1 {
-  justify-self: start;
+.homeLink img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+  transition: transform 0.2s ease;
+}
+
+/* Logo lekko rośnie pod kursorem — znak, że nagłówek jest klikalny, bez
+   podkreślenia. */
+.homeLink:hover img,
+.homeLink:focus-visible img {
+  transform: scale(1.03);
 }
 
 .tagline {
-  grid-column: 2;
-  grid-row: 2;
-}
-
-.logo {
-  display: grid;
-  place-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 50%;
-  font-size: 1.85rem;
-  font-weight: 800;
-  color: var(--gold-text);
-  background: radial-gradient(circle at 32% 28%, var(--gold-hi), var(--gold) 45%, var(--gold-lo));
-  box-shadow:
-    inset 0 -4px 8px rgba(0, 0, 0, 0.15),
-    0 6px 18px var(--gold-ring);
-}
-
-h1 {
-  font-size: clamp(1.6rem, 4.5vw, 2.25rem);
-  font-weight: 800;
-  line-height: 1.15;
-  letter-spacing: -0.02em;
-}
-
-.tagline {
-  margin-top: 4px;
+  margin-top: 12px;
   color: var(--muted);
+  text-align: center;
 }
 
-/* Przełączniki pod tytułem, na całą szerokość nagłówka (oba wiersze wyżej
-   zajmuje link i podtytuł): gra po lewej, tryb po prawej. Na wąskim ekranie
-   tryb zawija się pod grę. */
+/* Przełączniki pod podtytułem, na całą szerokość nagłówka (stretch, nie
+   środek jak logo): gra po lewej, tryb po prawej. Na wąskim ekranie tryb
+   zawija się pod grę. */
 .switches {
   display: flex;
   flex-wrap: wrap;
   justify-content: space-between;
+  justify-self: stretch;
   gap: 12px;
-  grid-column: 1 / -1;
-  grid-row: 3;
   margin-top: 20px;
 }
 

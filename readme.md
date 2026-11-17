@@ -121,4 +121,6 @@ zapisuje wyłącznie w przeglądarce testu.
 
 Kod: [Apache License 2.0](LICENSE), © 2020–2026 Krzysztof Janicki.
 Czcionka Inter w `fonts/` jest na licencji SIL Open Font License 1.1
-(`fonts/LICENSE-inter.txt`).
+(`fonts/LICENSE-inter.txt`). Napis w logo (`logo-light.svg`, `logo-dark.svg`)
+to krój Chango (SIL Open Font License 1.1) zamieniony na krzywe — strona tej
+czcionki nie wczytuje.

@@ -226,6 +226,35 @@ test(
   }
 );
 
+// Logo to obrazek (napis zamieniony na krzywe): bez pliku nagłówek pokazuje
+// sam tekst alt, a plik z jasnego motywu w ciemnym daje granatowy napis na
+// granatowym tle — nieczytelny, choć wszystko odpowiada 200.
+test(
+  'logo z wariantu drugiego motywu albo niewczytane — napis nieczytelny na tle albo nagłówek bez logo',
+  { tag: '@prod' },
+  async ({ page }) => {
+    const logo = page.getByRole('heading', { level: 1, name: 'Lotto Symulator' }).getByRole('img');
+    // Nazwa pliku, który przeglądarka wyświetliła (po buildzie z sumą w nazwie).
+    const shown = () =>
+      logo.evaluate((image) =>
+        image.decode().then(
+          () => new URL(image.currentSrc).pathname.split('/').pop(),
+          () => `niewczytany: ${image.currentSrc}`
+        )
+      );
+    for (const [colorScheme, variant] of [
+      ['light', /^logo-light\./],
+      ['dark', /^logo-dark\./],
+      // Zmiana motywu przy otwartej stronie: przeglądarka wymienia plik sama.
+      ['light', /^logo-light\./],
+    ]) {
+      await page.emulateMedia({ colorScheme });
+      if (page.url() === 'about:blank') await page.goto('/');
+      await expect.poll(shown, colorScheme).toMatch(variant);
+    }
+  }
+);
+
 // Typ MIME to za mało: plik z poprawnym typem i zepsutą treścią przeglądarka
 // odrzuca bez słowa i karta jest bez ikony. Dlatego ikonę dekoduje przeglądarka.
 test(
@@ -1185,9 +1214,11 @@ test('na desktopie strona nie przewija się po wyniku, nawet gdy wynik nie mieś
   // Bez animacji przewinięcie byłoby skokiem od razu — scrollY 0 tuż po
   // wyniku nie przejdzie wtedy tylko dlatego, że animacja jeszcze nie ruszyła.
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  // Od 900 px dwie kolumny; 500 px wysokości nie mieści ani wygranej, ani
+  // Od 900 px dwie kolumny; 560 px wysokości nie mieści ani wygranej, ani
   // zestawów generatora, więc w jednej kolumnie strona by przewinęła.
-  await page.setViewportSize({ width: 900, height: 500 });
+  // Niżej nie: „Przerwij” stoi kilka pikseli pod startem i fokus na nim
+  // (słusznie) przewija stronę już przy starcie, zanim jest jakikolwiek wynik.
+  await page.setViewportSize({ width: 900, height: 560 });
   await page.goto('/');
   await page.locator('.cookieDecline').click();
   await pickTicket(page);
