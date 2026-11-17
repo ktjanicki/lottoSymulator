@@ -1178,15 +1178,34 @@ test('na telefonie strona po wyniku przewija się do karty wyniku — inaczej wy
   expect(Math.round(await resultTop(page))).toBe(24);
 });
 
-test('na desktopie, gdzie wynik generatora mieści się w oknie, strona nie przewija się po wyniku', async ({ page }) => {
+test('na desktopie strona nie przewija się po wyniku, nawet gdy wynik nie mieści się w niskim oknie — inaczej plansza ucieka spod oczu', async ({
+  page,
+}) => {
   await page.addInitScript(fakeWorker, GENERATED);
+  // Bez animacji przewinięcie byłoby skokiem od razu — scrollY 0 tuż po
+  // wyniku nie przejdzie wtedy tylko dlatego, że animacja jeszcze nie ruszyła.
   await page.emulateMedia({ reducedMotion: 'reduce' });
-  await page.setViewportSize({ width: 1280, height: 800 });
-  await page.goto('/#generator');
+  // Od 900 px dwie kolumny; 500 px wysokości nie mieści ani wygranej, ani
+  // zestawów generatora, więc w jednej kolumnie strona by przewinęła.
+  await page.setViewportSize({ width: 900, height: 500 });
+  await page.goto('/');
   await page.locator('.cookieDecline').click();
+  await pickTicket(page);
+  // Klik Playwrighta sam przewija do przycisku — położenie mierzone po tym.
+  const scrollY = async () => {
+    await page.locator('.startButton').scrollIntoViewIfNeeded();
+    return page.evaluate(() => window.scrollY);
+  };
+  let before = await scrollY();
+  await page.locator('.startButton').click();
+  await expect(page.locator('.winResult')).toBeVisible();
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
+
+  await modeButton(page, 'Generator').click();
+  before = await scrollY();
   await page.locator('.startButton').click();
   await expect(page.locator('.generatorResult')).toBeVisible();
-  expect(await page.evaluate(() => window.scrollY)).toBe(0);
+  expect(await page.evaluate(() => window.scrollY)).toBe(before);
 });
 
 test('w trakcie generowania trybu, gry i liczby losowań nie da się zmienić, a „Przerwij” oddaje stronę', async ({

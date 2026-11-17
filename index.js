@@ -57,6 +57,7 @@ const resultSimulationTime = document.querySelector('.resultSimulationTime');
 const resultTicketNumbers = document.querySelector('.resultTicketNumbers');
 const simulationProgressElement = document.querySelector('.simulationProgress');
 const simulationProgressMessage = document.querySelector('.simulationProgressMessage');
+const layout = document.querySelector('.layout');
 const resultElement = document.querySelector('.result');
 const winResultElement = document.querySelector('.winResult');
 const progressLabel = document.querySelector('.progressLabel');
@@ -289,7 +290,7 @@ const reducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)');
 
 // Przewija stronę (przez SCROLL_MS) tak, żeby `first` stanął tuż pod górną
 // krawędzią okna — tylko gdy `last` nie mieści się w oknie (inaczej nowe
-// widać bez przewijania; na desktopie wynik w bocznym panelu zwykle tak).
+// widać bez przewijania).
 // Kółko, dotyk albo klawisz przerywają przewijanie: bez tego strona
 // szarpałaby się z odwiedzającym.
 const scrollToReveal = (first, last) => {
@@ -755,8 +756,13 @@ startButton.addEventListener('click', () => {
     // W jednej kolumnie wynik wyrasta pod przyciskiem startu, poza oknem
     // telefonu — bez przewinięcia odwiedzający widzi tylko, że pasek zniknął.
     // W generatorze ma się zmieścić także lista zestawów pod kartą wyniku.
+    // W dwóch kolumnach (desktop) wynik stoi obok przycisku — przewinięcie
+    // tylko zabiera planszę spod oczu (niskie okno, zestawy generatora).
+    // Kolumny liczone z siatki, nie z szerokości okna: próg siedzi tylko
+    // w style.css; druga kopia „900px” rozjechałaby się z nim po cichu.
     // Po fokusie: focus() przewija skokiem, przewijanie zaczyna od tego miejsca.
-    scrollToReveal(resultElement, runMode === GENERATOR ? generatedSets : winResultElement);
+    const singleColumn = getComputedStyle(layout).gridTemplateColumns.split(' ').length === 1;
+    if (singleColumn) scrollToReveal(resultElement, runMode === GENERATOR ? generatedSets : winResultElement);
     // Na końcu: wynik stoi już na ekranie, a baner zwróci fokus tam, gdzie go zastał.
     if (!consentGiven && consentReminderDue(++completedWithoutConsent)) {
       unsavedResult = result;
