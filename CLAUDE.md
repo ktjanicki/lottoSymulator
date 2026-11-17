@@ -87,10 +87,11 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   wołały je wprost. `analytics.js` dostaje okno jako argument. DOM tylko
   w `index.js`; `render()` i `renderHistory()` to jedyne miejsca, które
   ustawiają stan kontrolek.
-- **Tryb i gra stoją we fragmencie adresu** (`#eurojackpot`, `#generator`,
-  `#generator-eurojackpot`; nieznany fragment to symulator Lotto). Bloki
-  jednego trybu (`data-for-mode` w `index.html`) ukrywa `style.css` według
-  `data-mode` na `<body>`; teksty zależne od gry (`data-for-game`) — `render()`.
+- **Tryb i gra stoją we fragmencie adresu** (`#minilotto`, `#eurojackpot`,
+  `#generator`, `#generator-minilotto`, `#generator-eurojackpot`; nieznany
+  fragment to symulator Lotto). Bloki jednego trybu (`data-for-mode`
+  w `index.html`) ukrywa `style.css` według `data-mode` na `<body>`; teksty
+  zależne od gry (`data-for-game`) — `render()`.
 - **Worker** liczy synchronicznie — przerwanie to `terminate()`, nie wiadomość.
   Wejście: `{mode: 'simulator', game, numbers}` albo `{mode: 'generator', game,
 draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
@@ -114,12 +115,12 @@ draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
 
 ## Testy — cztery warstwy
 
-| Warstwa | Co                                                                                                                                                                                                          | Polecenie                                                   | Kiedy                                                     |
-| ------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
-| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                                                                                           | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
-| 2       | zbudowana strona (build jak na produkcji)                                                                                                                                                                   | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
-| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                                                                                   | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
-| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja i generator obu gier, przełączniki gry i trybu, CSP, zgody GA, og:image, canonical, robots/sitemap, Search Console, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
+| Warstwa | Co                                                                                                                                                                                                            | Polecenie                                                   | Kiedy                                                     |
+| ------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------- | --------------------------------------------------------- |
+| 1       | rdzeń, formatowanie, historia, analityka, dyscyplina repozytorium (wersje, importy, czcionki, CSP, og:image, SEO)                                                                                             | `npm test` (`node --test`)                                  | każdy commit, CI na Node z `.node-version` i Node serwera |
+| 2       | zbudowana strona (build jak na produkcji)                                                                                                                                                                     | `npm test` (`test/footer-version.test.js`), `npm run build` | każdy commit, CI                                          |
+| 3       | strona wykonana w Chromium i Firefoksie, na wyniku buildu                                                                                                                                                     | `npm run test:e2e` (Playwright, `e2e/`)                     | każdy commit, CI                                          |
+| 4       | produkcja z zewnątrz: numer z `VERSION`, pełna symulacja i generator każdej gry, przełączniki gry i trybu, CSP, zgody GA, og:image, canonical, robots/sitemap, Search Console, ikony, manifest, link nagłówka | `npm run check:prod` (scenariusze `@prod`)                  | po każdym wdrożeniu                                       |
 
 Do tego `npm run lint` (ESLint + Prettier) — każdy commit, CI.
 
@@ -131,12 +132,12 @@ Zasady:
 - Nowy test sprawdź na czerwono: zepsuj na chwilę kod, który ma pilnować,
   zobacz, że pada, przywróć (i sprawdź, że diff jest pusty).
 - Tytuł/docstring testu mówi, **jaka awaria** się za nim kryje, nie co robi kod.
-- **Czas do głównej wygranej jest losowy** (rozkład geometryczny; Lotto
-  zwykle kilka sekund, Eurojackpot — 10 razy rzadsze „5 + 2” — kilkadziesiąt;
-  czasem kilkanaście razy dłużej, czasem ułamek sekundy). Test z prawdziwym
-  workerem nie może zakładać, że zdąży coś kliknąć przed wygraną ani że
-  zobaczy pasek postępu — tam, gdzie liczy się logika strony, używaj atrapy
-  workera (`e2e/page.spec.mjs`).
+- **Czas do głównej wygranej jest losowy** (rozkład geometryczny; Mini Lotto
+  zwykle ułamek sekundy, Lotto kilka sekund, Eurojackpot — 10 razy rzadsze
+  „5 + 2” — kilkadziesiąt; czasem kilkanaście razy dłużej, czasem ułamek
+  sekundy). Test z prawdziwym workerem nie może zakładać, że zdąży coś kliknąć
+  przed wygraną ani że zobaczy pasek postępu — tam, gdzie liczy się logika
+  strony, używaj atrapy workera (`e2e/page.spec.mjs`).
 - Scenariusz lokalny nie ma prawa zależeć od produkcji ani jej dotykać
   (np. og:image pobieramy z testowanego serwera, nie z domeny z `og:url`).
   `check:prod` tylko czyta stronę; zapisuje wyłącznie w przeglądarce testu.

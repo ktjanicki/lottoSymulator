@@ -302,11 +302,20 @@ h1 {
   opacity: 0.5;
 }
 
-/* Cztery przyciski po 20 px wypełnienia nie mieszczą się w jednym wierszu
-   telefonu, a dwa wiersze przełączników spychają planszę. */
+/* Węższe wypełnienie na telefonie: z 20 px przełącznik gry (trzy przyciski)
+   nie mieści się w wierszu przy 360 px. Trybu i tak nie zmieścimy obok —
+   zawija się pod grę (.switches). */
 @media (max-width: 599px) {
   .switch > button {
     padding: 0 14px;
+  }
+}
+
+/* Przy 320 px (najwęższy ekran, WCAG 1.4.10) i 14 px przełącznik gry
+   wystawał o 2 px poza nagłówek. */
+@media (max-width: 359px) {
+  .switch > button {
+    padding: 0 12px;
   }
 }
 
@@ -533,8 +542,8 @@ h2 {
    z równymi odstępami w obu osiach jest kwadratem. Plansze Eurojackpota
    (8×7 i 6×2) — proporcja 8:7 i 3:1, o jeden odstęp za wysoka; nadmiar
    rozkłada się między rzędy. Inna pula w GAMES (simulation.js) — inna
-   siatka tutaj. Wejście wprost na #eurojackpot przesuwa stronę raz: przed
-   skryptem stoi plansza Lotto. */
+   siatka tutaj. Wejście wprost na #minilotto albo #eurojackpot przesuwa
+   stronę raz: przed skryptem stoi plansza Lotto. */
 .numbersList {
   display: grid;
   grid-template-columns: repeat(7, minmax(0, 1fr));
@@ -542,6 +551,12 @@ h2 {
   max-width: 500px;
   margin: 0 auto;
   aspect-ratio: 1;
+}
+
+/* Mini Lotto: 42 = 7×6 w kolumnach Lotto — kule tej samej wielkości,
+   plansza o rząd niższa (proporcja o 1/7 odstępu za wysoka). */
+body[data-game='minilotto'] .numbersList[data-pool='0'] {
+  aspect-ratio: 7 / 6;
 }
 
 /* Eurojackpot: 8 kolumn (50 = 6 pełnych rzędów + 49, 50). Od 900 px kartę
@@ -597,6 +612,10 @@ body[data-game='eurojackpot'] .numbersList[data-pool='0'] {
 /* Liczba miejsc na kuponie: suma `size` pul gry w GAMES (simulation.js). */
 body {
   --ticket-size: 6;
+}
+
+body[data-game='minilotto'] {
+  --ticket-size: 5;
 }
 
 body[data-game='eurojackpot'] {
@@ -1008,6 +1027,14 @@ body[data-game='eurojackpot'] .winNumbers {
 .statLabel {
   font-size: 0.85rem;
   color: var(--muted);
+}
+
+/* Dwa stopnie Mini Lotto: dwa kafelki na szerokość, bez pustej trzeciej
+   kolumny; poniżej 420 px wiersze jak w Lotto. */
+@media (min-width: 421px) {
+  body[data-game='minilotto'] .stats {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
 }
 
 /* Jedenaście stopni Eurojackpota: kafelki jak w Lotto („3 041 512” nad

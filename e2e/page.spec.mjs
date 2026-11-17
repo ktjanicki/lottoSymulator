@@ -22,6 +22,7 @@ import { GTAG_SCRIPT } from '../analytics.js';
 
 const VERSION = readFileSync(new URL('../VERSION', import.meta.url), 'utf8').trim();
 const TICKET = [3, 11, 19, 27, 35, 43];
+const MINI_TICKET = [5, 12, 19, 33, 42];
 // Eurojackpot: pięć liczb z 50, potem dwie z 12 (kolejność jak w GAMES).
 const EURO_TICKET = [
   [4, 9, 23, 31, 47],
@@ -97,6 +98,10 @@ const pickTicket = async (page) => {
 
 const ball = (page, pool, number) => page.locator(`.numbersList[data-pool="${pool}"] [data-number="${number}"]`);
 
+const pickMiniTicket = async (page) => {
+  for (const number of MINI_TICKET) await page.locator(`.numbersList [data-number="${number}"]`).click();
+};
+
 const pickEuroTicket = async (page) => {
   for (const [pool, numbers] of EURO_TICKET.entries()) {
     for (const number of numbers) await ball(page, pool, number).click();
@@ -134,8 +139,8 @@ const fakeWorker = (generated) => {
       (this.listeners[type] ??= []).push(listener);
     }
     postMessage({ mode, game, numbers, draws: generatorDraws }) {
-      // Liczba stopni jak w GAMES (simulation.js): Lotto 3, Eurojackpot 11.
-      const tiers = new Array(game === 'eurojackpot' ? 11 : 3).fill(0);
+      // Liczba stopni jak w GAMES (simulation.js).
+      const tiers = new Array({ lotto: 3, minilotto: 2, eurojackpot: 11 }[game]).fill(0);
       tiers[0] = 1;
       const data =
         mode === 'generator'
@@ -767,6 +772,70 @@ test(
   }
 );
 
+test(
+  'Mini Lotto z adresu, z przełącznika i po Wstecz — inaczej link do gry otwiera Lotto albo adres i strona pokazują różne gry',
+  { tag: '@prod' },
+  async ({ page }) => {
+    await page.goto('/#minilotto');
+    await page.locator('.cookieDecline').click();
+    await expect(page.locator('.gameSwitch button')).toHaveText(['Lotto', 'Mini Lotto', 'Eurojackpot']);
+    await expect(gameButton(page, 'Mini Lotto')).toHaveAttribute('aria-pressed', 'true');
+    await expect(gameButton(page, 'Lotto')).toHaveAttribute('aria-pressed', 'false');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(42);
+    await expect(page.locator('.euroBoard')).toBeHidden();
+    await expect(page.locator('.selectedItems .slot')).toHaveCount(5);
+    await expect(page.locator('.selectedCount')).toHaveText('0/5');
+    await expect(page.locator('.tagline')).toHaveText(/pięć liczb z 42.*„piątkę”/);
+    await expect(page.getByRole('heading', { name: 'Na czym polega Mini Lotto?' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Na czym polega Lotto?' })).toBeHidden();
+
+    await gameButton(page, 'Lotto').click();
+    await expect(page).toHaveURL(new URL('/', page.url()).href);
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(49);
+    await expect(page.getByRole('heading', { name: 'Na czym polega Mini Lotto?' })).toBeHidden();
+
+    await page.goBack();
+    await expect(page).toHaveURL(/#minilotto$/);
+    await expect(gameButton(page, 'Mini Lotto')).toHaveAttribute('aria-pressed', 'true');
+    await expect(page.locator('.numbersList[data-pool="0"] .ball')).toHaveCount(42);
+
+    await modeButton(page, 'Generator').click();
+    await expect(page).toHaveURL(/#generator-minilotto$/);
+    await expect(page.locator('.generatedSets .slot')).toHaveCount(6 * 5);
+  }
+);
+
+test(
+  'pełna symulacja Mini Lotto prawdziwym workerem kończy się na piątce i wpisem w historii tej gry',
+  { tag: '@prod' },
+  async ({ page }) => {
+    // „Piątka” pada średnio raz na 850 668 losowań — zwykle ułamek sekundy.
+    await page.addInitScript(recordViolations);
+    await page.goto('/#minilotto');
+    await page.locator('.cookieAccept').click();
+    await pickMiniTicket(page);
+    await expect(page.locator('.selectedCount')).toHaveText('5/5');
+    // Szósta liczba nie wchodzi na kupon.
+    await expect(page.locator('.numbersList [data-number="1"]')).toBeDisabled();
+    await page.locator('.startButton').click();
+
+    await expect(page.locator('.winResult')).toBeVisible({ timeout: 120_000 });
+    // Warianty wszystkich gier stoją w HTML-u; widoczny ma być tylko ten od Mini Lotto.
+    await expect(page.locator('.winResult h2 span:visible')).toHaveText(['Piątka!']);
+    await expect(page.locator('.winDraw span:visible')).toHaveText(['„Piątka”', /^\d/]);
+    await expect(page.locator('.resultTicketNumbers')).toHaveText('5, 12, 19, 33, 42');
+    await expectTierCounts(page, 2);
+    await expect(page.locator('.stats .statLabel')).toHaveText(['trójek', 'czwórek']);
+    await expect(page.locator('.historyCount')).toHaveText('1');
+    await page.locator('.historyToggle').click();
+    await expect(page.locator('.historyGame')).toHaveText(['Mini Lotto']);
+    await expect(page.locator('.historyBalls .ball')).toHaveText(MINI_TICKET.map(String));
+    const entries = JSON.parse(await stored(page, HISTORY_KEY));
+    expect(entries[0]).toMatchObject({ game: 'minilotto', numbers: MINI_TICKET });
+    expect(await page.evaluate(() => window.cspViolations)).toEqual([]);
+  }
+);
+
 // Wiersze wyniku generatora: kule każdego zestawu jako liczby i liczba trafień.
 const setRows = (page) => page.locator('.generatedSets .generatedSet');
 const setNumbers = async (page) =>
@@ -847,6 +916,7 @@ test('wejście wprost na #generator nie pokazuje pod banerem zgody symulatora ja
 
 for (const [game, hash, pools] of [
   ['lotto', '#generator', [{ max: 49, size: 6 }]],
+  ['minilotto', '#generator-minilotto', [{ max: 42, size: 5 }]],
   [
     'eurojackpot',
     '#generator-eurojackpot',
@@ -904,6 +974,27 @@ for (const [game, hash, pools] of [
     }
   );
 }
+
+test(
+  'generator Mini Lotto liczy zestawom ponad 255 trafień — inaczej licznik bajtowy staje na 255 i czołówka remisuje',
+  { tag: '@prod' },
+  async ({ page }) => {
+    // 300 mln losowań na 850 668 zestawów: średnio 353 trafienia, czołówka
+    // ok. 430. Kilka sekund na komputerze, kilkadziesiąt na wolnej maszynie.
+    test.setTimeout(330_000);
+    await page.goto('/#generator-minilotto');
+    await page.locator('.cookieDecline').click();
+    await drawsButton(page, '300 mln').click();
+    await page.locator('.startButton').click();
+
+    await expect(page.locator('.generatorResult')).toBeVisible({ timeout: 300_000 });
+    const hits = (await page.locator('.setHits').allTextContents()).map((text) => Number(text.replace(/\D/g, '')));
+    expect(hits).toHaveLength(6);
+    expect(Math.min(...hits), `Trafienia czołówki: ${hits}.`).toBeGreaterThan(255);
+    expect(hits).toEqual([...hits].sort((a, b) => b - a));
+    await expect(page.locator('.resultGeneratorDraws')).toHaveText('300 000 000');
+  }
+);
 
 test('generator liczy wybraną liczbę losowań, a jego historia stoi osobno od wygranych i łączy obie gry', async ({
   page,
@@ -1037,6 +1128,26 @@ test('na telefonie generator ma liczbę losowań i start nad zestawami, a symula
   await page.setViewportSize({ width: 1280, height: 800 });
   await modeButton(page, 'Generator').click();
   expect((await box(page.locator('.selectedItemsBlock'))).x).toBeGreaterThan((await box(sets)).x);
+});
+
+test('na najwęższym telefonie (320 px) przełącznik trzech gier mieści się w nagłówku, a tryb stoi pod nim — inaczej „Eurojackpot” wystaje poza stronę', async ({
+  page,
+}) => {
+  await page.setViewportSize({ width: 320, height: 640 });
+  await page.goto('/#minilotto');
+  await page.locator('.cookieDecline').click();
+  const switches = await box(page.locator('.switches'));
+  const games = await box(page.locator('.gameSwitch'));
+  const modes = await box(page.locator('.modeSwitch'));
+  expect(games.x).toBeGreaterThanOrEqual(switches.x);
+  expect(games.x + games.width).toBeLessThanOrEqual(switches.x + switches.width);
+  // Przyciski w jednym wierszu: podpis zawinięty na dwie linie podwaja wysokość.
+  const heights = await page
+    .locator('.gameSwitch button')
+    .evaluateAll((buttons) => buttons.map((button) => button.getBoundingClientRect().height));
+  expect(new Set(heights).size).toBe(1);
+  expect(modes.y).toBeGreaterThanOrEqual(games.y + games.height);
+  expect(await page.evaluate(() => document.documentElement.scrollWidth)).toBeLessThanOrEqual(320);
 });
 
 // Górna krawędź karty wyniku względem okna; po przewinięciu — 24 px

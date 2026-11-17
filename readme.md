@@ -2,9 +2,11 @@
 
 Aplikacja napisana hobbystycznie w podróży. Losuje tak długo, aż padnie
 główna wygrana z kuponu wybranego przez użytkownika, i pokazuje, ile losowań
-to zajęło. Dwie gry, przełączane w nagłówku:
+to zajęło. Trzy gry, przełączane w nagłówku:
 
 - Lotto — sześć liczb z 49, do „szóstki”;
+- Mini Lotto — pięć liczb z 42, do „piątki”
+  (adres `lottosymulator.pl/#minilotto`);
 - Eurojackpot — pięć liczb z 50 i dwie z 12, do „5 + 2”
   (adres `lottosymulator.pl/#eurojackpot`).
 
@@ -12,11 +14,14 @@ Zasady gier (pule liczb, stopnie wygranych) stoją w jednym miejscu: `GAMES`
 w `simulation.js`.
 
 Drugi tryb, przełączany w nagłówku po prawej, to generator
-(`lottosymulator.pl/#generator`, dla Eurojackpota `#generator-eurojackpot`):
+(`lottosymulator.pl/#generator`, dla pozostałych gier `#generator-minilotto`
+i `#generator-eurojackpot`):
 przeprowadza wybraną liczbę losowań (10–1000 mln, `GENERATOR_DRAWS`
 w `generator.js`), liczy, ile razy padł każdy zestaw, i pokazuje sześć
 najczęstszych. Każdy z nich można przenieść na kupon symulatora. Generator trzyma w pamięci
-licznik na każdy zestaw gry: 14 MB dla Lotto, 140 MB dla Eurojackpota.
+licznik na każdy zestaw gry: 14 MB dla Lotto, 1,7 MB dla Mini Lotto (licznik
+dwubajtowy — zestawów jest mało, a każdy pada przy miliardzie losowań średnio
+1175 razy), 140 MB dla Eurojackpota.
 
 ## Uruchomienie
 
@@ -105,9 +110,10 @@ Jednorazowe przeformatowanie Prettierem jest w `.git-blame-ignore-revs`; żeby
 `git config blame.ignoreRevsFile .git-blame-ignore-revs`.
 
 Po każdym wdrożeniu uruchom `npm run check:prod`: sprawdza, że produkcja podaje
-numer z `VERSION` i że symulacja obu gier przechodzi do wyniku (Eurojackpot
-trwa zwykle kilkadziesiąt sekund, czasem kilka minut), a generator obu gier —
-do zestawu. Tylko czyta stronę —
+numer z `VERSION` i że symulacja każdej gry przechodzi do wyniku (Eurojackpot
+trwa zwykle kilkadziesiąt sekund, czasem kilka minut), a generator każdej
+gry — do zestawu (Mini Lotto także przy 300 mln losowań, ponad 255 trafień
+na zestaw). Tylko czyta stronę —
 zapisuje wyłącznie w przeglądarce testu.
 
 ## Licencja

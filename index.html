@@ -3,10 +3,10 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Lotto Symulator — ile losowań do wygranej w Lotto i Eurojackpot?</title>
+    <title>Lotto Symulator — ile losowań do wygranej w Lotto, Mini Lotto i Eurojackpot?</title>
     <meta
       name="description"
-      content="Symulator Lotto i Eurojackpot online: wybierz liczby i sprawdź, ile losowań trzeba, żeby trafić „szóstkę” albo „5 + 2”."
+      content="Symulator Lotto, Mini Lotto i Eurojackpot online: wybierz liczby i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”, „piątkę” albo „5 + 2”."
     />
     <meta name="author" content="Krzysztof Janicki" />
     <!-- Potwierdzenie własności w Google Search Console (metoda „Tag HTML”).
@@ -20,7 +20,7 @@
     <meta property="og:title" content="Lotto Symulator" />
     <meta
       property="og:description"
-      content="Symulator Lotto i Eurojackpot online: wybierz liczby i sprawdź, ile losowań trzeba, żeby trafić „szóstkę” albo „5 + 2”."
+      content="Symulator Lotto, Mini Lotto i Eurojackpot online: wybierz liczby i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”, „piątkę” albo „5 + 2”."
     />
     <meta property="og:locale" content="pl_PL" />
     <meta property="og:image" content="og-image.png" />
@@ -54,7 +54,7 @@
         <h1>Lotto Symulator</h1>
       </a>
       <!-- Teksty zależne od gry: wszystkie warianty w HTML-u (wyszukiwarka widzi
-           obie gry), widoczny ten z data-for-game równym wybranej grze —
+           każdą grę), widoczny ten z data-for-game równym wybranej grze —
            przełącza render() w index.js. W HTML-u widoczne Lotto: tak
            wygląda strona, zanim skrypt sprawdzi adres.
            Teksty i bloki zależne od trybu: data-for-mode; ukrywa je style.css
@@ -64,6 +64,9 @@
         <span data-for-game="lotto" data-for-mode="simulator"
           >Wybierz sześć liczb i sprawdź, ile losowań trzeba, żeby trafić „szóstkę”.</span
         >
+        <span data-for-game="minilotto" data-for-mode="simulator" class="inactive"
+          >Wybierz pięć liczb z 42 i sprawdź, ile losowań trzeba, żeby trafić „piątkę”.</span
+        >
         <span data-for-game="eurojackpot" data-for-mode="simulator" class="inactive"
           >Wybierz pięć liczb z 50 i dwie z 12 i sprawdź, ile losowań trzeba, żeby trafić „5 + 2”.</span
         >
@@ -71,13 +74,16 @@
       </p>
       <!-- Przyciski z aria-pressed, nie zakładki (role="tab"): wzorzec zakładek
            wymaga panelu, a byłby nim <main> — strona straciłaby punkt
-           orientacyjny czytnika ekranu. Gra stoi w adresie (#eurojackpot). -->
+           orientacyjny czytnika ekranu. Gra stoi w adresie (#minilotto,
+           #eurojackpot). Podpis przycisku to też nazwa gry we wpisach historii. -->
       <div class="switches">
         <div class="switch gameSwitch" role="group" aria-label="Gra">
           <button type="button" data-game="lotto" aria-pressed="true">Lotto</button>
+          <button type="button" data-game="minilotto" aria-pressed="false">Mini Lotto</button>
           <button type="button" data-game="eurojackpot" aria-pressed="false">Eurojackpot</button>
         </div>
-        <!-- Tryb też stoi w adresie: #generator, #generator-eurojackpot. -->
+        <!-- Tryb też stoi w adresie: #generator, #generator-minilotto,
+             #generator-eurojackpot. -->
         <div class="switch modeSwitch" role="group" aria-label="Tryb">
           <button type="button" data-mode="simulator" aria-pressed="true">Symulator</button>
           <button type="button" data-mode="generator" aria-pressed="false">Generator</button>
@@ -91,6 +97,7 @@
           <h2 id="numbersTitle">Maszyna losująca</h2>
           <p class="selectNumbersTip">
             <span data-for-game="lotto" data-for-mode="simulator">Wybierz sześć liczb z 49</span>
+            <span data-for-game="minilotto" data-for-mode="simulator" class="inactive">Wybierz pięć liczb z 42</span>
             <span data-for-game="eurojackpot" data-for-mode="simulator" class="inactive">Wybierz pięć liczb z 50</span>
             <span data-for-mode="generator">Sześć zestawów, które padły najczęściej</span>
           </p>
@@ -146,10 +153,12 @@
           <div class="winResult inactive" data-for-mode="simulator">
             <h2>
               <span data-for-game="lotto">Szóstka!</span>
+              <span data-for-game="minilotto" class="inactive">Piątka!</span>
               <span data-for-game="eurojackpot" class="inactive">5 + 2!</span>
             </h2>
             <p class="winDraw">
               <span data-for-game="lotto">„Szóstka”</span>
+              <span data-for-game="minilotto" class="inactive">„Piątka”</span>
               <span data-for-game="eurojackpot" class="inactive">„5 + 2”</span>
               w losowaniu nr
               <span class="resultCounterTotal">0</span>
@@ -206,6 +215,14 @@
           szans od innych.
         </p>
         <p>Lotto Symulator powtarza losowania tak długo, aż padną wybrane liczby, i pokazuje, ile losowań to zajęło.</p>
+      </section>
+      <section class="about inactive" aria-labelledby="aboutTitleMiniLotto" data-for-game="minilotto">
+        <h2 id="aboutTitleMiniLotto">Na czym polega Mini Lotto?</h2>
+        <p>
+          Mini Lotto to gra liczbowa z losowaniami codziennie. Na kuponie skreśla się pięć liczb z 42, a maszyna
+          losująca wybiera pięć kul. Liczą się trafienia trzech, czterech i pięciu liczb; najwyższy wynik to „piątka”.
+          Każde losowanie jest niezależne od poprzednich, więc żaden zestaw liczb nie ma większych szans od innych.
+        </p>
       </section>
       <section class="about inactive" aria-labelledby="aboutTitleEurojackpot" data-for-game="eurojackpot">
         <h2 id="aboutTitleEurojackpot">Na czym polega Eurojackpot?</h2>

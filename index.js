@@ -77,8 +77,8 @@ const historyMore = document.querySelector('.historyMore');
 const cookieBanner = document.querySelector('.cookieBanner');
 const cookieAccept = document.querySelector('.cookieAccept');
 const cookieDecline = document.querySelector('.cookieDecline');
-// Tryb i gra z fragmentu adresu: #eurojackpot, #generator,
-// #generator-eurojackpot. Nieznany fragment (np. #historia ze starych
+// Tryb i gra z fragmentu adresu: #minilotto, #eurojackpot, #generator,
+// #generator-minilotto, #generator-eurojackpot. Nieznany fragment (np. #historia ze starych
 // linków) to symulator gry domyślnej. Object.hasOwn, nie `in`: #toString
 // przeszedłby jako gra bez pul i strona padłaby przy starcie.
 const GENERATOR_PREFIX = `${GENERATOR}-`;
@@ -230,8 +230,8 @@ const gameName = (id) => gameButtons.find((button) => button.dataset.game === id
 
 // Wygrana symulatora: kule, gra z datą, liczba losowań. Generowanie (wpis
 // z `sets`): gra z datą i liczba losowań, pod nimi zestawy z liczbą trafień.
-// Nazwa gry stoi przy każdym wpisie: lista trybu miesza gry, a zestaw Lotto
-// i główne liczby Eurojackpota wyglądają podobnie.
+// Nazwa gry stoi przy każdym wpisie: lista trybu miesza gry, a zestaw Mini
+// Lotto i główne liczby Eurojackpota (po pięć złotych kul) wyglądają tak samo.
 const createHistoryItem = ({ game: entryGame, numbers, sets, drawsNumber, date }) => {
   const item = document.createElement('li');
   item.className = sets ? 'historyItem historyRun' : 'historyItem';
@@ -475,8 +475,9 @@ const missingNumbersHint = (pools, ticket) => {
   return `Wybierz jeszcze ${parts.join(' i ')}.`;
 };
 
-// Podpisy kafelków w kolejności GAMES[gra].tiers. Lotto słowami, jak od
-// pierwszego wydania; gra z kilkoma pulami — trafienia w pulach („× 5 + 1”).
+// Podpisy kafelków w kolejności GAMES[gra].tiers. Gra z jedną pulą (Lotto,
+// Mini Lotto) słowami, jak od pierwszego wydania; gra z kilkoma pulami —
+// trafienia w pulach („× 5 + 1”).
 const LOTTO_TIER_LABELS = { 3: 'trójek', 4: 'czwórek', 5: 'piątek' };
 const tierLabel = (tier) => (tier.length === 1 ? LOTTO_TIER_LABELS[tier[0]] : `× ${tier.join(' + ')}`);
 
