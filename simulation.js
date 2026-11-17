@@ -6,13 +6,15 @@
 // pools: kolejne pule kul 1–max, z każdej losowanie i kupon mają `size` liczb;
 // na kuponie (i we wpisie historii) liczby idą płasko, pula po puli.
 // tiers: niższe stopnie wygranych jako liczby trafień w kolejnych pulach,
-// w kolejności, w jakiej pokazuje je strona (Lotto rosnąco, jak od początku;
-// Eurojackpot w kolejności oficjalnych stopni II–XII). Główna wygrana to
-// trafienie wszystkich liczb — nie ma jej na liście, kończy symulację.
+// w kolejności, w jakiej pokazuje je strona (Lotto i Mini Lotto rosnąco, jak
+// od początku; Eurojackpot w kolejności oficjalnych stopni II–XII). Główna
+// wygrana to trafienie wszystkich liczb — nie ma jej na liście, kończy
+// symulację.
 // Stopień spoza listy rdzeń liczy, ale go nie zwraca; literówka w stopniu
 // (np. [6, 0]) wywraca wejście modułu — patrz sprawdzenie niżej.
 export const GAMES = {
   lotto: { pools: [{ max: 49, size: 6 }], tiers: [[3], [4], [5]] },
+  minilotto: { pools: [{ max: 42, size: 5 }], tiers: [[3], [4]] },
   eurojackpot: {
     pools: [
       { max: 50, size: 5 },

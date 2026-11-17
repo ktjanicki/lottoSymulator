@@ -19,14 +19,19 @@ export const GENERATOR_DRAWS = [10_000_000, 50_000_000, 100_000_000, 300_000_000
 // wyniku w index.js, wysokość karty w style.css).
 export const GENERATOR_SETS = 6;
 
-// Licznik zestawu ma jeden bajt (Eurojackpot: 139 838 160 zestawów to 140 MB;
-// dwa bajty to 280 MB, których telefon nie da). Bajt mieści 255 trafień
-// i na nich staje (MAX_HITS) — zestawy, które by go przebiły,
-// remisowałyby na 255. Przy średniej do 100 na zestaw żaden tam nie dochodzi
-// (to ponad 15 odchyleń standardowych). Najgęściej jest w Lotto przy
-// miliardzie losowań: średnio 71,5 trafienia na zestaw.
-const MAX_HITS = 255;
-const MAX_MEAN_HITS = 100;
+// Licznik zestawu — najwęższy, który mieści średnią liczbę trafień
+// (losowania przez liczbę zestawów gry). Jeden bajt, gdy zestawów dużo
+// (Eurojackpot: 139 838 160 zestawów to 140 MB; dwa bajty to 280 MB, których
+// telefon nie da); dwa, gdy mało (Mini Lotto: 850 668 zestawów to 1,7 MB,
+// a miliard losowań to średnio 1175 trafień — bajt by nie wystarczył).
+// Licznik staje na maxHits — zestawy, które by go przebiły, remisowałyby na
+// nim. Przy średniej do maxMeanHits żaden tam nie dochodzi (dla bajtu ponad
+// 15 odchyleń standardowych, dla dwóch bajtów — setki). Bajt dostaje
+// najgęściej Lotto przy miliardzie losowań: średnio 71,5 trafienia na zestaw.
+const COUNTERS = [
+  { Counter: Uint8Array, maxHits: 255, maxMeanHits: 100 },
+  { Counter: Uint16Array, maxHits: 65_535, maxMeanHits: 25_000 },
+];
 
 // Symbol Newtona C(n, k) dla małych liczb — dokładny w liczbach całkowitych
 // (kolejne iloczyny dzielą się bez reszty).
@@ -94,15 +99,18 @@ export const mostFrequentDraws = (
     throw new RangeError(`Liczba losowań ma być dodatnią liczbą całkowitą, jest: ${draws}.`);
   }
   const total = combinationsCount(pools);
-  // Liczniki stojące na 255 remisują: wygrałby zestaw, który doszedł tam
+  // Liczniki stojące na maxHits remisują: wygrałby zestaw, który doszedł tam
   // pierwszy, a nie najczęstszy — wynik wyglądałby poprawnie.
-  if (draws / total > MAX_MEAN_HITS) {
+  const counter = COUNTERS.find(({ maxMeanHits }) => draws / total <= maxMeanHits);
+  if (!counter) {
+    const { maxMeanHits } = COUNTERS.at(-1);
     throw new RangeError(
-      `Za dużo losowań na ${total} zestawów: ${draws} (najwyżej ${MAX_MEAN_HITS} na zestaw). ` +
-        'Większa liczba losowań wymaga szerszego licznika w generator.js.'
+      `Za dużo losowań na ${total} zestawów: ${draws} (najwyżej ${maxMeanHits} na zestaw). ` +
+        'Większa liczba losowań wymaga szerszego licznika w generator.js (COUNTERS).'
     );
   }
-  const counts = new Uint8Array(total);
+  const { Counter, maxHits } = counter;
+  const counts = new Counter(total);
 
   // Czołówka liczona w trakcie losowań: zestaw wchodzi do niej, gdy jego
   // licznik przebije najsłabszy z czołówki (`weakest`), na miejsce tego
@@ -114,15 +122,15 @@ export const mostFrequentDraws = (
   // pętli losowań.
   const size = Math.min(GENERATOR_SETS, total);
   const topIndex = new Float64Array(size).fill(-1);
-  const topHits = new Uint8Array(size);
+  const topHits = new Counter(size);
   const topReachedAt = new Float64Array(size);
   let weakest = 0;
   let untilProgress = progressEvery;
   for (let draw = 1; draw <= draws; draw++) {
     const index = Math.floor(random() * total);
     const count = counts[index] + 1;
-    // Bez tego warunku 256. trafienie przekręca bajt przez zero.
-    if (count <= MAX_HITS) {
+    // Bez tego warunku trafienie ponad maxHits przekręca licznik przez zero.
+    if (count <= maxHits) {
       counts[index] = count;
       if (count > weakest) {
         // Miejsce zestawu w czołówce albo — gdy go tam nie ma — miejsce
@@ -140,7 +148,7 @@ export const mostFrequentDraws = (
         topIndex[slot] = index;
         topHits[slot] = count;
         topReachedAt[slot] = draw;
-        weakest = MAX_HITS;
+        weakest = maxHits;
         for (let i = 0; i < size; i++) if (topHits[i] < weakest) weakest = topHits[i];
       }
     }

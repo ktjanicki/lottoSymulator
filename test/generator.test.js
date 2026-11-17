@@ -6,7 +6,8 @@
 // - wynik, który pomija któryś z najczęstszych zestawów, podaje złą liczbę
 //   trafień albo złą kolejność;
 // - licznik przepełniony bez słowa przy zbyt wielu losowaniach (przekręcony
-//   przez zero albo stojący na 255 u wielu zestawów naraz);
+//   przez zero albo stojący na 255 u wielu zestawów naraz) — także w grze
+//   z małą liczbą zestawów (Mini Lotto), gdzie bajt nie wystarcza;
 // - postęp zgłaszany po ostatnim losowaniu albo wcale.
 // Generator z ziarnem albo skrypt wartości random — wynik testu nie zależy od losu.
 
@@ -47,6 +48,7 @@ const SMALL = [
 
 test('liczba zestawów zgadza się z zasadami gier — inna rozjeżdża liczniki z numeracją', () => {
   assert.equal(combinationsCount(GAMES.lotto.pools), 13_983_816);
+  assert.equal(combinationsCount(GAMES.minilotto.pools), 850_668);
   assert.equal(combinationsCount(GAMES.eurojackpot.pools), 139_838_160);
   assert.equal(combinationsCount(SMALL), 30);
 });
@@ -66,6 +68,7 @@ test('każdy numer daje inny poprawny zestaw i żadnego nie brakuje — inaczej 
 test('skrajne numery to skrajne zestawy gry, a losowe numery to poprawne kupony — także z 1 i z największą liczbą', () => {
   for (const [game, first, last] of [
     ['lotto', [[1, 2, 3, 4, 5, 6]], [[44, 45, 46, 47, 48, 49]]],
+    ['minilotto', [[1, 2, 3, 4, 5]], [[38, 39, 40, 41, 42]]],
     [
       'eurojackpot',
       [
@@ -146,7 +149,7 @@ test('skrajne wartości random trafiają w pierwszy i ostatni zestaw, nie poza l
   assert.deepEqual(result, { sets: [{ numbers: [[44, 45, 46, 47, 48, 49]], hits: 2 }], drawsNumber: 2 });
 });
 
-test('czołówka zgadza się z naiwnym zliczaniem tych samych losowań — obie gry', () => {
+test('czołówka zgadza się z naiwnym zliczaniem tych samych losowań — każda gra', () => {
   for (const game of Object.keys(GAMES)) {
     const { pools } = GAMES[game];
     const total = combinationsCount(pools);
@@ -167,7 +170,7 @@ test('czołówka zgadza się z naiwnym zliczaniem tych samych losowań — obie 
   }
 });
 
-test('każda liczba losowań ze strony mieści się w liczniku obu gier — inaczej generator odmawia po kliknięciu', () => {
+test('każda liczba losowań ze strony mieści się w liczniku każdej gry — inaczej generator odmawia po kliknięciu', () => {
   assert.deepEqual(GENERATOR_DRAWS, [10e6, 50e6, 100e6, 300e6, 500e6, 1000e6]);
   for (const { pools } of Object.values(GAMES)) {
     for (const draws of GENERATOR_DRAWS) {
@@ -185,11 +188,20 @@ test('każda liczba losowań ze strony mieści się w liczniku obu gier — inac
 });
 
 test('zbyt wiele losowań na zestaw to błąd, nie przepełniony po cichu licznik', () => {
-  assert.throws(() => mostFrequentDraws(SMALL, 30 * 100 + 1, seeded(1)), /Za dużo losowań/);
-  // Na granicy liczy: średnio 100 trafień na zestaw, najczęstszy daleko od 255.
-  const { sets } = mostFrequentDraws(SMALL, 30 * 100, seeded(1));
-  assert.ok(sets[0].hits > 100 && sets[0].hits < 255, `Najczęstszy zestaw: ${sets[0].hits} trafień.`);
+  assert.throws(() => mostFrequentDraws(SMALL, 30 * 25_000 + 1, seeded(1)), /Za dużo losowań/);
+  // Na granicy liczy: średnio 25 000 trafień na zestaw, najczęstszy daleko
+  // od 65 535.
+  const { sets } = mostFrequentDraws(SMALL, 30 * 25_000, seeded(1));
+  assert.ok(sets[0].hits > 25_000 && sets[0].hits < 26_000, `Najczęstszy zestaw: ${sets[0].hits} trafień.`);
   assert.equal(sets.length, GENERATOR_SETS);
+});
+
+test('przy średnio ponad 100 trafieniach na zestaw licznik liczy dalej niż do 255 — inaczej czołówka Mini Lotto remisuje na 255', () => {
+  // Średnio 100 trafień na zestaw: licznik bajtowy, staje na 255.
+  assert.deepEqual(ranked(SMALL, mostFrequentDraws(SMALL, 30 * 100, () => 0).sets), [[0, 255]]);
+  // Średnio ponad 100: szerszy licznik, wszystkie trafienia jednego zestawu.
+  // Tak liczy Mini Lotto od 100 mln losowań (miliard: średnio 1175 na zestaw).
+  assert.deepEqual(ranked(SMALL, mostFrequentDraws(SMALL, 30 * 100 + 1, () => 0).sets), [[0, 3001]]);
 });
 
 test('liczba losowań inna niż dodatnia całkowita to błąd z komunikatem', () => {

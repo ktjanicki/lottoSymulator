@@ -110,19 +110,23 @@ const tierProbability = (pools, tier) =>
     return (prob * choose(size, m) * choose(max - size, size - m)) / choose(max, size);
   }, 1);
 
-const TICKETS = {
-  lotto: ['12', '33', '17', '41', '27', '6'],
-  eurojackpot: ['4', '9', '23', '31', '47', '3', '11'],
+// Kupon i liczba losowań do sprawdzenia częstości stopni. Losowania muszą
+// się skończyć przed główną wygraną z ziarnem 2026: Mini Lotto trafia
+// „piątkę” średnio co 850 668 losowań — ten kupon dopiero w 1 292 776.
+const TIER_SAMPLES = {
+  lotto: { ticket: ['12', '33', '17', '41', '27', '6'], draws: 2_000_000 },
+  minilotto: { ticket: ['3', '14', '22', '35', '40'], draws: 1_000_000 },
+  eurojackpot: { ticket: ['4', '9', '23', '31', '47', '3', '11'], draws: 2_000_000 },
 };
 
 for (const [game, { pools, tiers }] of Object.entries(GAMES)) {
   test(`${game}: każdy stopień wypada z teoretyczną częstością — inaczej liczenie trafień jest złe`, () => {
-    const DRAWS = 2_000_000;
-    const counts = tiersAfter(game, TICKETS[game], seeded(2026), DRAWS);
+    const { ticket, draws: DRAWS } = TIER_SAMPLES[game];
+    const counts = tiersAfter(game, ticket, seeded(2026), DRAWS);
     tiers.forEach((tier, index) => {
       const expected = DRAWS * tierProbability(pools, tier);
       // 5 odchyleń standardowych (Poisson) plus 1 na stopnie, które
-      // w 2 mln losowań wypadają średnio raz albo rzadziej.
+      // w tylu losowaniach wypadają średnio raz albo rzadziej.
       assert.ok(
         Math.abs(counts[index] - expected) < 5 * Math.sqrt(expected) + 1,
         `Stopień ${tier.join('+')}: ${counts[index]} razy, oczekiwano ok. ${expected.toFixed(1)}.`
@@ -155,6 +159,14 @@ test('Lotto: symulacja kończy się na szóstce i liczy piątki po drodze', () =
   assert.deepEqual(result, { drawsNumber: 2, tiers: [0, 0, 1] });
 });
 
+test('Mini Lotto: symulacja kończy się na piątce, nie na czwórce', () => {
+  // Losowanie 1: 1–5 (czwórka dla kuponu 1–4 + 42). Losowanie 2: 1–4, potem 42
+  // (ostatnia z 38 pozostałych w puli).
+  const values = [0, 0, 0, 0, 0, 0, 0, 0, 0, TOP];
+  const result = simulateUntilWin('minilotto', ['42', '1', '2', '3', '4'], scripted(values));
+  assert.deepEqual(result, { drawsNumber: 2, tiers: [0, 1] });
+});
+
 test('Eurojackpot: wygrana dopiero na 5+2 — 5+1 nie kończy symulacji', () => {
   // Losowanie 1: 1–5 + 1, 2 (5+1 dla kuponu 1–5 + 1, 12). Losowanie 2: 1–5,
   // potem 1 i 12 (druga kula: 11. z pozostałych 11 w puli 2–12).
@@ -176,6 +188,13 @@ test('zły kupon zgłasza błąd zamiast kręcić się bez końca', () => {
       ['1', '2', '3', '4', '5', '50'],
       ['1', '2', '3', '4', '5', 'x'],
       ['1', '2', '3', '4', '5', '6', '7'],
+    ],
+    minilotto: [
+      ['1', '2', '3', '4'],
+      ['1', '2', '3', '4', '5', '6'],
+      ['1', '2', '3', '4', '43'],
+      ['0', '2', '3', '4', '5'],
+      ['1', '1', '3', '4', '5'],
     ],
     eurojackpot: [
       ['1', '2', '3', '4', '5', '1'],

@@ -95,9 +95,11 @@ Każda zmiana przechodzi te kroki, w tej kolejności:
   Wejście: `{mode: 'simulator', game, numbers}` albo `{mode: 'generator', game,
 draws}`; protokół: `{type: 'progress' | 'result' | 'error'}`.
 - **Generator** nie wyciąga kul: losuje numer zestawu (ten sam rozkład, kilka
-  razy szybciej) i trzyma bajt licznika na każdy zestaw gry (Eurojackpot:
-  140 MB w workerze). Nowa gra albo większa liczba losowań musi się zmieścić
-  w tym liczniku — pilnuje wejście `mostFrequentDraws`.
+  razy szybciej) i trzyma licznik na każdy zestaw gry — bajt, gdy zestawów
+  dużo (Eurojackpot: 140 MB w workerze), dwa bajty, gdy średnia liczba
+  trafień przerasta bajt (Mini Lotto: 1,7 MB); szerokości w `COUNTERS`.
+  Nowa gra albo większa liczba losowań musi się zmieścić w którymś
+  z liczników — pilnuje wejście `mostFrequentDraws`.
 - **localStorage** tylko za zgodą (klucze w `history.js`; zmiana klucza gubi
   dane odwiedzających). Odmowy nie zapisujemy. Wpis historii niesie grę;
   wpisy sprzed 1.15.0 jej nie mają i czytają się jako `LEGACY_GAME` (Lotto).
